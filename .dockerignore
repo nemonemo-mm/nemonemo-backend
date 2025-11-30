@@ -1,0 +1,16 @@
+.gradle
+build
+bin
+.idea
+.vscode
+*.iml
+*.ipr
+*.iws
+.DS_Store
+.git
+.gitignore
+README.md
+HELP.md
+DOCKER_GUIDE.md
+docker-compose.yml
+
