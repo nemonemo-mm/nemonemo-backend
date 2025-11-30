@@ -2,6 +2,10 @@
 FROM gradle:8.5-jdk17 AS build
 WORKDIR /app
 
+# Copy gradlew and grant execute permission
+COPY gradlew .
+RUN chmod +x gradlew
+
 # Copy Gradle files
 COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
