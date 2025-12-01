@@ -89,55 +89,60 @@ jobs:
   deploy:
     needs: build-and-push-docker
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # main 브랜치 또는 deploy/ 로 시작하는 브랜치에서만 배포 실행
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/deploy/'))
+    permissions:
+      id-token: write        # OIDC 토큰 발급용
+      contents: read         # 리포지토리 코드 읽기용
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}                 # 예: ap-northeast-2
+      S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}               # 예: nemonemo-deploy-bucket
+      S3_KEY: nemonemo-${{ github.sha }}.zip                # S3에 업로드될 ZIP 파일 이름
+      CODEDEPLOY_APPLICATION_NAME: ${{ secrets.CODEDEPLOY_APPLICATION_NAME }}   # CodeDeploy 애플리케이션 이름
+      CODEDEPLOY_DEPLOYMENT_GROUP: ${{ secrets.CODEDEPLOY_DEPLOYMENT_GROUP }}   # CodeDeploy 배포 그룹 이름
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
-    - name: Configure SSH
-      env:
-        SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
-        EC2_HOST: ${{ secrets.EC2_HOST }}
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Build project (for CodeDeploy bundle)
+      run: ./gradlew clean build
+
+    - name: Create deployment bundle (ZIP)
       run: |
-        mkdir -p ~/.ssh
-        chmod 700 ~/.ssh
-        # Write SSH key to file
-        echo "$SSH_KEY" > ~/.ssh/deploy_key
-        chmod 600 ~/.ssh/deploy_key
-        # Add EC2 host to known_hosts
-        ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
-        
-    - name: Deploy to EC2
-      env:
-        EC2_HOST: ${{ secrets.EC2_HOST }}
-        EC2_USER: ${{ secrets.EC2_USER }}
-        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        echo "Creating ZIP bundle: $S3_KEY"
+        zip -r "$S3_KEY" . \
+          -x "*.git*" \
+          -x "*/build/tmp/*"
+
+    - name: Configure AWS credentials (OIDC)
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}   # OIDC용 IAM Role ARN
+        role-session-name: nemonemo-github-actions
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Upload bundle to S3
       run: |
-        ssh -i ~/.ssh/deploy_key \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=~/.ssh/known_hosts \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
-          # Login to Docker Hub
-          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-          
-          # Pull latest image
-          docker pull $DOCKER_USERNAME/nemonemo-backend:main || true
-          
-          # Stop and remove old container
-          docker stop nemonemo-backend || true
-          docker rm nemonemo-backend || true
-          
-          # Run new container
-          docker run -d \
-            --name nemonemo-backend \
-            --restart unless-stopped \
-            -p 8080:8080 \
-            -e SPRING_PROFILES_ACTIVE=prod \
-            $DOCKER_USERNAME/nemonemo-backend:main
-          
-          # Clean up old images
-          docker image prune -f
-        EOF
+        echo "Uploading $S3_KEY to s3://$S3_BUCKET/$S3_KEY"
+        aws s3 cp "$S3_KEY" "s3://$S3_BUCKET/$S3_KEY"
+
+    - name: Deploy with CodeDeploy
+      run: |
+        echo "Creating deployment to CodeDeploy..."
+        aws deploy create-deployment \
+          --application-name "${CODEDEPLOY_APPLICATION_NAME}" \
+          --deployment-group-name "${CODEDEPLOY_DEPLOYMENT_GROUP}" \
+          --deployment-config-name "CodeDeployDefault.AllAtOnce" \
+          --s3-location bucket="${S3_BUCKET}",key="${S3_KEY}",bundleType=zip \
+          --region "${AWS_REGION}"
 
