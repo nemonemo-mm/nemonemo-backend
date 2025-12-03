@@ -21,11 +21,17 @@ public class ScheduleResponse {
     private LocalDateTime endAt;
     private Boolean isAllDay;
     private Boolean isPinned;
+    private String place;
+    private Integer reminderOffsetMinutes;
     private Long createdById;
     private String createdByName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
+
+
+
+
 
 
 

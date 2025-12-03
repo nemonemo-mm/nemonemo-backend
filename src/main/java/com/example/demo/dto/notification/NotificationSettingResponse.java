@@ -17,12 +17,14 @@ public class NotificationSettingResponse {
     private String userName;
     private Long teamId;
     private String teamName;
-    private Boolean enableDueAlarm;
-    private Integer dueAlarmBeforeMin;
-    private Boolean enablePinnedAlarm;
+    private Boolean enableTeamAlarm;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
+
+
+
+
 
 
 

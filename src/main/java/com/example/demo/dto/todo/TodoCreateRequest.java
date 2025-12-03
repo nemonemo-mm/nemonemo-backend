@@ -24,7 +24,14 @@ public class TodoCreateRequest {
     private LocalDateTime dueAt;
 
     private Long assigneeMemberId;
+
+    // 개별 투두 알림 오프셋 (due_at 기준 n분 전)
+    private Integer reminderOffsetMinutes;
 }
+
+
+
+
 
 
 

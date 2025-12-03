@@ -37,6 +37,10 @@ public class User {
     @Column(name = "provider_id", length = 255)
     private String providerId;
 
+    @Column(name = "enable_push_notification", nullable = false)
+    @Builder.Default
+    private Boolean enablePushNotification = true;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -50,6 +54,10 @@ public class User {
         updatedAt = LocalDateTime.now();
     }
 }
+
+
+
+
 
 
 

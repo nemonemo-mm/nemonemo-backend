@@ -20,6 +20,7 @@ public class TodoResponse {
     private String description;
     private TodoStatus status;
     private LocalDateTime dueAt;
+    private Integer reminderOffsetMinutes;
     private Long createdById;
     private String createdByName;
     private Long assigneeMemberId;
@@ -27,6 +28,10 @@ public class TodoResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
+
+
+
+
 
 
 
