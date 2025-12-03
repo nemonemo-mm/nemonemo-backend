@@ -27,7 +27,17 @@ public class ScheduleCreateRequest {
     private Boolean isAllDay;
 
     private Boolean isPinned;
+
+    // 장소 (옵션)
+    private String place;
+
+    // 개별 일정 알림 오프셋 (end_at 기준 n분 전)
+    private Integer reminderOffsetMinutes;
 }
+
+
+
+
 
 
 

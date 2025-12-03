@@ -29,11 +29,17 @@ public class Schedule {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(length = 255)
+    private String place;
+
     @Column(name = "start_at", nullable = false)
     private LocalDateTime startAt;
 
     @Column(name = "end_at", nullable = false)
     private LocalDateTime endAt;
+
+    @Column(name = "reminder_offset_minutes")
+    private Integer reminderOffsetMinutes;
 
     @Column(name = "is_all_day", nullable = false)
     @Builder.Default
@@ -60,6 +66,10 @@ public class Schedule {
         updatedAt = LocalDateTime.now();
     }
 }
+
+
+
+
 
 
 

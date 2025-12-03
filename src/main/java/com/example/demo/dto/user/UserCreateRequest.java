@@ -21,7 +21,14 @@ public class UserCreateRequest {
     private AuthProvider provider;
 
     private String providerId;
+
+    // 앱 전역 푸시 알림 수신 동의 여부 (기본값: true)
+    private Boolean enablePushNotification = true;
 }
+
+
+
+
 
 
 

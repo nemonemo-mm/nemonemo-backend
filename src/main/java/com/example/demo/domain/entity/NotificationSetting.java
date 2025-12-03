@@ -31,17 +31,9 @@ public class NotificationSetting {
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
 
-    @Column(name = "enable_due_alarm", nullable = false)
+    @Column(name = "enable_team_alarm", nullable = false)
     @Builder.Default
-    private Boolean enableDueAlarm = true;
-
-    @Column(name = "due_alarm_before_min", nullable = false)
-    @Builder.Default
-    private Integer dueAlarmBeforeMin = 30;
-
-    @Column(name = "enable_pinned_alarm", nullable = false)
-    @Builder.Default
-    private Boolean enablePinnedAlarm = true;
+    private Boolean enableTeamAlarm = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
@@ -56,6 +48,10 @@ public class NotificationSetting {
         updatedAt = LocalDateTime.now();
     }
 }
+
+
+
+
 
 
 

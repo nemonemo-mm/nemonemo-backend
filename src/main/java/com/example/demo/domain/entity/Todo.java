@@ -38,6 +38,9 @@ public class Todo {
     @Column(name = "due_at")
     private LocalDateTime dueAt;
 
+    @Column(name = "reminder_offset_minutes")
+    private Integer reminderOffsetMinutes;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id", nullable = false)
     private User createdBy;
@@ -59,6 +62,10 @@ public class Todo {
         updatedAt = LocalDateTime.now();
     }
 }
+
+
+
+
 
 
 
