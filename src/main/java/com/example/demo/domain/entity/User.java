@@ -6,12 +6,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "app_user")
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -37,9 +39,8 @@ public class User {
     @Column(name = "provider_id", length = 255)
     private String providerId;
 
-    @Column(name = "enable_push_notification", nullable = false)
-    @Builder.Default
-    private Boolean enablePushNotification = true;
+    @Column(name = "image_url", length = 255)
+    private String imageUrl;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default

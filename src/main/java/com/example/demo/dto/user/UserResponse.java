@@ -17,7 +17,7 @@ public class UserResponse {
     private String email;
     private String name;
     private AuthProvider provider;
-    private Boolean enablePushNotification;
+    private String imageUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

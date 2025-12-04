@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
                 columnNames = {"team_id", "user_id"}
         ))
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
