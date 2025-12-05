@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -31,8 +33,13 @@ public class User {
     @Column(nullable = false, length = 100)
     private String name;
 
+    /**
+     * 인증 제공자 (LOCAL, GOOGLE, APPLE)
+     * PostgreSQL ENUM 타입(auth_provider)과 매핑
+     */
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(nullable = false, columnDefinition = "auth_provider")
     @Builder.Default
     private AuthProvider provider = AuthProvider.LOCAL;
 
@@ -55,11 +62,6 @@ public class User {
         updatedAt = LocalDateTime.now();
     }
 }
-
-
-
-
-
 
 
 
