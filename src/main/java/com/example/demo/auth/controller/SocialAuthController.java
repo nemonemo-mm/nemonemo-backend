@@ -4,6 +4,12 @@ import com.example.demo.auth.dto.AuthTokensResponse;
 import com.example.demo.auth.dto.SocialLoginRequest;
 import com.example.demo.auth.service.SocialAuthService;
 import com.example.demo.domain.enums.AuthProvider;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +23,7 @@ import java.security.GeneralSecurityException;
 import java.util.HashMap;
 import java.util.Map;
 
+@Tag(name = "인증", description = "소셜 로그인 API")
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -24,6 +31,14 @@ public class SocialAuthController {
 
     private final SocialAuthService socialAuthService;
 
+    @Operation(summary = "소셜 로그인", description = "Google ID 토큰을 사용하여 소셜 로그인을 수행합니다.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "로그인 성공", 
+            content = @Content(schema = @Schema(implementation = AuthTokensResponse.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패 또는 지원하지 않는 provider)"),
+        @ApiResponse(responseCode = "401", description = "유효하지 않은 토큰"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
     @PostMapping("/social/login")
     public ResponseEntity<Map<String, Object>> socialLogin(@Valid @RequestBody SocialLoginRequest request) {
 
@@ -68,5 +83,4 @@ public class SocialAuthController {
         }
     }
 }
-
 

@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -32,8 +34,13 @@ public class Todo {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    /**
+     * 투두 상태 (TODO, DONE)
+     * PostgreSQL ENUM 타입(todo_status)과 매핑
+     */
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(nullable = false, columnDefinition = "todo_status")
     @Builder.Default
     private TodoStatus status = TodoStatus.TODO;
 
@@ -64,11 +71,6 @@ public class Todo {
         updatedAt = LocalDateTime.now();
     }
 }
-
-
-
-
-
 
 
 
