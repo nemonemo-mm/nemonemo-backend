@@ -68,23 +68,53 @@ public class SocialAuthService {
 
         String providerId = payload.getSubject();
         String email = payload.getEmail();
-        String name = request.getName() != null ? request.getName() : (String) payload.get("name");
-        String picture = request.getImageUrl() != null ? request.getImageUrl() : (String) payload.get("picture");
 
-        // 기존 유저 존재 여부 확인
+        // 기존 유저 존재 여부 확인 (먼저 조회)
         Optional<User> existingUserOpt = userRepository.findByProviderAndProviderId(AuthProvider.GOOGLE, providerId);
         boolean isNewUser = existingUserOpt.isEmpty();
 
-        User user = existingUserOpt.orElseGet(() -> {
-            User newUser = User.builder()
+        User user;
+        if (isNewUser) {
+            // 새 사용자: name 필수 검증 후 회원가입
+            String name = request.getName() != null ? request.getName() : (String) payload.get("name");
+            String picture = request.getImageUrl() != null ? request.getImageUrl() : (String) payload.get("picture");
+
+            // 이름 필수 검증 (새 사용자만)
+            if (name == null || name.trim().isEmpty()) {
+                throw new IllegalArgumentException("AUTH_MISSING_NAME: 사용자 이름이 필요합니다.");
+            }
+
+            user = User.builder()
                     .email(email)
                     .name(name)
                     .provider(AuthProvider.GOOGLE)
                     .providerId(providerId)
                     .imageUrl(picture)
                     .build();
-            return userRepository.save(newUser);
-        });
+            user = userRepository.save(user);
+        } else {
+            // 기존 사용자: name 검증 없이 바로 로그인
+            user = existingUserOpt.get();
+            
+            // 선택적으로 name, imageUrl 업데이트 (request에 제공된 경우)
+            String name = request.getName();
+            String picture = request.getImageUrl();
+            boolean updated = false;
+            
+            if (name != null && !name.trim().isEmpty() && !name.equals(user.getName())) {
+                user.setName(name);
+                updated = true;
+            }
+            
+            if (picture != null && !picture.equals(user.getImageUrl())) {
+                user.setImageUrl(picture);
+                updated = true;
+            }
+            
+            if (updated) {
+                user = userRepository.save(user);
+            }
+        }
 
         // 새 refresh token 발급 및 저장
         String refreshTokenValue = jwtTokenProvider.createRefreshToken(user.getId());
