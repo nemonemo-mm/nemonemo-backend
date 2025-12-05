@@ -26,7 +26,7 @@ public class SocialLoginRequest {
             allowableValues = {"IOS", "ANDROID", "WEB"})
     private ClientType clientType;
 
-    @Schema(description = "사용자 이름 (선택사항)", example = "홍길동")
+    @Schema(description = "사용자 이름 (신규 회원가입 시 필수, 기존 사용자 로그인 시 선택사항)", example = "홍길동")
     private String name;
 
     @Schema(description = "프로필 이미지 URL (선택사항)", example = "https://example.com/profile.jpg")
