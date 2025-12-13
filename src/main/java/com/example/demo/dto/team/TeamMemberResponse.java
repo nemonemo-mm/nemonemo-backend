@@ -15,13 +15,14 @@ public class TeamMemberResponse {
     private Long id;
     private Long teamId;
     private String teamName;
+    private String imageUrl;
     private Long userId;
     private String userName;
     private String userEmail;
     private String nickname;
-    private Long roleCategoryId;
-    private String roleCategoryName;
-    private String roleCategoryColor;
+    private Long positionId;
+    private String positionName;
+    private String positionColor;
     private Boolean isAdmin;
     private LocalDateTime joinedAt;
 }
