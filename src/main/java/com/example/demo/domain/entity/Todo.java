@@ -44,19 +44,24 @@ public class Todo {
     @Builder.Default
     private TodoStatus status = TodoStatus.TODO;
 
+    @Column(name = "start_at")
+    private LocalDateTime startAt;  // 시작 시간
+
+    @Column(name = "end_at")
+    private LocalDateTime endAt;  // 종료 시간
+
     @Column(name = "due_at")
-    private LocalDateTime dueAt;
+    private LocalDateTime dueAt;  // 마감일 (기존 호환성 유지)
 
     @Column(name = "reminder_offset_minutes")
     private Integer reminderOffsetMinutes;
 
+    @Column(name = "url", length = 500)
+    private String url;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id", nullable = false)
     private User createdBy;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assignee_member_id")
-    private TeamMember assigneeMember;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default

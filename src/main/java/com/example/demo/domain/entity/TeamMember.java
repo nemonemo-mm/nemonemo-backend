@@ -37,8 +37,8 @@ public class TeamMember {
     private String nickname;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_category_id")
-    private RoleCategory roleCategory;
+    @JoinColumn(name = "position_id")
+    private Position position;
 
     @Column(name = "is_admin", nullable = false)
     @Builder.Default

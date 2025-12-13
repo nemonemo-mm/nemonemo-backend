@@ -37,6 +37,13 @@ public class NotificationSetting {
     @Builder.Default
     private Boolean enableTeamAlarm = true;
 
+    @Column(name = "enable_schedule_start_alarm", nullable = false)
+    @Builder.Default
+    private Boolean enableScheduleStartAlarm = true;
+
+    @Column(name = "schedule_start_before_minutes")
+    private Integer scheduleStartBeforeMinutes;  // 10, 30, 60 (분)
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();

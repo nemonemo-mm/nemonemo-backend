@@ -27,6 +27,11 @@ public class User {
     @Column(nullable = false, unique = true, length = 255)
     private String email;
 
+    /**
+     * 비밀번호 해시 (bcrypt 등)
+     * 소셜 로그인만 사용하는 계정은 null
+     * 나중에 이메일 기반 로그인/회원가입 추가 시 사용 예정
+     */
     @Column(name = "password_hash", length = 255)
     private String passwordHash;
 

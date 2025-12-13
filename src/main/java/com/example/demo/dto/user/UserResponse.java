@@ -24,8 +24,14 @@ public class UserResponse {
     @Schema(description = "이름", example = "홍길동")
     private String name;
 
+    @Schema(description = "비밀번호 해시 (보안상 항상 null 반환)", example = "null")
+    private String passwordHash;
+
     @Schema(description = "인증 제공자", example = "GOOGLE")
     private AuthProvider provider;
+
+    @Schema(description = "소셜 제공자 ID", example = "12345678901234567890")
+    private String providerId;
 
     @Schema(description = "프로필 이미지 URL", example = "https://example.com/profile.jpg")
     private String imageUrl;
