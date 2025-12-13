@@ -10,9 +10,9 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "role_category",
+@Table(name = "position",
         uniqueConstraints = @UniqueConstraint(
-                name = "uq_role_category_team_name",
+                name = "uq_position_team_name",
                 columnNames = {"team_id", "name"}
         ))
 @Getter
@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RoleCategory {
+public class Position {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -29,7 +29,7 @@ public class RoleCategory {
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
 
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, length = 10)
     private String name;
 
     @Column(name = "color_hex", length = 9)
@@ -52,15 +52,4 @@ public class RoleCategory {
         updatedAt = LocalDateTime.now();
     }
 }
-
-
-
-
-
-
-
-
-
-
-
 

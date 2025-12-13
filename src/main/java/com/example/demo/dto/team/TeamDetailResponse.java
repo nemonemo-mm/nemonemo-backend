@@ -11,25 +11,16 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TeamResponse {
+public class TeamDetailResponse {
     private Long id;
     private String name;
     private String inviteCode;
     private Long ownerId;
     private String ownerName;
+    private Boolean isOwner;
+    private String imageUrl;
+    private String description;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
-
-
-
-
-
-
-
-
-
-
-
-
 

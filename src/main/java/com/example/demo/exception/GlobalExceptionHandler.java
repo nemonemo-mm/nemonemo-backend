@@ -67,12 +67,33 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException ex) {
         Map<String, Object> response = new HashMap<>();
         response.put("success", false);
-        response.put("code", "INVALID_REQUEST");
-        response.put("message", ex.getMessage());
+        
+        String message = ex.getMessage();
+        String code = "INVALID_REQUEST";
+        
+        // 메시지에 따라 적절한 코드 설정
+        if (message != null) {
+            if (message.contains("최대") && (message.contains("10자") || message.contains("길이"))) {
+                code = "VALIDATION_ERROR";
+            } else if (message.contains("찾을 수 없습니다")) {
+                code = "NOT_FOUND";
+            } else if (message.contains("권한")) {
+                code = "FORBIDDEN";
+            } else if (message.contains("필수")) {
+                code = "INVALID_REQUEST";
+            }
+        }
+        
+        response.put("code", code);
+        response.put("message", message);
         response.put("data", null);
         response.put("meta", null);
         
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        HttpStatus status = "FORBIDDEN".equals(code) ? HttpStatus.FORBIDDEN 
+                : "NOT_FOUND".equals(code) ? HttpStatus.NOT_FOUND 
+                : HttpStatus.BAD_REQUEST;
+        
+        return ResponseEntity.status(status).body(response);
     }
 }
 

@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RoleCategoryResponse {
+public class PositionResponse {
     private Long id;
     private Long teamId;
     private String name;
@@ -20,16 +20,4 @@ public class RoleCategoryResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
-
-
-
-
-
-
-
-
-
-
-
-
 

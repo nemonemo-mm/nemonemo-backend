@@ -2,8 +2,15 @@ package com.example.demo;
 
 import com.example.demo.auth.google.GoogleIdTokenVerifierService;
 import com.example.demo.auth.service.SocialAuthService;
+import com.example.demo.domain.repository.PositionRepository;
 import com.example.demo.domain.repository.RefreshTokenRepository;
+import com.example.demo.domain.repository.TeamMemberRepository;
+import com.example.demo.domain.repository.TeamRepository;
 import com.example.demo.domain.repository.UserRepository;
+import com.example.demo.domain.service.InviteCodeGenerator;
+import com.example.demo.domain.service.PositionService;
+import com.example.demo.domain.service.TeamService;
+import com.example.demo.security.jwt.JwtAuthenticationHelper;
 import com.example.demo.security.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,6 +42,28 @@ class TestApplicationTests {
     
     @MockBean
     private SocialAuthService socialAuthService;
+    
+    // 새로 추가한 팀 관리 관련 MockBean들
+    @MockBean
+    private TeamRepository teamRepository;
+    
+    @MockBean
+    private PositionRepository positionRepository;
+    
+    @MockBean
+    private TeamMemberRepository teamMemberRepository;
+    
+    @MockBean
+    private TeamService teamService;
+    
+    @MockBean
+    private PositionService positionService;
+    
+    @MockBean
+    private InviteCodeGenerator inviteCodeGenerator;
+    
+    @MockBean
+    private JwtAuthenticationHelper jwtAuthenticationHelper;
 
 	@Test
 	void contextLoads() {

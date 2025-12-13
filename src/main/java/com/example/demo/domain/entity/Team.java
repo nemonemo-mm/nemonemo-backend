@@ -30,10 +30,12 @@ public class Team {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
+    
+    @Column(name = "image_url", length = 255)
+    private String imageUrl;
 
-    @Column(name = "is_deleted", nullable = false)
-    @Builder.Default
-    private Boolean isDeleted = false;
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default

@@ -7,7 +7,7 @@ import lombok.Setter;
 @Setter
 public class TeamMemberCreateRequest {
     private String nickname;
-    private Long roleCategoryId;
+    private Long positionId;
     private Boolean isAdmin;
 }
 
