@@ -2,11 +2,13 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.auth.AuthTokensResponse;
 import com.example.demo.dto.auth.SocialLoginRequest;
+import com.example.demo.dto.common.ErrorResponse;
 import com.example.demo.service.SocialAuthService;
 import com.example.demo.domain.enums.AuthProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -21,9 +23,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @Tag(name = "인증", description = "소셜 로그인 API")
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -37,56 +36,50 @@ public class AuthController {
             "신규 회원가입 시에는 name 필드가 필수입니다.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "로그인 성공", 
-            content = @Content(schema = @Schema(implementation = AuthTokensResponse.class))),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패, 지원하지 않는 provider, 또는 사용자 이름 누락)", 
-            content = @Content(schema = @Schema(example = "{\"success\":false,\"code\":\"AUTH_MISSING_NAME\",\"message\":\"사용자 이름이 필요합니다.\",\"data\":null,\"meta\":null}"))),
-        @ApiResponse(responseCode = "401", description = "유효하지 않은 Firebase ID 토큰", 
-            content = @Content(schema = @Schema(example = "{\"success\":false,\"code\":\"AUTH_INVALID_TOKEN\",\"message\":\"유효하지 않은 Firebase ID 토큰입니다.\",\"data\":null,\"meta\":null}"))),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthTokensResponse.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패, 지원하지 않는 provider, 또는 사용자 이름 누락) - 에러 코드: INVALID_REQUEST, AUTH_MISSING_NAME", 
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"AUTH_MISSING_NAME\",\"message\":\"신규 회원가입 시 이름은 필수입니다.\"}"))),
+        @ApiResponse(responseCode = "401", description = "유효하지 않은 Firebase ID 토큰 - 에러 코드: AUTH_INVALID_TOKEN", 
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"AUTH_INVALID_TOKEN\",\"message\":\"유효하지 않은 Firebase ID 토큰입니다.\"}"))),
+        @ApiResponse(responseCode = "500", description = "서버 오류 - 에러 코드: INTERNAL_SERVER_ERROR",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"Firebase 토큰 검증 중 오류가 발생했습니다.\"}")))
     })
     @PostMapping("/social/login")
-    public ResponseEntity<Map<String, Object>> socialLogin(@Valid @RequestBody SocialLoginRequest request) {
+    public ResponseEntity<?> socialLogin(@Valid @RequestBody SocialLoginRequest request) {
 
         if (request.getProvider() != AuthProvider.GOOGLE) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("code", "INVALID_REQUEST");
-            response.put("message", "현재는 GOOGLE provider만 지원합니다.");
-            response.put("data", null);
-            response.put("meta", null);
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest()
+                    .body(ErrorResponse.builder()
+                            .code("INVALID_REQUEST")
+                            .message("현재는 GOOGLE provider만 지원합니다.")
+                            .build());
         }
 
         try {
             AuthTokensResponse tokens = socialAuthService.loginWithGoogle(request);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("code", "SUCCESS");
-            response.put("message", null);
-            response.put("data", tokens);
-            response.put("meta", null);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(tokens);
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
         } catch (com.google.firebase.auth.FirebaseAuthException e) {
             // Firebase 인증 오류
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("code", "AUTH_INVALID_TOKEN");
-            response.put("message", "유효하지 않은 Firebase ID 토큰입니다.");
-            response.put("data", null);
-            response.put("meta", null);
-            return ResponseEntity.status(401).body(response);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ErrorResponse.builder()
+                            .code("AUTH_INVALID_TOKEN")
+                            .message("유효하지 않은 Firebase ID 토큰입니다.")
+                            .build());
         } catch (Exception e) {
             // 예상치 못한 오류
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("code", "INTERNAL_SERVER_ERROR");
-            response.put("message", "Firebase 토큰 검증 중 오류가 발생했습니다.");
-            response.put("data", null);
-            response.put("meta", null);
-            return ResponseEntity.status(500).body(response);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ErrorResponse.builder()
+                            .code("INTERNAL_SERVER_ERROR")
+                            .message("Firebase 토큰 검증 중 오류가 발생했습니다.")
+                            .build());
         }
     }
 
@@ -99,56 +92,52 @@ public class AuthController {
             "자동 로그인 기능에 사용됩니다.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "토큰 재발급 성공 (새로운 Access Token과 Refresh Token 반환)", 
-            content = @Content(schema = @Schema(implementation = AuthTokensResponse.class))),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청 (Authorization 헤더 누락 또는 형식 오류)", 
-            content = @Content(schema = @Schema(example = "{\"success\":false,\"code\":\"INVALID_REQUEST\",\"message\":\"Authorization 헤더에 Bearer 토큰이 필요합니다.\",\"data\":null,\"meta\":null}"))),
-        @ApiResponse(responseCode = "401", description = "유효하지 않거나 만료된 토큰, 또는 이미 사용된 토큰", 
-            content = @Content(schema = @Schema(example = "{\"success\":false,\"code\":\"INVALID_REFRESH_TOKEN\",\"message\":\"유효하지 않은 리프레시 토큰입니다.\",\"data\":null,\"meta\":null}"))),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthTokensResponse.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (Authorization 헤더 누락 또는 형식 오류) - 에러 코드: INVALID_REQUEST", 
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INVALID_REQUEST\",\"message\":\"Authorization 헤더에 Bearer 토큰이 필요합니다.\"}"))),
+        @ApiResponse(responseCode = "401", description = "유효하지 않거나 만료된 토큰, 또는 이미 사용된 토큰 - 에러 코드: INVALID_REFRESH_TOKEN, AUTH_TOKEN_EXPIRED", 
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INVALID_REFRESH_TOKEN\",\"message\":\"유효하지 않거나 만료된 Refresh Token입니다.\"}"))),
+        @ApiResponse(responseCode = "500", description = "서버 오류 - 에러 코드: INTERNAL_SERVER_ERROR",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"토큰 재발급 중 오류가 발생했습니다.\"}")))
     })
     @PostMapping("/refresh")
-    public ResponseEntity<Map<String, Object>> refreshToken(
+    public ResponseEntity<?> refreshToken(
             @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
         try {
             // Authorization 헤더에서 Bearer 토큰 추출
             if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-                Map<String, Object> response = new HashMap<>();
-                response.put("success", false);
-                response.put("code", "INVALID_REQUEST");
-                response.put("message", "Authorization 헤더에 Bearer 토큰이 필요합니다.");
-                response.put("data", null);
-                response.put("meta", null);
-                return ResponseEntity.badRequest().body(response);
+                return ResponseEntity.badRequest()
+                        .body(ErrorResponse.builder()
+                                .code("INVALID_REQUEST")
+                                .message("Authorization 헤더에 Bearer 토큰이 필요합니다.")
+                                .build());
             }
             
             String refreshToken = authorizationHeader.substring(7); // "Bearer " 제거
             AuthTokensResponse tokens = socialAuthService.refreshAccessToken(refreshToken);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("code", "SUCCESS");
-            response.put("message", null);
-            response.put("data", tokens);
-            response.put("meta", null);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(tokens);
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
         } catch (Exception e) {
             // 예상치 못한 오류
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("code", "INTERNAL_SERVER_ERROR");
-            response.put("message", "토큰 재발급 중 오류가 발생했습니다.");
-            response.put("data", null);
-            response.put("meta", null);
-            return ResponseEntity.status(500).body(response);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ErrorResponse.builder()
+                            .code("INTERNAL_SERVER_ERROR")
+                            .message("토큰 재발급 중 오류가 발생했습니다.")
+                            .build());
         }
     }
     
     /**
      * IllegalArgumentException 처리 (권한, 리소스 없음, 인증 에러 등을 구분)
      */
-    private ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException e) {
+    private ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
         String message = e.getMessage();
         
         // 에러 코드가 포함된 경우 (예: "FORBIDDEN: ...", "AUTH_INVALID_TOKEN: ...")
@@ -171,7 +160,11 @@ public class AuthController {
                 status = HttpStatus.BAD_REQUEST;
             }
             
-            return createErrorResponseWithCode(errorCode, cleanMessage, status);
+            return ResponseEntity.status(status)
+                    .body(ErrorResponse.builder()
+                            .code(errorCode)
+                            .message(cleanMessage)
+                            .build());
         }
         
         // 에러 코드가 없는 경우 메시지로 판단
@@ -191,20 +184,10 @@ public class AuthController {
             }
         }
         
-        return createErrorResponseWithCode(code, message != null ? message : "잘못된 요청입니다.", status);
-    }
-    
-    /**
-     * 특정 에러 코드로 에러 응답 생성
-     */
-    private ResponseEntity<Map<String, Object>> createErrorResponseWithCode(String code, String message, HttpStatus status) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", false);
-        response.put("code", code);
-        response.put("message", message);
-        response.put("data", null);
-        response.put("meta", null);
-        
-        return ResponseEntity.status(status).body(response);
+        return ResponseEntity.status(status)
+                .body(ErrorResponse.builder()
+                        .code(code)
+                        .message(message != null ? message : "잘못된 요청입니다.")
+                        .build());
     }
 }

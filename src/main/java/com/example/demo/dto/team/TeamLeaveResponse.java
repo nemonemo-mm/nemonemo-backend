@@ -6,18 +6,18 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Schema(description = "초대 코드 응답")
+@Schema(description = "팀 탈퇴 응답")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class InviteCodeResponse {
+public class TeamLeaveResponse {
     @Schema(description = "팀 ID", example = "1")
     private Long teamId;
-
-    @Schema(description = "초대 코드", example = "ABC123XY")
-    private String inviteCode;
+    
+    @Schema(description = "탈퇴한 멤버 ID", example = "1")
+    private Long memberId;
+    
+    @Schema(description = "탈퇴한 사용자 ID", example = "1")
+    private Long userId;
 }
-
-
-

@@ -6,6 +6,7 @@ import com.example.demo.repository.PositionRepository;
 import com.example.demo.repository.TeamMemberRepository;
 import com.example.demo.repository.TeamRepository;
 import com.example.demo.dto.team.PositionCreateRequest;
+import com.example.demo.dto.team.PositionDeleteResponse;
 import com.example.demo.dto.team.PositionResponse;
 import com.example.demo.dto.team.PositionUpdateRequest;
 import lombok.RequiredArgsConstructor;
@@ -140,7 +141,7 @@ public class PositionService {
      * 포지션 삭제
      */
     @Transactional
-    public void deletePosition(Long userId, Long teamId, Long positionId) {
+    public PositionDeleteResponse deletePosition(Long userId, Long teamId, Long positionId) {
         // 권한 확인 (팀장만 삭제 가능)
         teamPermissionService.verifyTeamOwner(userId, teamId);
         
@@ -160,6 +161,11 @@ public class PositionService {
         
         // 포지션 삭제
         positionRepository.delete(position);
+        
+        return PositionDeleteResponse.builder()
+                .teamId(teamId)
+                .positionId(positionId)
+                .build();
     }
     
     /**

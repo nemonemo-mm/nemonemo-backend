@@ -1,5 +1,6 @@
 package com.example.demo.exception;
 
+import com.example.demo.dto.common.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -7,8 +8,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -18,46 +17,34 @@ public class GlobalExceptionHandler {
      * Validation 에러 처리 (@Valid 실패 시)
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationException(MethodArgumentNotValidException ex) {
-        Map<String, Object> response = new HashMap<>();
-        
-        Map<String, String> fieldErrors = ex.getBindingResult()
+    public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex) {
+        String errorMessage = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
-                .collect(Collectors.toMap(
-                    error -> error.getField(),
-                    error -> error.getDefaultMessage() != null ? error.getDefaultMessage() : "유효하지 않은 값입니다.",
-                    (existing, replacement) -> existing + ", " + replacement
-                ));
-        
-        String errorMessage = fieldErrors.isEmpty() 
-            ? "요청 데이터가 유효하지 않습니다."
-            : fieldErrors.entrySet().stream()
-                .map(entry -> entry.getKey() + ": " + entry.getValue())
+                .map(error -> error.getField() + ": " + (error.getDefaultMessage() != null ? error.getDefaultMessage() : "유효하지 않은 값입니다."))
                 .collect(Collectors.joining("; "));
         
-        response.put("success", false);
-        response.put("code", "VALIDATION_ERROR");
-        response.put("message", errorMessage);
-        response.put("data", fieldErrors);
-        response.put("meta", null);
+        if (errorMessage.isEmpty()) {
+            errorMessage = "요청 데이터가 유효하지 않습니다.";
+        }
         
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.builder()
+                        .code("VALIDATION_ERROR")
+                        .message(errorMessage)
+                        .build());
     }
 
     /**
      * JSON 파싱 오류 처리
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<Map<String, Object>> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", false);
-        response.put("code", "INVALID_JSON");
-        response.put("message", "요청 본문의 JSON 형식이 올바르지 않습니다: " + ex.getMessage());
-        response.put("data", null);
-        response.put("meta", null);
-        
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.builder()
+                        .code("INVALID_JSON")
+                        .message("요청 본문의 JSON 형식이 올바르지 않습니다.")
+                        .build());
     }
 
     /**
@@ -65,10 +52,7 @@ public class GlobalExceptionHandler {
      * Controller에서 처리하지 못한 IllegalArgumentException을 전역으로 처리
      */
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException ex) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", false);
-        
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
         String message = ex.getMessage();
         String code;
         HttpStatus status;
@@ -81,26 +65,24 @@ public class GlobalExceptionHandler {
             if ("FORBIDDEN".equals(errorCode)) {
                 code = "FORBIDDEN";
                 status = HttpStatus.FORBIDDEN;
-                response.put("code", code);
-                response.put("message", cleanMessage);
             } else if ("TEAM_NOT_FOUND".equals(errorCode) || "TEAM_MEMBER_NOT_FOUND".equals(errorCode) 
                     || "POSITION_NOT_FOUND".equals(errorCode) || "NOT_FOUND".equals(errorCode)) {
                 code = "NOT_FOUND";
                 status = HttpStatus.NOT_FOUND;
-                response.put("code", code);
-                response.put("message", cleanMessage);
             } else if ("AUTH_INVALID_TOKEN".equals(errorCode) || "INVALID_REFRESH_TOKEN".equals(errorCode) 
                     || "AUTH_TOKEN_EXPIRED".equals(errorCode)) {
                 code = errorCode;
                 status = HttpStatus.UNAUTHORIZED;
-                response.put("code", code);
-                response.put("message", cleanMessage);
             } else {
                 code = errorCode;
                 status = HttpStatus.BAD_REQUEST;
-                response.put("code", code);
-                response.put("message", cleanMessage);
             }
+            
+            return ResponseEntity.status(status)
+                    .body(ErrorResponse.builder()
+                            .code(code)
+                            .message(cleanMessage)
+                            .build());
         } else {
             // 에러 코드가 없는 경우 메시지로 판단
             code = "INVALID_REQUEST";
@@ -120,14 +102,12 @@ public class GlobalExceptionHandler {
                 }
             }
             
-            response.put("code", code);
-            response.put("message", message);
+            return ResponseEntity.status(status)
+                    .body(ErrorResponse.builder()
+                            .code(code)
+                            .message(message != null ? message : "잘못된 요청입니다.")
+                            .build());
         }
-        
-        response.put("data", null);
-        response.put("meta", null);
-        
-        return ResponseEntity.status(status).body(response);
     }
 }
 

@@ -81,13 +81,11 @@ public class SocialAuthService {
                 }
             }
             
-            String picture = request.getImageUrl();
-            if (picture == null || picture.trim().isEmpty()) {
-                // 클레임에서 picture 추출 시도
-                Object pictureClaim = claims.get("picture");
-                if (pictureClaim != null) {
-                    picture = pictureClaim.toString();
-                }
+            // Firebase 클레임에서 picture 추출
+            String picture = null;
+            Object pictureClaim = claims.get("picture");
+            if (pictureClaim != null) {
+                picture = pictureClaim.toString();
             }
 
             // 이름 필수 검증 (새 사용자만)
@@ -108,18 +106,12 @@ public class SocialAuthService {
             // 기존 사용자: name 검증 없이 바로 로그인
             user = existingUserOpt.get();
             
-            // 선택적으로 name, imageUrl 업데이트 (request에 제공된 경우)
+            // 선택적으로 name 업데이트 (request에 제공된 경우)
             String name = request.getName();
-            String picture = request.getImageUrl();
             boolean updated = false;
             
             if (name != null && !name.trim().isEmpty() && !name.equals(user.getName())) {
                 user.setName(name.trim());
-                updated = true;
-            }
-            
-            if (picture != null && !picture.equals(user.getImageUrl())) {
-                user.setImageUrl(picture);
                 updated = true;
             }
             
@@ -150,7 +142,6 @@ public class SocialAuthService {
                 .name(user.getName())
                 .provider(user.getProvider())
                 .providerId(user.getProviderId())
-                .imageUrl(user.getImageUrl())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();

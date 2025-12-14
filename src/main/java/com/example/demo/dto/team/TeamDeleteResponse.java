@@ -6,18 +6,12 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Schema(description = "초대 코드 응답")
+@Schema(description = "팀 삭제 응답")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class InviteCodeResponse {
+public class TeamDeleteResponse {
     @Schema(description = "팀 ID", example = "1")
     private Long teamId;
-
-    @Schema(description = "초대 코드", example = "ABC123XY")
-    private String inviteCode;
 }
-
-
-
