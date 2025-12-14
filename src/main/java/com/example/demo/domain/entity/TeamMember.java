@@ -40,10 +40,6 @@ public class TeamMember {
     @JoinColumn(name = "position_id")
     private Position position;
 
-    @Column(name = "is_admin", nullable = false)
-    @Builder.Default
-    private Boolean isAdmin = false;
-
     @Column(name = "joined_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime joinedAt = LocalDateTime.now();
