@@ -62,6 +62,7 @@ public class GlobalExceptionHandler {
 
     /**
      * IllegalArgumentException 처리
+     * Controller에서 처리하지 못한 IllegalArgumentException을 전역으로 처리
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException ex) {
@@ -69,29 +70,62 @@ public class GlobalExceptionHandler {
         response.put("success", false);
         
         String message = ex.getMessage();
-        String code = "INVALID_REQUEST";
+        String code;
+        HttpStatus status;
         
-        // 메시지에 따라 적절한 코드 설정
-        if (message != null) {
-            if (message.contains("최대") && (message.contains("10자") || message.contains("길이"))) {
-                code = "VALIDATION_ERROR";
-            } else if (message.contains("찾을 수 없습니다")) {
-                code = "NOT_FOUND";
-            } else if (message.contains("권한")) {
+        // 에러 코드가 포함된 경우 (예: "FORBIDDEN: ...", "NOT_FOUND: ...")
+        if (message != null && message.contains(":")) {
+            String errorCode = message.split(":")[0].trim();
+            String cleanMessage = message.split(":", 2)[1].trim();
+            
+            if ("FORBIDDEN".equals(errorCode)) {
                 code = "FORBIDDEN";
-            } else if (message.contains("필수")) {
-                code = "INVALID_REQUEST";
+                status = HttpStatus.FORBIDDEN;
+                response.put("code", code);
+                response.put("message", cleanMessage);
+            } else if ("TEAM_NOT_FOUND".equals(errorCode) || "TEAM_MEMBER_NOT_FOUND".equals(errorCode) 
+                    || "POSITION_NOT_FOUND".equals(errorCode) || "NOT_FOUND".equals(errorCode)) {
+                code = "NOT_FOUND";
+                status = HttpStatus.NOT_FOUND;
+                response.put("code", code);
+                response.put("message", cleanMessage);
+            } else if ("AUTH_INVALID_TOKEN".equals(errorCode) || "INVALID_REFRESH_TOKEN".equals(errorCode) 
+                    || "AUTH_TOKEN_EXPIRED".equals(errorCode)) {
+                code = errorCode;
+                status = HttpStatus.UNAUTHORIZED;
+                response.put("code", code);
+                response.put("message", cleanMessage);
+            } else {
+                code = errorCode;
+                status = HttpStatus.BAD_REQUEST;
+                response.put("code", code);
+                response.put("message", cleanMessage);
             }
+        } else {
+            // 에러 코드가 없는 경우 메시지로 판단
+            code = "INVALID_REQUEST";
+            status = HttpStatus.BAD_REQUEST;
+            
+            if (message != null) {
+                if (message.contains("권한") || message.contains("FORBIDDEN")) {
+                    code = "FORBIDDEN";
+                    status = HttpStatus.FORBIDDEN;
+                } else if (message.contains("찾을 수 없습니다") || message.contains("NOT_FOUND")) {
+                    code = "NOT_FOUND";
+                    status = HttpStatus.NOT_FOUND;
+                } else if (message.contains("최대") && (message.contains("10자") || message.contains("길이"))) {
+                    code = "VALIDATION_ERROR";
+                } else if (message.contains("필수")) {
+                    code = "INVALID_REQUEST";
+                }
+            }
+            
+            response.put("code", code);
+            response.put("message", message);
         }
         
-        response.put("code", code);
-        response.put("message", message);
         response.put("data", null);
         response.put("meta", null);
-        
-        HttpStatus status = "FORBIDDEN".equals(code) ? HttpStatus.FORBIDDEN 
-                : "NOT_FOUND".equals(code) ? HttpStatus.NOT_FOUND 
-                : HttpStatus.BAD_REQUEST;
         
         return ResponseEntity.status(status).body(response);
     }

@@ -1,4 +1,4 @@
-package com.example.demo.domain.repository;
+package com.example.demo.repository;
 
 import com.example.demo.domain.entity.TeamMember;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,4 +15,3 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
     
     boolean existsByTeamIdAndUserId(Long teamId, Long userId);
 }
-

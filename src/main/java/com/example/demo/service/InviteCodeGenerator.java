@@ -1,6 +1,6 @@
-package com.example.demo.domain.service;
+package com.example.demo.service;
 
-import com.example.demo.domain.repository.TeamRepository;
+import com.example.demo.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -50,7 +50,3 @@ public class InviteCodeGenerator {
         return code.toString();
     }
 }
-
-
-
-

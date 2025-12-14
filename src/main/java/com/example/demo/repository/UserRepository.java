@@ -1,4 +1,4 @@
-package com.example.demo.domain.repository;
+package com.example.demo.repository;
 
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.AuthProvider;

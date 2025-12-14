@@ -1,13 +1,13 @@
-package com.example.demo.domain.service;
+package com.example.demo.service;
 
 import com.example.demo.domain.entity.Position;
 import com.example.demo.domain.entity.Team;
 import com.example.demo.domain.entity.TeamMember;
 import com.example.demo.domain.entity.User;
-import com.example.demo.domain.repository.PositionRepository;
-import com.example.demo.domain.repository.TeamMemberRepository;
-import com.example.demo.domain.repository.TeamRepository;
-import com.example.demo.domain.repository.UserRepository;
+import com.example.demo.repository.PositionRepository;
+import com.example.demo.repository.TeamMemberRepository;
+import com.example.demo.repository.TeamRepository;
+import com.example.demo.repository.UserRepository;
 import com.example.demo.dto.team.InviteCodeResponse;
 import com.example.demo.dto.team.PositionCreateRequest;
 import com.example.demo.dto.team.TeamCreateRequest;
@@ -35,6 +35,7 @@ public class TeamService {
     private final PositionRepository positionRepository;
     private final TeamMemberRepository teamMemberRepository;
     private final InviteCodeGenerator inviteCodeGenerator;
+    private final TeamPermissionService teamPermissionService;
     
     /**
      * 팀 생성
@@ -120,13 +121,8 @@ public class TeamService {
      */
     @Transactional
     public TeamDetailResponse updateTeam(Long userId, Long teamId, TeamUpdateRequest request) {
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalArgumentException("팀을 찾을 수 없습니다."));
-        
-        // 권한 확인 (팀장만 수정 가능)
-        if (!team.getOwner().getId().equals(userId)) {
-            throw new IllegalArgumentException("팀 수정 권한이 없습니다.");
-        }
+        // 권한 확인 및 팀 조회 (팀장만 수정 가능)
+        Team team = teamPermissionService.getTeamWithOwnerCheck(userId, teamId);
         
         // 부분 수정
         if (request.getName() != null) {
@@ -160,14 +156,8 @@ public class TeamService {
      */
     @Transactional(readOnly = true)
     public TeamDetailResponse getTeamDetail(Long userId, Long teamId) {
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalArgumentException("팀을 찾을 수 없습니다."));
-        
-        // 팀원인지 확인
-        boolean isMember = teamMemberRepository.existsByTeamIdAndUserId(teamId, userId);
-        if (!isMember && !team.getOwner().getId().equals(userId)) {
-            throw new IllegalArgumentException("팀 조회 권한이 없습니다.");
-        }
+        // 권한 확인 및 팀 조회 (팀원 모두 조회 가능)
+        Team team = teamPermissionService.getTeamWithMemberCheck(userId, teamId);
         
         return toDetailResponse(team, userId);
     }
@@ -188,13 +178,11 @@ public class TeamService {
      */
     @Transactional
     public void deleteTeam(Long userId, Long teamId) {
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalArgumentException("팀을 찾을 수 없습니다."));
-        
         // 권한 확인 (팀장만 삭제 가능)
-        if (!team.getOwner().getId().equals(userId)) {
-            throw new IllegalArgumentException("팀 삭제 권한이 없습니다.");
-        }
+        teamPermissionService.verifyTeamOwner(userId, teamId);
+        
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new IllegalArgumentException("TEAM_NOT_FOUND: 팀을 찾을 수 없습니다."));
         
         teamRepository.delete(team);
     }
@@ -204,13 +192,8 @@ public class TeamService {
      */
     @Transactional(readOnly = true)
     public InviteCodeResponse getInviteCode(Long userId, Long teamId) {
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalArgumentException("팀을 찾을 수 없습니다."));
-        
-        // 권한 확인 (팀장만 조회 가능)
-        if (!team.getOwner().getId().equals(userId)) {
-            throw new IllegalArgumentException("초대 코드 조회 권한이 없습니다.");
-        }
+        // 권한 확인 및 팀 조회 (팀장만 조회 가능)
+        Team team = teamPermissionService.getTeamWithOwnerCheck(userId, teamId);
         
         return InviteCodeResponse.builder()
                 .inviteCode(team.getInviteCode())
@@ -281,13 +264,8 @@ public class TeamService {
      */
     @Transactional
     public void leaveTeam(Long userId, Long teamId) {
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalArgumentException("TEAM_NOT_FOUND: 팀을 찾을 수 없습니다."));
-        
         // 팀장인지 확인 (팀장은 탈퇴 불가)
-        if (team.getOwner().getId().equals(userId)) {
-            throw new IllegalArgumentException("OWNER_CANNOT_LEAVE: 팀장은 탈퇴할 수 없습니다. 팀 삭제가 필요합니다.");
-        }
+        teamPermissionService.verifyNotTeamOwner(userId, teamId);
         
         // 멤버 조회
         TeamMember member = teamMemberRepository.findByTeamIdAndUserId(teamId, userId)
@@ -343,15 +321,8 @@ public class TeamService {
      */
     @Transactional(readOnly = true)
     public TeamMemberResponse getTeamMemberDetail(Long userId, Long teamId, Long memberId) {
-        // 팀 조회
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalArgumentException("팀을 찾을 수 없습니다."));
-        
-        // 권한 확인 (팀원인지 확인)
-        boolean isMember = teamMemberRepository.existsByTeamIdAndUserId(teamId, userId);
-        if (!isMember && !team.getOwner().getId().equals(userId)) {
-            throw new IllegalArgumentException("해당 팀의 멤버만 조회할 수 있습니다.");
-        }
+        // 권한 확인 및 팀 조회 (팀원 모두 조회 가능)
+        teamPermissionService.verifyTeamMember(userId, teamId);
         
         // 팀원 조회
         TeamMember member = teamMemberRepository.findById(memberId)
@@ -370,9 +341,8 @@ public class TeamService {
      */
     @Transactional
     public TeamMemberResponse updateTeamMember(Long userId, Long teamId, Long memberId, TeamMemberUpdateRequest request) {
-        // 팀 조회
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalArgumentException("팀을 찾을 수 없습니다."));
+        // 권한 확인 및 팀 조회 (팀원 모두 접근 가능)
+        Team team = teamPermissionService.getTeamWithMemberCheck(userId, teamId);
         
         // 팀원 조회
         TeamMember member = teamMemberRepository.findById(memberId)
@@ -422,14 +392,8 @@ public class TeamService {
      */
     @Transactional
     public void deleteTeamMember(Long userId, Long teamId, Long memberId) {
-        // 팀 조회
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalArgumentException("팀을 찾을 수 없습니다."));
-        
-        // 권한 확인 (팀장만 삭제 가능)
-        if (!team.getOwner().getId().equals(userId)) {
-            throw new IllegalArgumentException("팀원 삭제 권한이 없습니다.");
-        }
+        // 권한 확인 및 팀 조회 (팀장만 삭제 가능)
+        Team team = teamPermissionService.getTeamWithOwnerCheck(userId, teamId);
         
         // 팀원 조회
         TeamMember member = teamMemberRepository.findById(memberId)
@@ -442,7 +406,7 @@ public class TeamService {
         
         // 팀장은 삭제할 수 없음
         if (member.getUser().getId().equals(team.getOwner().getId())) {
-            throw new IllegalArgumentException("팀장은 삭제할 수 없습니다.");
+            throw new IllegalArgumentException("FORBIDDEN: 팀장은 삭제할 수 없습니다.");
         }
         
         // 팀원 삭제
@@ -491,4 +455,3 @@ public class TeamService {
                 .build();
     }
 }
-

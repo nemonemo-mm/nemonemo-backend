@@ -40,6 +40,9 @@ jobs:
       
     - name: Build with Gradle
       run: ./gradlew build
+      env:
+        FIREBASE_SERVICE_ACCOUNT_KEY_JSON_BASE64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY_JSON_BASE64 }}
+        FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
       
     - name: Run tests
       run: ./gradlew test
@@ -48,6 +51,8 @@ jobs:
         SPRING_DATASOURCE_USERNAME: postgres
         SPRING_DATASOURCE_PASSWORD: postgres
         SPRING_PROFILES_ACTIVE: test
+        FIREBASE_SERVICE_ACCOUNT_KEY_JSON_BASE64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY_JSON_BASE64 }}
+        FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
 
   build-and-push-docker:
     needs: build-and-test
