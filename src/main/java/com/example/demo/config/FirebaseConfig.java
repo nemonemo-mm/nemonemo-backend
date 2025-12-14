@@ -42,7 +42,8 @@ public class FirebaseConfig {
                         credentials = GoogleCredentials.fromStream(keyStream);
                     }
                 } else {
-                    throw new IllegalStateException("Firebase 인증 정보를 찾을 수 없습니다. 환경 변수 FIREBASE_SERVICE_ACCOUNT_KEY_JSON_BASE64를 설정해주세요.");
+                    log.warn("Firebase 인증 정보를 찾을 수 없습니다. Firebase 기능이 비활성화됩니다. 환경 변수 FIREBASE_SERVICE_ACCOUNT_KEY_JSON_BASE64를 설정해주세요.");
+                    return; // 테스트 환경 등에서 설정이 없으면 초기화 건너뛰기
                 }
 
                 builder.setCredentials(credentials);
