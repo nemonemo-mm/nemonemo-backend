@@ -1,6 +1,6 @@
 package com.example.demo.controller;
 
-import com.example.demo.domain.service.TeamService;
+import com.example.demo.service.TeamService;
 import com.example.demo.dto.team.InviteCodeResponse;
 import com.example.demo.dto.team.TeamCreateRequest;
 import com.example.demo.dto.team.TeamDetailResponse;
@@ -64,7 +64,7 @@ public class TeamController {
             
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
-            return createErrorResponse(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 생성 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -101,13 +101,7 @@ public class TeamController {
             
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
-            String message = e.getMessage();
-            if (message.contains("찾을 수 없습니다")) {
-                return createErrorResponse(message, HttpStatus.NOT_FOUND);
-            } else if (message.contains("권한")) {
-                return createErrorResponse(message, HttpStatus.FORBIDDEN);
-            }
-            return createErrorResponse(message, HttpStatus.BAD_REQUEST);
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -141,13 +135,7 @@ public class TeamController {
             
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
-            String message = e.getMessage();
-            if (message.contains("찾을 수 없습니다")) {
-                return createErrorResponse(message, HttpStatus.NOT_FOUND);
-            } else if (message.contains("권한")) {
-                return createErrorResponse(message, HttpStatus.FORBIDDEN);
-            }
-            return createErrorResponse(message, HttpStatus.BAD_REQUEST);
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -211,13 +199,7 @@ public class TeamController {
             
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
-            String message = e.getMessage();
-            if (message.contains("찾을 수 없습니다")) {
-                return createErrorResponse(message, HttpStatus.NOT_FOUND);
-            } else if (message.contains("권한")) {
-                return createErrorResponse(message, HttpStatus.FORBIDDEN);
-            }
-            return createErrorResponse(message, HttpStatus.BAD_REQUEST);
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 삭제 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -252,13 +234,7 @@ public class TeamController {
             
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
-            String message = e.getMessage();
-            if (message.contains("찾을 수 없습니다")) {
-                return createErrorResponse(message, HttpStatus.NOT_FOUND);
-            } else if (message.contains("권한")) {
-                return createErrorResponse(message, HttpStatus.FORBIDDEN);
-            }
-            return createErrorResponse(message, HttpStatus.BAD_REQUEST);
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("초대 코드 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -294,17 +270,7 @@ public class TeamController {
             
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
-            String message = e.getMessage();
-            String errorCode = extractErrorCode(message);
-            
-            HttpStatus status = HttpStatus.BAD_REQUEST;
-            if (errorCode.equals("TEAM_NOT_FOUND") || errorCode.equals("NOT_A_MEMBER")) {
-                status = HttpStatus.NOT_FOUND;
-            } else if (message.contains("팀장은") || message.contains("참여할 수 없습니다")) {
-                status = HttpStatus.FORBIDDEN;
-            }
-            
-            return createErrorResponseWithCode(errorCode, message, status);
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 참여 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -338,17 +304,7 @@ public class TeamController {
             
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
-            String message = e.getMessage();
-            String errorCode = extractErrorCode(message);
-            
-            HttpStatus status = HttpStatus.BAD_REQUEST;
-            if (errorCode.equals("TEAM_NOT_FOUND") || errorCode.equals("NOT_A_MEMBER")) {
-                status = HttpStatus.NOT_FOUND;
-            } else if (errorCode.equals("OWNER_CANNOT_LEAVE")) {
-                status = HttpStatus.BAD_REQUEST;
-            }
-            
-            return createErrorResponseWithCode(errorCode, message, status);
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 탈퇴 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -383,13 +339,7 @@ public class TeamController {
             
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
-            String message = e.getMessage();
-            if (message.contains("찾을 수 없습니다")) {
-                return createErrorResponse(message, HttpStatus.NOT_FOUND);
-            } else if (message.contains("멤버만")) {
-                return createErrorResponseWithCode("FORBIDDEN", message, HttpStatus.FORBIDDEN);
-            }
-            return createErrorResponse(message, HttpStatus.BAD_REQUEST);
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀원 목록 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -425,17 +375,7 @@ public class TeamController {
             
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
-            String message = e.getMessage();
-            String errorCode = extractErrorCode(message);
-            
-            HttpStatus status = HttpStatus.NOT_FOUND;
-            if (errorCode.equals("TEAM_MEMBER_NOT_FOUND")) {
-                status = HttpStatus.NOT_FOUND;
-            } else if (message.contains("멤버만")) {
-                status = HttpStatus.FORBIDDEN;
-            }
-            
-            return createErrorResponseWithCode(errorCode, message, status);
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀원 상세 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -473,19 +413,7 @@ public class TeamController {
             
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
-            String message = e.getMessage();
-            String errorCode = extractErrorCode(message);
-            
-            HttpStatus status = HttpStatus.BAD_REQUEST;
-            if (errorCode.equals("TEAM_MEMBER_NOT_FOUND")) {
-                status = HttpStatus.NOT_FOUND;
-            } else if (errorCode.equals("FORBIDDEN") || message.contains("권한")) {
-                status = HttpStatus.FORBIDDEN;
-            } else if (errorCode.equals("INVALID_ROLE_CATEGORY")) {
-                status = HttpStatus.BAD_REQUEST;
-            }
-            
-            return createErrorResponseWithCode(errorCode, message, status);
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀원 정보 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -520,17 +448,7 @@ public class TeamController {
             
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
-            String message = e.getMessage();
-            String errorCode = extractErrorCode(message);
-            
-            HttpStatus status = HttpStatus.NOT_FOUND;
-            if (errorCode.equals("TEAM_MEMBER_NOT_FOUND")) {
-                status = HttpStatus.NOT_FOUND;
-            } else if (message.contains("권한")) {
-                status = HttpStatus.FORBIDDEN;
-            }
-            
-            return createErrorResponseWithCode(errorCode, message, status);
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀원 삭제 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -544,40 +462,56 @@ public class TeamController {
     }
     
     /**
+     * IllegalArgumentException 처리 (권한, 리소스 없음 등을 구분)
+     */
+    private ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException e) {
+        String message = e.getMessage();
+        
+        // 에러 코드가 포함된 경우 (예: "FORBIDDEN: ...", "NOT_FOUND: ...")
+        if (message != null && message.contains(":")) {
+            String errorCode = message.split(":")[0].trim();
+            String cleanMessage = message.split(":", 2)[1].trim();
+            
+            if ("FORBIDDEN".equals(errorCode)) {
+                return createErrorResponseWithCode("FORBIDDEN", cleanMessage, HttpStatus.FORBIDDEN);
+            } else if ("TEAM_NOT_FOUND".equals(errorCode) || "TEAM_MEMBER_NOT_FOUND".equals(errorCode) 
+                    || "POSITION_NOT_FOUND".equals(errorCode) || "NOT_FOUND".equals(errorCode)) {
+                return createErrorResponseWithCode("NOT_FOUND", cleanMessage, HttpStatus.NOT_FOUND);
+            } else {
+                return createErrorResponseWithCode(errorCode, cleanMessage, HttpStatus.BAD_REQUEST);
+            }
+        }
+        
+        // 에러 코드가 없는 경우 메시지로 판단
+        if (message != null) {
+            if (message.contains("권한") || message.contains("FORBIDDEN") || message.contains("멤버만")) {
+                String cleanMessage = message.replace("FORBIDDEN:", "").trim();
+                return createErrorResponseWithCode("FORBIDDEN", cleanMessage, HttpStatus.FORBIDDEN);
+            } else if (message.contains("찾을 수 없습니다") || message.contains("NOT_FOUND")) {
+                return createErrorResponseWithCode("NOT_FOUND", message, HttpStatus.NOT_FOUND);
+            } else if (message.contains("필수")) {
+                return createErrorResponseWithCode("VALIDATION_ERROR", message, HttpStatus.BAD_REQUEST);
+            } else if (message.contains("최대") || message.contains("길이")) {
+                return createErrorResponseWithCode("VALIDATION_ERROR", message, HttpStatus.BAD_REQUEST);
+            }
+        }
+        
+        // 기본값
+        return createErrorResponseWithCode("INVALID_REQUEST", message != null ? message : "잘못된 요청입니다.", HttpStatus.BAD_REQUEST);
+    }
+    
+    /**
      * 에러 응답 생성
      */
     private ResponseEntity<Map<String, Object>> createErrorResponse(String message, HttpStatus status) {
         Map<String, Object> response = new HashMap<>();
         response.put("success", false);
-        
-        // 메시지에 따라 적절한 코드 설정
-        if (message.contains("필수")) {
-            response.put("code", "INVALID_REQUEST");
-        } else if (message.contains("최대") || message.contains("길이")) {
-            response.put("code", "VALIDATION_ERROR");
-        } else if (message.contains("찾을 수 없습니다")) {
-            response.put("code", "NOT_FOUND");
-        } else if (message.contains("권한")) {
-            response.put("code", "FORBIDDEN");
-        } else {
-            response.put("code", status == HttpStatus.INTERNAL_SERVER_ERROR ? "INTERNAL_SERVER_ERROR" : "INVALID_REQUEST");
-        }
-        
+        response.put("code", status == HttpStatus.INTERNAL_SERVER_ERROR ? "INTERNAL_SERVER_ERROR" : "INVALID_REQUEST");
         response.put("message", message);
         response.put("data", null);
         response.put("meta", null);
         
         return ResponseEntity.status(status).body(response);
-    }
-    
-    /**
-     * 에러 코드가 포함된 메시지에서 코드 추출
-     */
-    private String extractErrorCode(String message) {
-        if (message != null && message.contains(":")) {
-            return message.split(":")[0].trim();
-        }
-        return "INVALID_REQUEST";
     }
     
     /**
@@ -588,13 +522,7 @@ public class TeamController {
         response.put("success", false);
         response.put("code", code);
         
-        // 메시지에서 코드 부분 제거
-        String cleanMessage = message;
-        if (message != null && message.contains(":")) {
-            cleanMessage = message.split(":", 2)[1].trim();
-        }
-        
-        response.put("message", cleanMessage);
+        response.put("message", message);
         response.put("data", null);
         response.put("meta", null);
         
