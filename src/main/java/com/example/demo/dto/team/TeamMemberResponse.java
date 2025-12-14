@@ -47,8 +47,8 @@ public class TeamMemberResponse {
     @Schema(description = "포지션 색상 (HEX)", example = "#FFAA00")
     private String positionColor;
 
-    @Schema(description = "관리자 여부", example = "false")
-    private Boolean isAdmin;
+    @Schema(description = "팀장 여부", example = "false")
+    private Boolean isOwner;
 
     @Schema(description = "가입일시")
     private LocalDateTime joinedAt;
