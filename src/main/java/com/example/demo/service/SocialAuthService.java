@@ -1,17 +1,16 @@
-package com.example.demo.auth.service;
+package com.example.demo.service;
 
-import com.example.demo.auth.dto.AuthTokensResponse;
-import com.example.demo.auth.dto.SocialLoginRequest;
-import com.example.demo.auth.google.GoogleIdTokenVerifierService;
+import com.example.demo.dto.auth.AuthTokensResponse;
+import com.example.demo.dto.auth.SocialLoginRequest;
 import com.example.demo.domain.entity.RefreshToken;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.AuthProvider;
-import com.example.demo.domain.enums.ClientType;
-import com.example.demo.domain.repository.RefreshTokenRepository;
-import com.example.demo.domain.repository.UserRepository;
+import com.example.demo.repository.RefreshTokenRepository;
+import com.example.demo.repository.UserRepository;
 import com.example.demo.dto.user.UserResponse;
 import com.example.demo.security.jwt.JwtTokenProvider;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseToken;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.security.SecurityException;
@@ -20,9 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -30,57 +28,67 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class SocialAuthService {
 
-    private final GoogleIdTokenVerifierService googleVerifier;
+    private final FirebaseIdTokenVerifierService firebaseVerifier;
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
     @Transactional
-    public AuthTokensResponse loginWithGoogle(SocialLoginRequest request) throws GeneralSecurityException, IOException {
-        String idToken = request.getIdToken();
-        if (idToken == null || idToken.trim().isEmpty()) {
-            throw new IllegalArgumentException("AUTH_INVALID_TOKEN: ID 토큰이 없습니다.");
+    public AuthTokensResponse loginWithGoogle(SocialLoginRequest request) throws FirebaseAuthException {
+        String firebaseIdToken = request.getFirebaseIdToken();
+        if (firebaseIdToken == null || firebaseIdToken.trim().isEmpty()) {
+            throw new IllegalArgumentException("AUTH_INVALID_TOKEN: Firebase ID 토큰이 없습니다.");
+        }
+
+        // Firebase ID Token 검증
+        FirebaseToken decodedToken = firebaseVerifier.verify(firebaseIdToken);
+        if (decodedToken == null) {
+            throw new IllegalArgumentException("AUTH_INVALID_TOKEN: 유효하지 않은 Firebase ID 토큰입니다.");
+        }
+
+        // Firebase UID 추출 (providerId로 사용)
+        String firebaseUid = decodedToken.getUid();
+        
+        // 이메일 추출
+        String email = decodedToken.getEmail();
+        if (email == null || email.trim().isEmpty()) {
+            // Firebase에서 이메일이 없는 경우도 있을 수 있지만, Google 로그인은 보통 이메일을 포함
+            log.warn("Firebase ID Token에 이메일이 없습니다. firebaseUid: {}", firebaseUid);
         }
 
         // 클라이언트 타입 로깅 (요청에서 제공된 경우)
-        ClientType clientType = request.getClientType();
-        if (clientType != null) {
-            log.info("Google 로그인 요청 - 클라이언트 타입: {}", clientType);
+        if (request.getClientType() != null) {
+            log.info("Firebase 로그인 요청 - 클라이언트 타입: {}", request.getClientType());
         } else {
-            log.info("Google 로그인 요청 - 클라이언트 타입: 미지정");
+            log.info("Firebase 로그인 요청 - 클라이언트 타입: 미지정");
         }
 
-        GoogleIdToken.Payload payload = googleVerifier.verify(idToken);
-        if (payload == null) {
-            throw new IllegalArgumentException("AUTH_INVALID_TOKEN: 토큰 검증 실패");
-        }
-
-        // ID 토큰에서 클라이언트 타입 자동 감지 (audience 확인)
-        ClientType detectedClientType = googleVerifier.detectClientType(payload);
-        if (detectedClientType != null) {
-            if (clientType == null) {
-                log.info("클라이언트 타입 자동 감지: {}", detectedClientType);
-            } else if (clientType != detectedClientType) {
-                log.warn("클라이언트 타입 불일치 - 요청: {}, 감지: {}", clientType, detectedClientType);
-            } else {
-                log.info("클라이언트 타입 확인: {}", detectedClientType);
-            }
-        } else if (clientType != null) {
-            log.info("클라이언트 타입 (요청): {}", clientType);
-        }
-
-        String providerId = payload.getSubject();
-        String email = payload.getEmail();
-
-        // 기존 유저 존재 여부 확인 (먼저 조회)
-        Optional<User> existingUserOpt = userRepository.findByProviderAndProviderId(AuthProvider.GOOGLE, providerId);
+        // 기존 유저 존재 여부 확인 (Firebase UID로 조회)
+        Optional<User> existingUserOpt = userRepository.findByProviderAndProviderId(AuthProvider.GOOGLE, firebaseUid);
         boolean isNewUser = existingUserOpt.isEmpty();
 
         User user;
         if (isNewUser) {
             // 새 사용자: name 필수 검증 후 회원가입
-            String name = request.getName() != null ? request.getName() : (String) payload.get("name");
-            String picture = request.getImageUrl() != null ? request.getImageUrl() : (String) payload.get("picture");
+            // Firebase Token의 클레임에서 이름 추출 시도
+            Map<String, Object> claims = decodedToken.getClaims();
+            String name = request.getName();
+            if (name == null || name.trim().isEmpty()) {
+                // 클레임에서 name 추출 시도
+                Object nameClaim = claims.get("name");
+                if (nameClaim != null) {
+                    name = nameClaim.toString();
+                }
+            }
+            
+            String picture = request.getImageUrl();
+            if (picture == null || picture.trim().isEmpty()) {
+                // 클레임에서 picture 추출 시도
+                Object pictureClaim = claims.get("picture");
+                if (pictureClaim != null) {
+                    picture = pictureClaim.toString();
+                }
+            }
 
             // 이름 필수 검증 (새 사용자만)
             if (name == null || name.trim().isEmpty()) {
@@ -89,12 +97,13 @@ public class SocialAuthService {
 
             user = User.builder()
                     .email(email)
-                    .name(name)
+                    .name(name.trim())
                     .provider(AuthProvider.GOOGLE)
-                    .providerId(providerId)
+                    .providerId(firebaseUid)  // Firebase UID 사용
                     .imageUrl(picture)
                     .build();
             user = userRepository.save(user);
+            log.info("신규 사용자 회원가입 완료: userId={}, email={}, firebaseUid={}", user.getId(), email, firebaseUid);
         } else {
             // 기존 사용자: name 검증 없이 바로 로그인
             user = existingUserOpt.get();
@@ -105,7 +114,7 @@ public class SocialAuthService {
             boolean updated = false;
             
             if (name != null && !name.trim().isEmpty() && !name.equals(user.getName())) {
-                user.setName(name);
+                user.setName(name.trim());
                 updated = true;
             }
             
@@ -116,6 +125,7 @@ public class SocialAuthService {
             
             if (updated) {
                 user = userRepository.save(user);
+                log.info("사용자 정보 업데이트 완료: userId={}", user.getId());
             }
         }
 
@@ -246,4 +256,3 @@ public class SocialAuthService {
         }
     }
 }
-

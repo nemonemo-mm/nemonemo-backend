@@ -1,4 +1,4 @@
-package com.example.demo.auth.dto;
+package com.example.demo.dto.auth;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -13,4 +13,3 @@ public class RefreshTokenRequest {
     @Schema(description = "리프레시 토큰", example = "eyJhbGciOiJIUzI1NiJ9...")
     private String refreshToken;
 }
-

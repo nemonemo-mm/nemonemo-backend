@@ -1,4 +1,4 @@
-package com.example.demo.domain.repository;
+package com.example.demo.repository;
 
 import com.example.demo.domain.entity.Position;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,7 +16,3 @@ public interface PositionRepository extends JpaRepository<Position, Long> {
     
     Optional<Position> findByTeamIdAndName(Long teamId, String name);
 }
-
-
-
-

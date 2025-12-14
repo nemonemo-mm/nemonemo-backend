@@ -1,4 +1,4 @@
-package com.example.demo.auth.dto;
+package com.example.demo.dto.auth;
 
 import com.example.demo.dto.user.UserResponse;
 import io.swagger.v3.oas.annotations.media.Schema;

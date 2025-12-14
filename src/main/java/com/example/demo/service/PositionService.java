@@ -1,10 +1,10 @@
-package com.example.demo.domain.service;
+package com.example.demo.service;
 
 import com.example.demo.domain.entity.Position;
 import com.example.demo.domain.entity.Team;
-import com.example.demo.domain.repository.PositionRepository;
-import com.example.demo.domain.repository.TeamMemberRepository;
-import com.example.demo.domain.repository.TeamRepository;
+import com.example.demo.repository.PositionRepository;
+import com.example.demo.repository.TeamMemberRepository;
+import com.example.demo.repository.TeamRepository;
 import com.example.demo.dto.team.PositionCreateRequest;
 import com.example.demo.dto.team.PositionResponse;
 import com.example.demo.dto.team.PositionUpdateRequest;
@@ -24,21 +24,15 @@ public class PositionService {
     private final TeamRepository teamRepository;
     private final PositionRepository positionRepository;
     private final TeamMemberRepository teamMemberRepository;
+    private final TeamPermissionService teamPermissionService;
     
     /**
      * 포지션 목록 조회
      */
     @Transactional(readOnly = true)
     public List<PositionResponse> getPositionList(Long userId, Long teamId) {
-        // 팀 조회
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalArgumentException("팀을 찾을 수 없습니다."));
-        
-        // 권한 확인 (팀원인지 확인)
-        boolean isMember = teamMemberRepository.existsByTeamIdAndUserId(teamId, userId);
-        if (!isMember && !team.getOwner().getId().equals(userId)) {
-            throw new IllegalArgumentException("해당 팀의 멤버만 조회할 수 있습니다.");
-        }
+        // 권한 확인 및 팀 조회 (팀원 모두 조회 가능)
+        teamPermissionService.verifyTeamMember(userId, teamId);
         
         // 포지션 목록 조회
         List<Position> positions = positionRepository.findByTeamId(teamId);
@@ -53,14 +47,8 @@ public class PositionService {
      */
     @Transactional
     public PositionResponse createPosition(Long userId, Long teamId, PositionCreateRequest request) {
-        // 팀 조회
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalArgumentException("팀을 찾을 수 없습니다."));
-        
-        // 권한 확인 (팀장만 생성 가능)
-        if (!team.getOwner().getId().equals(userId)) {
-            throw new IllegalArgumentException("포지션 생성 권한이 없습니다.");
-        }
+        // 권한 확인 및 팀 조회 (팀장만 생성 가능)
+        Team team = teamPermissionService.getTeamWithOwnerCheck(userId, teamId);
         
         // 포지션 이름 검증
         if (request.getName() == null || request.getName().trim().isEmpty()) {
@@ -99,14 +87,8 @@ public class PositionService {
      */
     @Transactional
     public PositionResponse updatePosition(Long userId, Long teamId, Long positionId, PositionUpdateRequest request) {
-        // 팀 조회
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalArgumentException("팀을 찾을 수 없습니다."));
-        
-        // 권한 확인 (팀장만 수정 가능)
-        if (!team.getOwner().getId().equals(userId)) {
-            throw new IllegalArgumentException("포지션 수정 권한이 없습니다.");
-        }
+        // 권한 확인 및 팀 조회 (팀장만 수정 가능)
+        Team team = teamPermissionService.getTeamWithOwnerCheck(userId, teamId);
         
         // 포지션 조회
         Position position = positionRepository.findById(positionId)
@@ -159,14 +141,8 @@ public class PositionService {
      */
     @Transactional
     public void deletePosition(Long userId, Long teamId, Long positionId) {
-        // 팀 조회
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalArgumentException("팀을 찾을 수 없습니다."));
-        
         // 권한 확인 (팀장만 삭제 가능)
-        if (!team.getOwner().getId().equals(userId)) {
-            throw new IllegalArgumentException("포지션 삭제 권한이 없습니다.");
-        }
+        teamPermissionService.verifyTeamOwner(userId, teamId);
         
         // 포지션 조회
         Position position = positionRepository.findById(positionId)
@@ -201,4 +177,3 @@ public class PositionService {
                 .build();
     }
 }
-

@@ -1,4 +1,4 @@
-package com.example.demo.auth.google;
+package com.example.demo.service;
 
 import com.example.demo.domain.enums.ClientType;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
