@@ -8,7 +8,6 @@ import lombok.Setter;
 public class TeamMemberCreateRequest {
     private String nickname;
     private Long positionId;
-    private Boolean isAdmin;
 }
 
 

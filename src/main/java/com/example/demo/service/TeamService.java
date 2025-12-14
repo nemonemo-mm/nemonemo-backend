@@ -11,8 +11,11 @@ import com.example.demo.repository.UserRepository;
 import com.example.demo.dto.team.InviteCodeResponse;
 import com.example.demo.dto.team.PositionCreateRequest;
 import com.example.demo.dto.team.TeamCreateRequest;
+import com.example.demo.dto.team.TeamDeleteResponse;
 import com.example.demo.dto.team.TeamDetailResponse;
 import com.example.demo.dto.team.TeamJoinRequest;
+import com.example.demo.dto.team.TeamLeaveResponse;
+import com.example.demo.dto.team.TeamMemberDeleteResponse;
 import com.example.demo.dto.team.TeamMemberListItemResponse;
 import com.example.demo.dto.team.TeamMemberResponse;
 import com.example.demo.dto.team.TeamMemberUpdateRequest;
@@ -62,7 +65,7 @@ public class TeamService {
                 .name(request.getName().trim())
                 .inviteCode(inviteCode)
                 .owner(owner)
-                .imageUrl(request.getImageUrl())
+                .imageUrl(null)
                 .description(request.getDescription())
                 .build();
         
@@ -109,7 +112,6 @@ public class TeamService {
         TeamMember ownerMember = TeamMember.builder()
                 .team(team)
                 .user(owner)
-                .isAdmin(true)
                 .build();
         teamMemberRepository.save(ownerMember);
         
@@ -134,14 +136,7 @@ public class TeamService {
             }
             team.setName(request.getName().trim());
         }
-        
-        if (request.getImageUrl() != null) {
-            if (request.getImageUrl().length() > 255) {
-                throw new IllegalArgumentException("이미지 URL은 최대 255자까지 입력 가능합니다.");
-            }
-            team.setImageUrl(request.getImageUrl());
-        }
-        
+
         if (request.getDescription() != null) {
             team.setDescription(request.getDescription());
         }
@@ -177,7 +172,7 @@ public class TeamService {
      * 팀 삭제
      */
     @Transactional
-    public void deleteTeam(Long userId, Long teamId) {
+    public TeamDeleteResponse deleteTeam(Long userId, Long teamId) {
         // 권한 확인 (팀장만 삭제 가능)
         teamPermissionService.verifyTeamOwner(userId, teamId);
         
@@ -185,6 +180,10 @@ public class TeamService {
                 .orElseThrow(() -> new IllegalArgumentException("TEAM_NOT_FOUND: 팀을 찾을 수 없습니다."));
         
         teamRepository.delete(team);
+        
+        return TeamDeleteResponse.builder()
+                .teamId(teamId)
+                .build();
     }
     
     /**
@@ -196,6 +195,7 @@ public class TeamService {
         Team team = teamPermissionService.getTeamWithOwnerCheck(userId, teamId);
         
         return InviteCodeResponse.builder()
+                .teamId(teamId)
                 .inviteCode(team.getInviteCode())
                 .build();
     }
@@ -251,7 +251,6 @@ public class TeamService {
                 .user(user)
                 .nickname(nickname.trim())
                 .position(position)
-                .isAdmin(false)
                 .build();
         
         member = teamMemberRepository.save(member);
@@ -263,7 +262,7 @@ public class TeamService {
      * 팀 탈퇴 (팀원만, 팀장 불가)
      */
     @Transactional
-    public void leaveTeam(Long userId, Long teamId) {
+    public TeamLeaveResponse leaveTeam(Long userId, Long teamId) {
         // 팀장인지 확인 (팀장은 탈퇴 불가)
         teamPermissionService.verifyNotTeamOwner(userId, teamId);
         
@@ -271,23 +270,35 @@ public class TeamService {
         TeamMember member = teamMemberRepository.findByTeamIdAndUserId(teamId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("NOT_A_MEMBER: 해당 팀의 멤버가 아닙니다."));
         
+        // 멤버 ID와 사용자 ID 저장 (삭제 전에)
+        Long memberId = member.getId();
+        Long memberUserId = member.getUser().getId();
+        
         // 멤버 삭제
         teamMemberRepository.delete(member);
+        
+        return TeamLeaveResponse.builder()
+                .teamId(teamId)
+                .memberId(memberId)
+                .userId(memberUserId)
+                .build();
     }
     
     /**
      * Team 엔티티를 TeamDetailResponse로 변환
      */
     private TeamDetailResponse toDetailResponse(Team team, Long currentUserId) {
+        boolean isOwner = team.getOwner().getId().equals(currentUserId);
+        
         return TeamDetailResponse.builder()
                 .id(team.getId())
                 .name(team.getName())
-                .inviteCode(team.getInviteCode())
+                .inviteCode(isOwner ? team.getInviteCode() : null)
                 .ownerId(team.getOwner().getId())
                 .ownerName(team.getOwner().getName())
-                .isOwner(team.getOwner().getId().equals(currentUserId))
-                .imageUrl(team.getImageUrl())
+                .isOwner(isOwner)
                 .description(team.getDescription())
+                .imageUrl(team.getImageUrl())
                 .createdAt(team.getCreatedAt())
                 .updatedAt(team.getUpdatedAt())
                 .build();
@@ -391,7 +402,7 @@ public class TeamService {
      * 팀원 삭제 (팀장만 가능)
      */
     @Transactional
-    public void deleteTeamMember(Long userId, Long teamId, Long memberId) {
+    public TeamMemberDeleteResponse deleteTeamMember(Long userId, Long teamId, Long memberId) {
         // 권한 확인 및 팀 조회 (팀장만 삭제 가능)
         Team team = teamPermissionService.getTeamWithOwnerCheck(userId, teamId);
         
@@ -411,6 +422,12 @@ public class TeamService {
         
         // 팀원 삭제
         teamMemberRepository.delete(member);
+        
+        return TeamMemberDeleteResponse.builder()
+                .teamId(teamId)
+                .memberId(memberId)
+                .userId(member.getUser().getId())
+                .build();
     }
     
     /**
@@ -418,6 +435,7 @@ public class TeamService {
      */
     private TeamMemberResponse toMemberResponse(TeamMember member) {
         Position position = member.getPosition();
+        boolean isOwner = member.getTeam().getOwner().getId().equals(member.getUser().getId());
         
         return TeamMemberResponse.builder()
                 .id(member.getId())
@@ -431,7 +449,7 @@ public class TeamService {
                 .positionId(position != null ? position.getId() : null)
                 .positionName(position != null ? position.getName() : null)
                 .positionColor(position != null ? position.getColorHex() : null)
-                .isAdmin(member.getIsAdmin())
+                .isOwner(isOwner)
                 .joinedAt(member.getJoinedAt())
                 .build();
     }
@@ -449,6 +467,7 @@ public class TeamService {
         
         return TeamMemberListItemResponse.builder()
                 .id(member.getId())
+                .userId(member.getUser().getId())
                 .displayName(displayName)
                 .positionName(position != null ? position.getName() : null)
                 .imageUrl(member.getUser().getImageUrl())
