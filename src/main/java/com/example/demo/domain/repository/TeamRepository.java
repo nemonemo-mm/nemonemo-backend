@@ -18,3 +18,6 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     List<Team> findByUserId(@Param("userId") Long userId);
 }
 
+
+
+
