@@ -138,7 +138,6 @@ public class SocialAuthService {
                 .id(user.getId())
                 .email(user.getEmail())
                 .name(user.getName())
-                .passwordHash(null) // 보안상 항상 null 반환
                 .provider(user.getProvider())
                 .providerId(user.getProviderId())
                 .imageUrl(user.getImageUrl())
@@ -147,6 +146,7 @@ public class SocialAuthService {
                 .build();
 
         return AuthTokensResponse.builder()
+                .userId(user.getId())
                 .accessToken(accessToken)
                 .refreshToken(refreshTokenValue)
                 .isNewUser(isNewUser)
@@ -227,6 +227,7 @@ public class SocialAuthService {
 
             // 8. 응답 생성 (새로운 Access Token과 Refresh Token만 반환, 사용자 정보 제외)
             return AuthTokensResponse.builder()
+                    .userId(user.getId())
                     .accessToken(newAccessToken)
                     .refreshToken(newRefreshTokenValue) // 새로운 Refresh Token 반환 (로테이션)
                     .isNewUser(false) // 재발급이므로 신규 사용자 아님

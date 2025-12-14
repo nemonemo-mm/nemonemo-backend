@@ -1,4 +1,4 @@
-package com.example.demo.team.controller;
+package com.example.demo.controller;
 
 import com.example.demo.domain.service.TeamService;
 import com.example.demo.dto.team.InviteCodeResponse;
@@ -12,6 +12,8 @@ import com.example.demo.dto.team.TeamUpdateRequest;
 import com.example.demo.security.jwt.JwtAuthenticationHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,7 +38,8 @@ public class TeamController {
     
     @Operation(summary = "팀 생성", description = "새로운 팀을 생성합니다. 인증된 사용자는 누구나 팀을 생성할 수 있습니다.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "팀 생성 성공"),
+        @ApiResponse(responseCode = "200", description = "팀 생성 성공",
+            content = @Content(schema = @Schema(implementation = TeamDetailResponse.class))),
         @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패)"),
         @ApiResponse(responseCode = "401", description = "인증 실패")
     })
@@ -69,7 +72,8 @@ public class TeamController {
     
     @Operation(summary = "팀 수정", description = "팀 정보를 수정합니다. 팀장만 수정 가능하며, 부분 수정이 가능합니다.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "팀 수정 성공"),
+        @ApiResponse(responseCode = "200", description = "팀 수정 성공",
+            content = @Content(schema = @Schema(implementation = TeamDetailResponse.class))),
         @ApiResponse(responseCode = "400", description = "잘못된 요청"),
         @ApiResponse(responseCode = "401", description = "인증 실패"),
         @ApiResponse(responseCode = "403", description = "권한 없음"),
@@ -111,7 +115,8 @@ public class TeamController {
     
     @Operation(summary = "팀 상세 조회", description = "팀 상세 정보를 조회합니다. 팀원 모두 조회 가능합니다.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "팀 조회 성공"),
+        @ApiResponse(responseCode = "200", description = "팀 조회 성공",
+            content = @Content(schema = @Schema(implementation = TeamDetailResponse.class))),
         @ApiResponse(responseCode = "401", description = "인증 실패"),
         @ApiResponse(responseCode = "404", description = "팀을 찾을 수 없음")
     })
@@ -150,7 +155,8 @@ public class TeamController {
     
     @Operation(summary = "팀 목록 조회", description = "사용자가 속한 팀 목록을 조회합니다.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "팀 목록 조회 성공"),
+        @ApiResponse(responseCode = "200", description = "팀 목록 조회 성공",
+            content = @Content(schema = @Schema(implementation = TeamDetailResponse.class))),
         @ApiResponse(responseCode = "401", description = "인증 실패")
     })
     @GetMapping
@@ -219,7 +225,8 @@ public class TeamController {
     
     @Operation(summary = "초대 코드 조회", description = "팀의 초대 코드를 조회합니다. 팀장만 조회 가능합니다.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "초대 코드 조회 성공"),
+        @ApiResponse(responseCode = "200", description = "초대 코드 조회 성공",
+            content = @Content(schema = @Schema(implementation = InviteCodeResponse.class))),
         @ApiResponse(responseCode = "401", description = "인증 실패"),
         @ApiResponse(responseCode = "403", description = "권한 없음"),
         @ApiResponse(responseCode = "404", description = "팀을 찾을 수 없음")
@@ -259,7 +266,8 @@ public class TeamController {
     
     @Operation(summary = "팀 참여", description = "초대 코드를 사용하여 팀에 참여합니다. 팀원만 참여 가능하며, 팀장은 참여할 수 없습니다.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "팀 참여 성공"),
+        @ApiResponse(responseCode = "200", description = "팀 참여 성공",
+            content = @Content(schema = @Schema(implementation = TeamMemberResponse.class))),
         @ApiResponse(responseCode = "400", description = "잘못된 요청 (이미 멤버, 유효하지 않은 초대 코드)"),
         @ApiResponse(responseCode = "401", description = "인증 실패"),
         @ApiResponse(responseCode = "403", description = "권한 없음 (팀장은 참여 불가)"),
@@ -348,7 +356,8 @@ public class TeamController {
     
     @Operation(summary = "팀원 목록 조회", description = "팀원 목록을 조회합니다. 팀원 모두 조회 가능합니다.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "팀원 목록 조회 성공"),
+        @ApiResponse(responseCode = "200", description = "팀원 목록 조회 성공",
+            content = @Content(schema = @Schema(implementation = TeamMemberListItemResponse.class))),
         @ApiResponse(responseCode = "401", description = "인증 실패"),
         @ApiResponse(responseCode = "403", description = "권한 없음"),
         @ApiResponse(responseCode = "404", description = "팀을 찾을 수 없음")
@@ -388,7 +397,8 @@ public class TeamController {
     
     @Operation(summary = "팀원 상세 조회", description = "특정 팀원의 상세 정보를 조회합니다. 팀원 모두 조회 가능합니다.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "팀원 상세 조회 성공"),
+        @ApiResponse(responseCode = "200", description = "팀원 상세 조회 성공",
+            content = @Content(schema = @Schema(implementation = TeamMemberResponse.class))),
         @ApiResponse(responseCode = "401", description = "인증 실패"),
         @ApiResponse(responseCode = "403", description = "권한 없음"),
         @ApiResponse(responseCode = "404", description = "팀 또는 팀원을 찾을 수 없음")
@@ -433,7 +443,8 @@ public class TeamController {
     
     @Operation(summary = "팀원 정보 수정", description = "팀원 정보를 수정합니다. 본인 정보 수정은 모두 가능하며, 다른 팀원 정보 수정은 팀장만 가능합니다.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "팀원 정보 수정 성공"),
+        @ApiResponse(responseCode = "200", description = "팀원 정보 수정 성공",
+            content = @Content(schema = @Schema(implementation = TeamMemberResponse.class))),
         @ApiResponse(responseCode = "400", description = "잘못된 요청 (유효하지 않은 포지션)"),
         @ApiResponse(responseCode = "401", description = "인증 실패"),
         @ApiResponse(responseCode = "403", description = "권한 없음"),
@@ -604,4 +615,3 @@ public class TeamController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 }
-

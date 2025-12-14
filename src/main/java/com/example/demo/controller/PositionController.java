@@ -1,4 +1,4 @@
-package com.example.demo.position.controller;
+package com.example.demo.controller;
 
 import com.example.demo.domain.service.PositionService;
 import com.example.demo.dto.team.PositionCreateRequest;
@@ -7,6 +7,8 @@ import com.example.demo.dto.team.PositionUpdateRequest;
 import com.example.demo.security.jwt.JwtAuthenticationHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,7 +33,8 @@ public class PositionController {
     
     @Operation(summary = "포지션 목록 조회", description = "팀의 포지션 목록을 조회합니다. 팀원 모두 조회 가능합니다.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "포지션 목록 조회 성공"),
+        @ApiResponse(responseCode = "200", description = "포지션 목록 조회 성공",
+            content = @Content(schema = @Schema(implementation = PositionResponse.class))),
         @ApiResponse(responseCode = "401", description = "인증 실패"),
         @ApiResponse(responseCode = "403", description = "권한 없음"),
         @ApiResponse(responseCode = "404", description = "팀을 찾을 수 없음")
@@ -71,7 +74,8 @@ public class PositionController {
     
     @Operation(summary = "포지션 생성", description = "새로운 포지션을 생성합니다. 팀장만 생성 가능하며, 최대 6개까지 생성 가능합니다.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "포지션 생성 성공"),
+        @ApiResponse(responseCode = "200", description = "포지션 생성 성공",
+            content = @Content(schema = @Schema(implementation = PositionResponse.class))),
         @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패, 중복 이름, 최대 개수 초과)"),
         @ApiResponse(responseCode = "401", description = "인증 실패"),
         @ApiResponse(responseCode = "403", description = "권한 없음"),
@@ -117,7 +121,8 @@ public class PositionController {
     
     @Operation(summary = "포지션 수정", description = "포지션 정보를 수정합니다. 팀장만 수정 가능하며, 기본 포지션의 이름은 변경할 수 없습니다.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "포지션 수정 성공"),
+        @ApiResponse(responseCode = "200", description = "포지션 수정 성공",
+            content = @Content(schema = @Schema(implementation = PositionResponse.class))),
         @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패, 기본 포지션 이름 변경 시도, 중복 이름)"),
         @ApiResponse(responseCode = "401", description = "인증 실패"),
         @ApiResponse(responseCode = "403", description = "권한 없음"),
@@ -287,4 +292,3 @@ public class PositionController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 }
-

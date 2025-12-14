@@ -13,6 +13,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class AuthTokensResponse {
+    @Schema(description = "사용자 ID", example = "1")
+    private Long userId;
+
     @Schema(description = "액세스 토큰 (JWT)", example = "eyJhbGciOiJIUzI1NiJ9...")
     private String accessToken;
 

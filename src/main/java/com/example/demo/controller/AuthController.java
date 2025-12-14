@@ -1,4 +1,4 @@
-package com.example.demo.auth.controller;
+package com.example.demo.controller;
 
 import com.example.demo.auth.dto.AuthTokensResponse;
 import com.example.demo.auth.dto.SocialLoginRequest;
@@ -29,7 +29,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
-public class SocialAuthController {
+public class AuthController {
 
     private final SocialAuthService socialAuthService;
 
@@ -113,7 +113,7 @@ public class SocialAuthController {
             "자동 로그인 기능에 사용됩니다.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "토큰 재발급 성공 (새로운 Access Token과 Refresh Token 반환)", 
-            content = @Content(schema = @Schema(example = "{\"success\":true,\"code\":\"SUCCESS\",\"message\":null,\"data\":{\"accessToken\":\"new-jwt-access-token\",\"refreshToken\":\"new-refresh-token\",\"isNewUser\":false,\"user\":null},\"meta\":null}"))),
+            content = @Content(schema = @Schema(implementation = AuthTokensResponse.class))),
         @ApiResponse(responseCode = "400", description = "잘못된 요청 (Authorization 헤더 누락 또는 형식 오류)", 
             content = @Content(schema = @Schema(example = "{\"success\":false,\"code\":\"INVALID_REQUEST\",\"message\":\"Authorization 헤더에 Bearer 토큰이 필요합니다.\",\"data\":null,\"meta\":null}"))),
         @ApiResponse(responseCode = "401", description = "유효하지 않거나 만료된 토큰, 또는 이미 사용된 토큰", 
@@ -179,4 +179,3 @@ public class SocialAuthController {
         }
     }
 }
-
