@@ -4,6 +4,8 @@ import com.example.demo.domain.entity.Team;
 import com.example.demo.domain.entity.User;
 import com.example.demo.repository.TeamRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.dto.common.ErrorResponse;
+import com.example.demo.dto.image.ImageDeleteResponse;
 import com.example.demo.dto.image.ImageUploadResponse;
 import com.example.demo.security.jwt.JwtAuthenticationHelper;
 import com.example.demo.service.FirebaseStorageService;
@@ -11,6 +13,7 @@ import com.example.demo.service.TeamPermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -21,9 +24,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Tag(name = "이미지", description = "이미지 업로드/삭제/수정 API")
 @RestController
@@ -40,12 +40,26 @@ public class ImageController {
     @Operation(summary = "프로필 이미지 업로드", description = "사용자 프로필 이미지를 업로드합니다.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "이미지 업로드 성공",
-            content = @Content(schema = @Schema(implementation = ImageUploadResponse.class))),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청 (파일 없음, 잘못된 형식, 크기 초과)"),
-        @ApiResponse(responseCode = "401", description = "인증 필요")
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ImageUploadResponse.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (파일 없음, 잘못된 형식, 크기 초과) - 에러 코드: VALIDATION_ERROR",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"이미지 파일은 jpg, jpeg, png, gif, webp 형식만 지원하며 최대 5MB까지 업로드 가능합니다.\"}"))),
+        @ApiResponse(responseCode = "401", description = "인증 필요 - 에러 코드: UNAUTHORIZED",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
+        @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음 - 에러 코드: NOT_FOUND",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"NOT_FOUND\",\"message\":\"사용자를 찾을 수 없습니다.\"}"))),
+        @ApiResponse(responseCode = "500", description = "서버 오류 - 에러 코드: INTERNAL_SERVER_ERROR",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"프로필 이미지 업로드 중 오류가 발생했습니다.\"}")))
     })
     @PostMapping(value = "/users/me/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Map<String, Object>> uploadUserProfileImage(
+    public ResponseEntity<?> uploadUserProfileImage(
             @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(
                 description = "이미지 파일 (jpg, jpeg, png, gif, webp, 최대 5MB)",
@@ -70,14 +84,10 @@ public class ImageController {
             user.setImageUrl(newImageUrl);
             userRepository.save(user);
 
-            Map<String, Object> result = new HashMap<>();
-            result.put("success", true);
-            result.put("code", "SUCCESS");
-            result.put("message", null);
-            result.put("data", ImageUploadResponse.builder().imageUrl(newImageUrl).build());
-            result.put("meta", null);
-
-            return ResponseEntity.ok(result);
+            return ResponseEntity.ok(ImageUploadResponse.builder()
+                    .userId(userId)
+                    .imageUrl(newImageUrl)
+                    .build());
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
         } catch (Exception e) {
@@ -87,11 +97,23 @@ public class ImageController {
 
     @Operation(summary = "프로필 이미지 삭제", description = "사용자 프로필 이미지를 삭제합니다.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "이미지 삭제 성공"),
-        @ApiResponse(responseCode = "401", description = "인증 필요")
+        @ApiResponse(responseCode = "200", description = "이미지 삭제 성공",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ImageDeleteResponse.class))),
+        @ApiResponse(responseCode = "401", description = "인증 필요 - 에러 코드: UNAUTHORIZED",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
+        @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음 - 에러 코드: NOT_FOUND",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"NOT_FOUND\",\"message\":\"사용자를 찾을 수 없습니다.\"}"))),
+        @ApiResponse(responseCode = "500", description = "서버 오류 - 에러 코드: INTERNAL_SERVER_ERROR",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"프로필 이미지 삭제 중 오류가 발생했습니다.\"}")))
     })
     @DeleteMapping("/users/me/profile")
-    public ResponseEntity<Map<String, Object>> deleteUserProfileImage(
+    public ResponseEntity<?> deleteUserProfileImage(
             @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
         try {
             Long userId = jwtHelper.getUserIdFromHeader(authorizationHeader);
@@ -109,14 +131,9 @@ public class ImageController {
                 userRepository.save(user);
             }
 
-            Map<String, Object> result = new HashMap<>();
-            result.put("success", true);
-            result.put("code", "SUCCESS");
-            result.put("message", null);
-            result.put("data", null);
-            result.put("meta", null);
-
-            return ResponseEntity.ok(result);
+            return ResponseEntity.ok(ImageDeleteResponse.builder()
+                    .userId(userId)
+                    .build());
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
         } catch (Exception e) {
@@ -127,13 +144,30 @@ public class ImageController {
     @Operation(summary = "팀 이미지 업로드", description = "팀 이미지를 업로드합니다. 팀장만 가능합니다.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "이미지 업로드 성공",
-            content = @Content(schema = @Schema(implementation = ImageUploadResponse.class))),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "403", description = "권한 없음 (팀장만 가능)")
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ImageUploadResponse.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (파일 없음, 잘못된 형식, 크기 초과) - 에러 코드: VALIDATION_ERROR",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"이미지 파일은 jpg, jpeg, png, gif, webp 형식만 지원하며 최대 5MB까지 업로드 가능합니다.\"}"))),
+        @ApiResponse(responseCode = "401", description = "인증 필요 - 에러 코드: UNAUTHORIZED",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
+        @ApiResponse(responseCode = "403", description = "권한 없음 (팀장만 가능) - 에러 코드: FORBIDDEN",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"FORBIDDEN\",\"message\":\"팀장만 이미지를 업로드할 수 있습니다.\"}"))),
+        @ApiResponse(responseCode = "404", description = "팀을 찾을 수 없음 - 에러 코드: TEAM_NOT_FOUND",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"TEAM_NOT_FOUND\",\"message\":\"팀을 찾을 수 없습니다.\"}"))),
+        @ApiResponse(responseCode = "500", description = "서버 오류 - 에러 코드: INTERNAL_SERVER_ERROR",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"팀 이미지 업로드 중 오류가 발생했습니다.\"}")))
     })
     @PostMapping(value = "/teams/{teamId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Map<String, Object>> uploadTeamImage(
+    public ResponseEntity<?> uploadTeamImage(
             @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "팀 ID", required = true) @PathVariable Long teamId,
             @Parameter(
@@ -158,14 +192,10 @@ public class ImageController {
             team.setImageUrl(newImageUrl);
             teamRepository.save(team);
 
-            Map<String, Object> result = new HashMap<>();
-            result.put("success", true);
-            result.put("code", "SUCCESS");
-            result.put("message", null);
-            result.put("data", ImageUploadResponse.builder().imageUrl(newImageUrl).build());
-            result.put("meta", null);
-
-            return ResponseEntity.ok(result);
+            return ResponseEntity.ok(ImageUploadResponse.builder()
+                    .teamId(teamId)
+                    .imageUrl(newImageUrl)
+                    .build());
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
         } catch (Exception e) {
@@ -175,12 +205,27 @@ public class ImageController {
 
     @Operation(summary = "팀 이미지 삭제", description = "팀 이미지를 삭제합니다. 팀장만 가능합니다.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "이미지 삭제 성공"),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "403", description = "권한 없음 (팀장만 가능)")
+        @ApiResponse(responseCode = "200", description = "이미지 삭제 성공",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ImageDeleteResponse.class))),
+        @ApiResponse(responseCode = "401", description = "인증 필요 - 에러 코드: UNAUTHORIZED",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
+        @ApiResponse(responseCode = "403", description = "권한 없음 (팀장만 가능) - 에러 코드: FORBIDDEN",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"FORBIDDEN\",\"message\":\"팀장만 이미지를 삭제할 수 있습니다.\"}"))),
+        @ApiResponse(responseCode = "404", description = "팀을 찾을 수 없음 - 에러 코드: TEAM_NOT_FOUND",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"TEAM_NOT_FOUND\",\"message\":\"팀을 찾을 수 없습니다.\"}"))),
+        @ApiResponse(responseCode = "500", description = "서버 오류 - 에러 코드: INTERNAL_SERVER_ERROR",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"팀 이미지 삭제 중 오류가 발생했습니다.\"}")))
     })
     @DeleteMapping("/teams/{teamId}")
-    public ResponseEntity<Map<String, Object>> deleteTeamImage(
+    public ResponseEntity<?> deleteTeamImage(
             @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "팀 ID", required = true) @PathVariable Long teamId) {
         try {
@@ -199,14 +244,9 @@ public class ImageController {
                 teamRepository.save(team);
             }
 
-            Map<String, Object> result = new HashMap<>();
-            result.put("success", true);
-            result.put("code", "SUCCESS");
-            result.put("message", null);
-            result.put("data", null);
-            result.put("meta", null);
-
-            return ResponseEntity.ok(result);
+            return ResponseEntity.ok(ImageDeleteResponse.builder()
+                    .teamId(teamId)
+                    .build());
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
         } catch (Exception e) {
@@ -217,7 +257,7 @@ public class ImageController {
     /**
      * IllegalArgumentException 처리 (권한, 리소스 없음 등을 구분)
      */
-    private ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException e) {
+    private ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
         String message = e.getMessage();
         
         // 에러 코드가 포함된 경우 (예: "FORBIDDEN: ...", "NOT_FOUND: ...")
@@ -225,73 +265,68 @@ public class ImageController {
             String errorCode = message.split(":")[0].trim();
             String cleanMessage = message.split(":", 2)[1].trim();
             
+            HttpStatus status;
             if ("FORBIDDEN".equals(errorCode)) {
-                return createErrorResponseWithCode("FORBIDDEN", cleanMessage, HttpStatus.FORBIDDEN);
+                status = HttpStatus.FORBIDDEN;
             } else if ("TEAM_NOT_FOUND".equals(errorCode) || "TEAM_MEMBER_NOT_FOUND".equals(errorCode) 
                     || "POSITION_NOT_FOUND".equals(errorCode) || "NOT_FOUND".equals(errorCode)) {
-                return createErrorResponseWithCode("NOT_FOUND", cleanMessage, HttpStatus.NOT_FOUND);
+                status = HttpStatus.NOT_FOUND;
             } else {
-                return createErrorResponseWithCode(errorCode, cleanMessage, HttpStatus.BAD_REQUEST);
+                status = HttpStatus.BAD_REQUEST;
             }
+            
+            return ResponseEntity.status(status)
+                    .body(ErrorResponse.builder()
+                            .code(errorCode)
+                            .message(cleanMessage)
+                            .build());
         }
         
         // 에러 코드가 없는 경우 메시지로 판단
+        String code = "INVALID_REQUEST";
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        
         if (message != null) {
             if (message.contains("권한") || message.contains("FORBIDDEN") || message.contains("멤버만")) {
-                String cleanMessage = message.replace("FORBIDDEN:", "").trim();
-                return createErrorResponseWithCode("FORBIDDEN", cleanMessage, HttpStatus.FORBIDDEN);
+                code = "FORBIDDEN";
+                status = HttpStatus.FORBIDDEN;
             } else if (message.contains("찾을 수 없습니다") || message.contains("NOT_FOUND")) {
-                return createErrorResponseWithCode("NOT_FOUND", message, HttpStatus.NOT_FOUND);
+                code = "NOT_FOUND";
+                status = HttpStatus.NOT_FOUND;
             } else if (message.contains("필수")) {
-                return createErrorResponseWithCode("VALIDATION_ERROR", message, HttpStatus.BAD_REQUEST);
+                code = "VALIDATION_ERROR";
             } else if (message.contains("최대") || message.contains("길이") || message.contains("크기")) {
-                return createErrorResponseWithCode("VALIDATION_ERROR", message, HttpStatus.BAD_REQUEST);
+                code = "VALIDATION_ERROR";
             }
         }
         
-        // 기본값
-        return createErrorResponseWithCode("INVALID_REQUEST", message != null ? message : "잘못된 요청입니다.", HttpStatus.BAD_REQUEST);
+        return ResponseEntity.status(status)
+                .body(ErrorResponse.builder()
+                        .code(code)
+                        .message(message != null ? message : "잘못된 요청입니다.")
+                        .build());
     }
     
     /**
      * 에러 응답 생성
      */
-    private ResponseEntity<Map<String, Object>> createErrorResponse(String message, HttpStatus status) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", false);
-        response.put("code", status == HttpStatus.INTERNAL_SERVER_ERROR ? "INTERNAL_SERVER_ERROR" : "INVALID_REQUEST");
-        response.put("message", message);
-        response.put("data", null);
-        response.put("meta", null);
-        
-        return ResponseEntity.status(status).body(response);
-    }
-    
-    /**
-     * 특정 에러 코드로 에러 응답 생성
-     */
-    private ResponseEntity<Map<String, Object>> createErrorResponseWithCode(String code, String message, HttpStatus status) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", false);
-        response.put("code", code);
-        response.put("message", message);
-        response.put("data", null);
-        response.put("meta", null);
-        
-        return ResponseEntity.status(status).body(response);
+    private ResponseEntity<ErrorResponse> createErrorResponse(String message, HttpStatus status) {
+        String code = status == HttpStatus.INTERNAL_SERVER_ERROR ? "INTERNAL_SERVER_ERROR" : "INVALID_REQUEST";
+        return ResponseEntity.status(status)
+                .body(ErrorResponse.builder()
+                        .code(code)
+                        .message(message)
+                        .build());
     }
     
     /**
      * 인증 실패 응답 생성
      */
-    private ResponseEntity<Map<String, Object>> createUnauthorizedResponse(String message) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", false);
-        response.put("code", "UNAUTHORIZED");
-        response.put("message", message);
-        response.put("data", null);
-        response.put("meta", null);
-        
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    private ResponseEntity<ErrorResponse> createUnauthorizedResponse(String message) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ErrorResponse.builder()
+                        .code("UNAUTHORIZED")
+                        .message(message)
+                        .build());
     }
 }

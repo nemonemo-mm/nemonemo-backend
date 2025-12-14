@@ -17,10 +17,6 @@ public class TeamCreateRequest {
     @Size(max = 10, message = "팀 이름은 최대 10자까지 입력 가능합니다.")
     private String name;
     
-    @Schema(description = "프로필 이미지 URL (선택, 최대 255자)", example = "https://example.com/image.jpg")
-    @Size(max = 255, message = "이미지 URL은 최대 255자까지 입력 가능합니다.")
-    private String imageUrl;
-    
     @Schema(description = "팀 소개 (선택, 최대 50자)", example = "우리팀 소개")
     @Size(max = 50, message = "팀 소개는 최대 50자까지 입력 가능합니다.")
     private String description;

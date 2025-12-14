@@ -15,6 +15,9 @@ public class TeamMemberListItemResponse {
     @Schema(description = "팀 멤버 ID", example = "1")
     private Long id;
 
+    @Schema(description = "사용자 ID", example = "1")
+    private Long userId;
+
     @Schema(description = "표시 이름 (닉네임 혹은 사용자 이름)", example = "팀원1")
     private String displayName; // 닉네임 혹은 사용자 이름
 
