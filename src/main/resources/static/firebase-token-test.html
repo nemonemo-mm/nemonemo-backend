@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase ID Token 테스트 웹 클라이언트 기반</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .config-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .config-section h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #444;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #357ae8;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .logout-btn {
+            background: #ea4335;
+        }
+        .logout-btn:hover {
+            background: #d33b2c;
+        }
+        .token-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e8f5e9;
+            border-radius: 5px;
+            display: none;
+        }
+        .token-section h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #2e7d32;
+        }
+        #idToken {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #4caf50;
+            border-radius: 5px;
+            background: white;
+            font-size: 12px;
+            word-break: break-all;
+            margin-bottom: 15px;
+            font-family: monospace;
+        }
+        .copy-btn {
+            background: #4caf50;
+        }
+        .copy-btn:hover {
+            background: #45a049;
+        }
+        .info {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #856404;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            color: #721c24;
+            display: none;
+        }
+        .user-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 5px;
+            display: none;
+        }
+        .user-info h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        .troubleshoot {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+            display: none;
+        }
+        .troubleshoot h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        .troubleshoot ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .troubleshoot li {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+        .troubleshoot code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Firebase ID Token 테스트</h1>
+        <p>앱 추가 후 -> 안드로이드, ios용 sha-1 등록 해야함. </p>
+        <br>
+        <p>출시 키스토어(배포용) : .\gradlew signingReport 또는 keytool -list -v -alias <your-key-name> -keystore <path-to-production-keystore></p>
+        <div class="config-section">
+            <h2>Firebase 설정</h2>
+            <label for="apiKey">API Key:</label>
+            <input type="text" id="apiKey" placeholder="AIzaSy...">
+
+            <label for="authDomain">Auth Domain:</label>
+            <input type="text" id="authDomain" placeholder="your-project.firebaseapp.com">
+
+            <label for="projectId">Project ID:</label>
+            <input type="text" id="projectId" placeholder="your-project-id">
+
+            <label for="storageBucket">Storage Bucket:</label>
+            <input type="text" id="storageBucket" placeholder="your-project.appspot.com">
+
+            <label for="messagingSenderId">Messaging Sender ID:</label>
+            <input type="text" id="messagingSenderId" placeholder="123456789">
+
+            <label for="appId">App ID:</label>
+            <input type="text" id="appId" placeholder="1:123456789:web:abc123">
+        </div>
+
+        <button id="initBtn" onclick="initializeFirebase()">Firebase 초기화</button>
+        <button id="loginBtn" onclick="signInWithGoogle()" disabled>Google 로그인</button>
+        <button id="logoutBtn" class="logout-btn" onclick="signOut()" disabled style="display:none;">로그아웃</button>
+
+        <div id="errorMsg" class="error"></div>
+
+        <div id="userInfo" class="user-info">
+            <h3>로그인 정보</h3>
+            <p><strong>이메일:</strong> <span id="userEmail"></span></p>
+            <p><strong>이름:</strong> <span id="userName"></span></p>
+            <p><strong>UID:</strong> <span id="userUid"></span></p>
+        </div>
+
+        <div id="tokenSection" class="token-section">
+            <h2>Firebase ID Token</h2>
+            <textarea id="idToken" rows="6" readonly></textarea>
+            <button class="copy-btn" onclick="copyToken()">토큰 복사</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        let app = null;
+        let auth = null;
+        let provider = null;
+
+        window.initializeFirebase = function() {
+            const apiKey = document.getElementById('apiKey').value;
+            const authDomain = document.getElementById('authDomain').value;
+            const projectId = document.getElementById('projectId').value;
+            const storageBucket = document.getElementById('storageBucket').value;
+            const messagingSenderId = document.getElementById('messagingSenderId').value;
+            const appId = document.getElementById('appId').value;
+
+            if (!apiKey || !authDomain || !projectId || !storageBucket || !messagingSenderId || !appId) {
+                showError('모든 Firebase 설정 값을 입력해주세요.');
+                return;
+            }
+
+            try {
+                const firebaseConfig = {
+                    apiKey: apiKey,
+                    authDomain: authDomain,
+                    projectId: projectId,
+                    storageBucket: storageBucket,
+                    messagingSenderId: messagingSenderId,
+                    appId: appId
+                };
+
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                provider = new GoogleAuthProvider();
+
+                document.getElementById('initBtn').disabled = true;
+                document.getElementById('loginBtn').disabled = false;
+                document.getElementById('errorMsg').style.display = 'none';
+                
+                // 설정 값들을 localStorage에 저장
+                localStorage.setItem('firebaseConfig', JSON.stringify(firebaseConfig));
+
+                alert('Firebase 초기화 완료. Google 로그인을 할 수 있습니다.');
+            } catch (error) {
+                showError('Firebase 초기화 실패: ' + error.message);
+            }
+        };
+
+        window.signInWithGoogle = async function() {
+            if (!auth || !provider) {
+                showError('먼저 Firebase를 초기화해주세요.');
+                return;
+            }
+
+            try {
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                
+                // ID Token 가져오기
+                const idToken = await user.getIdToken();
+                
+                // 사용자 정보 표시
+                document.getElementById('userEmail').textContent = user.email || 'N/A';
+                document.getElementById('userName').textContent = user.displayName || 'N/A';
+                document.getElementById('userUid').textContent = user.uid;
+                document.getElementById('userInfo').style.display = 'block';
+                
+                // 토큰 표시
+                document.getElementById('idToken').value = idToken;
+                document.getElementById('tokenSection').style.display = 'block';
+                
+                document.getElementById('loginBtn').style.display = 'none';
+                document.getElementById('logoutBtn').style.display = 'inline-block';
+                document.getElementById('logoutBtn').disabled = false;
+                document.getElementById('errorMsg').style.display = 'none';
+            } catch (error) {
+                showError('로그인 실패: ' + error.message);
+            }
+        };
+
+        window.signOut = async function() {
+            if (!auth) {
+                return;
+            }
+
+            try {
+                await firebaseSignOut(auth);
+                document.getElementById('tokenSection').style.display = 'none';
+                document.getElementById('userInfo').style.display = 'none';
+                document.getElementById('loginBtn').style.display = 'inline-block';
+                document.getElementById('logoutBtn').style.display = 'none';
+                document.getElementById('errorMsg').style.display = 'none';
+            } catch (error) {
+                showError('로그아웃 실패: ' + error.message);
+            }
+        };
+
+        window.copyToken = function() {
+            const token = document.getElementById('idToken').value;
+            navigator.clipboard.writeText(token).then(() => {
+                alert('토큰이 클립보드에 복사되었습니다!');
+            }).catch(err => {
+                showError('복사 실패: ' + err.message);
+            });
+        };
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMsg');
+            // 줄바꿈을 <br>로 변환
+            errorDiv.innerHTML = message.replace(/\n/g, '<br>');
+            errorDiv.style.display = 'block';
+        }
+
+        // 페이지 로드 시 저장된 설정 불러오기
+        window.addEventListener('DOMContentLoaded', function() {
+            const savedConfig = localStorage.getItem('firebaseConfig');
+            if (savedConfig) {
+                try {
+                    const config = JSON.parse(savedConfig);
+                    document.getElementById('apiKey').value = config.apiKey || '';
+                    document.getElementById('authDomain').value = config.authDomain || '';
+                    document.getElementById('projectId').value = config.projectId || '';
+                    document.getElementById('storageBucket').value = config.storageBucket || '';
+                    document.getElementById('messagingSenderId').value = config.messagingSenderId || '';
+                    document.getElementById('appId').value = config.appId || '';
+                } catch (e) {
+                    console.error('설정 불러오기 실패:', e);
+                }
+            }
+
+            // 인증 상태 변경 감지
+            if (auth) {
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        user.getIdToken().then(idToken => {
+                            document.getElementById('idToken').value = idToken;
+                            document.getElementById('tokenSection').style.display = 'block';
+                            document.getElementById('userEmail').textContent = user.email || 'N/A';
+                            document.getElementById('userName').textContent = user.displayName || 'N/A';
+                            document.getElementById('userUid').textContent = user.uid;
+                            document.getElementById('userInfo').style.display = 'block';
+                            document.getElementById('loginBtn').style.display = 'none';
+                            document.getElementById('logoutBtn').style.display = 'inline-block';
+                            document.getElementById('logoutBtn').disabled = false;
+                        });
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
