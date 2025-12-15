@@ -333,8 +333,8 @@ public class TeamService {
      */
     @Transactional
     public TeamMemberResponse updateTeamMember(Long userId, Long teamId, Long memberId, TeamMemberUpdateRequest request) {
-        // 권한 확인 및 팀 조회 (팀원 모두 접근 가능)
-        Team team = teamPermissionService.getTeamWithMemberCheck(userId, teamId);
+        // 권한 확인 및 팀 조회 (팀장만 접근 가능)
+        Team team = teamPermissionService.getTeamWithOwnerCheck(userId, teamId);
         
         // 팀원 조회
         TeamMember member = teamMemberRepository.findById(memberId)
@@ -345,12 +345,10 @@ public class TeamService {
             throw new IllegalArgumentException("TEAM_MEMBER_NOT_FOUND: 팀원을 찾을 수 없습니다.");
         }
         
-        // 권한 확인 (본인 정보 수정은 모두 가능, 다른 팀원 정보 수정은 팀장만 가능)
+        // 권한 확인 (팀장만 수정 가능)
         boolean isOwner = team.getOwner().getId().equals(userId);
-        boolean isSelf = member.getUser().getId().equals(userId);
-        
-        if (!isSelf && !isOwner) {
-            throw new IllegalArgumentException("FORBIDDEN: 본인 정보만 수정할 수 있습니다.");
+        if (!isOwner) {
+            throw new IllegalArgumentException("FORBIDDEN: 팀장만 수정할 수 있습니다.");
         }
         
         // 포지션 수정

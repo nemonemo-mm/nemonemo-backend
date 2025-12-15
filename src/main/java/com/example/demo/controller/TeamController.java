@@ -441,7 +441,7 @@ public class TeamController {
         }
     }
     
-    @Operation(summary = "팀원 정보 수정", description = "팀원 정보를 수정합니다. 본인 정보 수정은 모두 가능하며, 다른 팀원 정보 수정은 팀장만 가능합니다.")
+    @Operation(summary = "팀원 정보 수정", description = "팀원 정보를 수정합니다. 팀장만 수정 가능합니다.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "팀원 정보 수정 성공",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamMemberResponse.class))),
@@ -455,10 +455,10 @@ public class TeamController {
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
-        @ApiResponse(responseCode = "403", description = "권한 없음 (본인 또는 팀장만 수정 가능) - 에러 코드: FORBIDDEN",
+        @ApiResponse(responseCode = "403", description = "권한 없음 (팀장만 수정 가능) - 에러 코드: FORBIDDEN",
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(value = "{\"code\":\"FORBIDDEN\",\"message\":\"본인 또는 팀장만 수정할 수 있습니다.\"}"))),
+                examples = @ExampleObject(value = "{\"code\":\"FORBIDDEN\",\"message\":\"팀장만 수정할 수 있습니다.\"}"))),
         @ApiResponse(responseCode = "404", description = "팀 또는 팀원을 찾을 수 없음 - 에러 코드: TEAM_NOT_FOUND, TEAM_MEMBER_NOT_FOUND",
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),
