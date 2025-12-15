@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class TeamMemberListItemResponse {
     @Schema(description = "팀 멤버 ID", example = "1")
-    private Long teamMemberId;
+    private Long memberId;
 
     @Schema(description = "사용자 ID", example = "1")
     private Long userId;

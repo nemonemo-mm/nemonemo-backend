@@ -427,7 +427,7 @@ public class TeamService {
         boolean isOwner = member.getTeam().getOwner().getId().equals(member.getUser().getId());
         
         return TeamMemberResponse.builder()
-                .teamMemberId(member.getId())
+                .memberId(member.getId())
                 .teamId(member.getTeam().getId())
                 .teamName(member.getTeam().getName())
                 .userImageUrl(member.getUser().getImageUrl())
@@ -452,7 +452,7 @@ public class TeamService {
         Position position = member.getPosition();
         
         return TeamMemberListItemResponse.builder()
-                .teamMemberId(member.getId())
+                .memberId(member.getId())
                 .userId(member.getUser().getId())
                 .displayName(displayName)
                 .positionId(position != null ? position.getId() : null)

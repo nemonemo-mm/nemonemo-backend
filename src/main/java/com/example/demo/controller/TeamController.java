@@ -389,7 +389,7 @@ public class TeamController {
                 array = @ArraySchema(schema = @Schema(implementation = TeamMemberListItemResponse.class)),
                 examples = @ExampleObject(value = "[\n" +
                     "  {\n" +
-                    "    \"id\": 1,\n" +
+                    "    \"memberId\": 1,\n" +
                     "    \"userId\": 1,\n" +
                     "    \"displayName\": \"홍길동\",\n" +
                     "    \"positionId\": 1,\n" +
@@ -397,7 +397,7 @@ public class TeamController {
                     "    \"userImageUrl\": \"https://firebasestorage.googleapis.com/v0/b/your-project.appspot.com/o/users%2F...\"\n" +
                     "  },\n" +
                     "  {\n" +
-                    "    \"id\": 2,\n" +
+                    "    \"memberId\": 2,\n" +
                     "    \"userId\": 2,\n" +
                     "    \"displayName\": \"김철수\",\n" +
                     "    \"positionId\": 2,\n" +
