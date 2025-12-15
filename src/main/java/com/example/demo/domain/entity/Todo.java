@@ -56,7 +56,7 @@ public class Todo {
     @Column(name = "reminder_offset_minutes")
     private Integer reminderOffsetMinutes;
 
-    @Column(name = "url", length = 500)
+    @Column(name = "url", length = 1000)
     private String url;
 
     @ManyToOne(fetch = FetchType.LAZY)

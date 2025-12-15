@@ -15,3 +15,4 @@ public class TeamDeleteResponse {
     @Schema(description = "팀 ID", example = "1")
     private Long teamId;
 }
+

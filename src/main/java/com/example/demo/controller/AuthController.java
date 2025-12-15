@@ -37,10 +37,13 @@ public class AuthController {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "로그인 성공", 
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthTokensResponse.class))),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패, 지원하지 않는 provider, 또는 사용자 이름 누락) - 에러 코드: INVALID_REQUEST, AUTH_MISSING_NAME", 
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패, 지원하지 않는 provider, 사용자 이름 누락 또는 길이 초과) - 에러 코드: INVALID_REQUEST, AUTH_MISSING_NAME, VALIDATION_ERROR", 
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(value = "{\"code\":\"AUTH_MISSING_NAME\",\"message\":\"신규 회원가입 시 이름은 필수입니다.\"}"))),
+                examples = {
+                    @ExampleObject(name = "사용자 이름 누락", value = "{\"code\":\"AUTH_MISSING_NAME\",\"message\":\"사용자 이름이 필요합니다.\"}"),
+                    @ExampleObject(name = "사용자 이름 길이 초과", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"사용자 이름은 최대 10자까지 입력 가능합니다.\"}")
+                })),
         @ApiResponse(responseCode = "401", description = "유효하지 않은 Firebase ID 토큰 - 에러 코드: AUTH_INVALID_TOKEN", 
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),

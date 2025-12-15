@@ -33,7 +33,7 @@ public class TodoResponse {
     @Schema(description = "상태", example = "TODO")
     private TodoStatus status;
 
-    @Schema(description = "마감일시")
+    @Schema(description = "마감일시", example = "2024-01-15T10:30:00.000Z")
     private LocalDateTime dueAt;
 
     @Schema(description = "리마인더 오프셋(분)", example = "30")
@@ -51,10 +51,10 @@ public class TodoResponse {
     @Schema(description = "담당자 닉네임", example = "팀원1")
     private String assigneeMemberNickname;
 
-    @Schema(description = "생성일시")
+    @Schema(description = "생성일시", example = "2024-01-15T10:30:00.000Z")
     private LocalDateTime createdAt;
 
-    @Schema(description = "수정일시")
+    @Schema(description = "수정일시", example = "2024-01-15T10:30:00.000Z")
     private LocalDateTime updatedAt;
 }
 

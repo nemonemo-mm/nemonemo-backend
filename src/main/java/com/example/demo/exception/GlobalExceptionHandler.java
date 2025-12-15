@@ -95,7 +95,7 @@ public class GlobalExceptionHandler {
                 } else if (message.contains("찾을 수 없습니다") || message.contains("NOT_FOUND")) {
                     code = "NOT_FOUND";
                     status = HttpStatus.NOT_FOUND;
-                } else if (message.contains("최대") && (message.contains("10자") || message.contains("길이"))) {
+                } else if (message.contains("최대") && message.contains("자")) {
                     code = "VALIDATION_ERROR";
                 } else if (message.contains("필수")) {
                     code = "INVALID_REQUEST";

@@ -35,7 +35,7 @@ public class User {
     @Column(name = "password_hash", length = 255)
     private String passwordHash;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 10)
     private String name;
 
     /**
@@ -51,7 +51,7 @@ public class User {
     @Column(name = "provider_id", length = 255)
     private String providerId;
 
-    @Column(name = "image_url", length = 255)
+    @Column(name = "image_url", length = 1000)
     private String imageUrl;
 
     @Column(name = "created_at", nullable = false, updatable = false)

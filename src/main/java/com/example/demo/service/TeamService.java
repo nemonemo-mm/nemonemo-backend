@@ -131,8 +131,8 @@ public class TeamService {
             if (request.getName().trim().isEmpty()) {
                 throw new IllegalArgumentException("팀 이름은 비어있을 수 없습니다.");
             }
-            if (request.getName().length() > 100) {
-                throw new IllegalArgumentException("팀 이름은 최대 100자까지 입력 가능합니다.");
+            if (request.getName().length() > 10) {
+                throw new IllegalArgumentException("팀 이름은 최대 10자까지 입력 가능합니다.");
             }
             team.setName(request.getName().trim());
         }
@@ -374,8 +374,8 @@ public class TeamService {
         
         // 닉네임 수정
         if (request.getNickname() != null) {
-            if (request.getNickname().length() > 100) {
-                throw new IllegalArgumentException("닉네임은 최대 100자까지 입력 가능합니다.");
+            if (request.getNickname().length() > 10) {
+                throw new IllegalArgumentException("닉네임은 최대 10자까지 입력 가능합니다.");
             }
             member.setNickname(request.getNickname().trim());
         }

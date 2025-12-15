@@ -21,17 +21,17 @@ public class Team {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 10)
     private String name;
 
-    @Column(name = "invite_code", nullable = false, unique = true, length = 50)
+    @Column(name = "invite_code", nullable = false, unique = true, length = 20)
     private String inviteCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
     
-    @Column(name = "image_url", length = 255)
+    @Column(name = "image_url", length = 1000)
     private String imageUrl;
 
     @Column(columnDefinition = "TEXT")
