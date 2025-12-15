@@ -27,5 +27,5 @@ public class SocialLoginRequest {
     private ClientType clientType;
 
     @Schema(description = "사용자 이름 (신규 회원가입 시 필수, 기존 사용자 로그인 시 선택사항)", example = "홍길동 | null")
-    private String name;
+    private String userName;
 }

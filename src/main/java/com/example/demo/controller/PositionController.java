@@ -9,6 +9,7 @@ import com.example.demo.dto.team.PositionUpdateRequest;
 import com.example.demo.security.jwt.JwtAuthenticationHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -35,7 +36,37 @@ public class PositionController {
     @Operation(summary = "포지션 목록 조회", description = "팀의 포지션 목록을 조회합니다. 팀원 모두 조회 가능합니다.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "포지션 목록 조회 성공",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = PositionResponse.class))),
+            content = @Content(mediaType = "application/json",
+                array = @ArraySchema(schema = @Schema(implementation = PositionResponse.class)),
+                examples = @ExampleObject(value = "[\n" +
+                    "  {\n" +
+                    "    \"id\": 1,\n" +
+                    "    \"teamId\": 1,\n" +
+                    "    \"name\": \"MEMBER\",\n" +
+                    "    \"colorHex\": null,\n" +
+                    "    \"isDefault\": true,\n" +
+                    "    \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n" +
+                    "    \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n" +
+                    "  },\n" +
+                    "  {\n" +
+                    "    \"id\": 2,\n" +
+                    "    \"teamId\": 1,\n" +
+                    "    \"name\": \"Design\",\n" +
+                    "    \"colorHex\": \"#FFAA00\",\n" +
+                    "    \"isDefault\": false,\n" +
+                    "    \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n" +
+                    "    \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n" +
+                    "  },\n" +
+                    "  {\n" +
+                    "    \"id\": 3,\n" +
+                    "    \"teamId\": 1,\n" +
+                    "    \"name\": \"Developer\",\n" +
+                    "    \"colorHex\": \"#00AAFF\",\n" +
+                    "    \"isDefault\": false,\n" +
+                    "    \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n" +
+                    "    \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n" +
+                    "  }\n" +
+                    "]"))),
         @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "403", description = "권한 없음 (팀원만 조회 가능) - 에러 코드: FORBIDDEN",

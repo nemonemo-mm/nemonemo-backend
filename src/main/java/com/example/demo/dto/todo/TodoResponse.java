@@ -48,8 +48,8 @@ public class TodoResponse {
     @Schema(description = "담당자 팀멤버 ID", example = "2")
     private Long assigneeMemberId;
 
-    @Schema(description = "담당자 닉네임", example = "팀원1")
-    private String assigneeMemberNickname;
+    @Schema(description = "담당자 사용자 이름", example = "홍길동")
+    private String assigneeMemberUserName;
 
     @Schema(description = "생성일시", example = "2024-01-15T10:30:00.000Z")
     private LocalDateTime createdAt;

@@ -16,6 +16,7 @@ import com.example.demo.dto.team.TeamUpdateRequest;
 import com.example.demo.security.jwt.JwtAuthenticationHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -166,7 +167,32 @@ public class TeamController {
     @Operation(summary = "팀 목록 조회", description = "사용자가 속한 팀 목록을 조회합니다.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "팀 목록 조회 성공",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamDetailResponse.class))),
+            content = @Content(mediaType = "application/json",
+                array = @ArraySchema(schema = @Schema(implementation = TeamDetailResponse.class)),
+                examples = @ExampleObject(value = "[\n" +
+                    "  {\n" +
+                    "    \"id\": 1,\n" +
+                    "    \"name\": \"NemoNemo 팀\",\n" +
+                    "    \"ownerId\": 1,\n" +
+                    "    \"ownerName\": \"홍길동\",\n" +
+                    "    \"isOwner\": true,\n" +
+                    "    \"description\": \"우리팀 소개입니다\",\n" +
+                    "    \"teamImageUrl\": \"https://firebasestorage.googleapis.com/v0/b/your-project.appspot.com/o/teams%2F...\",\n" +
+                    "    \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n" +
+                    "    \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n" +
+                    "  },\n" +
+                    "  {\n" +
+                    "    \"id\": 2,\n" +
+                    "    \"name\": \"캡스톤 팀 B\",\n" +
+                    "    \"ownerId\": 2,\n" +
+                    "    \"ownerName\": \"김철수\",\n" +
+                    "    \"isOwner\": false,\n" +
+                    "    \"description\": \"캡스톤 프로젝트 팀입니다\",\n" +
+                    "    \"teamImageUrl\": null,\n" +
+                    "    \"createdAt\": \"2024-01-16T14:20:00.000Z\",\n" +
+                    "    \"updatedAt\": \"2024-01-16T14:20:00.000Z\"\n" +
+                    "  }\n" +
+                    "]"))),
         @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),
@@ -359,7 +385,26 @@ public class TeamController {
     @Operation(summary = "팀원 목록 조회", description = "팀원 목록을 조회합니다. 팀원 모두 조회 가능합니다.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "팀원 목록 조회 성공",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamMemberListItemResponse.class))),
+            content = @Content(mediaType = "application/json",
+                array = @ArraySchema(schema = @Schema(implementation = TeamMemberListItemResponse.class)),
+                examples = @ExampleObject(value = "[\n" +
+                    "  {\n" +
+                    "    \"id\": 1,\n" +
+                    "    \"userId\": 1,\n" +
+                    "    \"displayName\": \"홍길동\",\n" +
+                    "    \"positionId\": 1,\n" +
+                    "    \"positionName\": \"Design\",\n" +
+                    "    \"userImageUrl\": \"https://firebasestorage.googleapis.com/v0/b/your-project.appspot.com/o/users%2F...\"\n" +
+                    "  },\n" +
+                    "  {\n" +
+                    "    \"id\": 2,\n" +
+                    "    \"userId\": 2,\n" +
+                    "    \"displayName\": \"김철수\",\n" +
+                    "    \"positionId\": 2,\n" +
+                    "    \"positionName\": \"Developer\",\n" +
+                    "    \"userImageUrl\": \"https://firebasestorage.googleapis.com/v0/b/your-project.appspot.com/o/users%2F...\"\n" +
+                    "  }\n" +
+                    "]"))),
         @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),
@@ -445,7 +490,6 @@ public class TeamController {
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = {
-                    @ExampleObject(name = "닉네임 길이 초과", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"닉네임은 최대 10자까지 입력 가능합니다.\"}"),
                     @ExampleObject(name = "포지션 없음", value = "{\"code\":\"POSITION_NOT_FOUND\",\"message\":\"포지션을 찾을 수 없습니다.\"}")
                 })),
         @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",

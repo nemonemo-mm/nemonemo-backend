@@ -15,13 +15,13 @@ import java.time.LocalDateTime;
 @Builder
 public class PositionResponse {
     @Schema(description = "포지션 ID", example = "1")
-    private Long id;
+    private Long positionId;
 
     @Schema(description = "팀 ID", example = "1")
     private Long teamId;
 
     @Schema(description = "포지션 이름", example = "Design")
-    private String name;
+    private String positionName;
 
     @Schema(description = "포지션 색상 (HEX)", example = "#FFAA00")
     private String colorHex;
