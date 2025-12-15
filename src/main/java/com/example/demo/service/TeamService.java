@@ -9,7 +9,6 @@ import com.example.demo.repository.TeamMemberRepository;
 import com.example.demo.repository.TeamRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.dto.team.InviteCodeResponse;
-import com.example.demo.dto.team.PositionCreateRequest;
 import com.example.demo.dto.team.TeamCreateRequest;
 import com.example.demo.dto.team.TeamDeleteResponse;
 import com.example.demo.dto.team.TeamDetailResponse;
@@ -20,6 +19,7 @@ import com.example.demo.dto.team.TeamMemberListItemResponse;
 import com.example.demo.dto.team.TeamMemberResponse;
 import com.example.demo.dto.team.TeamMemberUpdateRequest;
 import com.example.demo.dto.team.TeamUpdateRequest;
+import com.example.demo.service.FirebaseStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -39,6 +39,7 @@ public class TeamService {
     private final TeamMemberRepository teamMemberRepository;
     private final InviteCodeGenerator inviteCodeGenerator;
     private final TeamPermissionService teamPermissionService;
+    private final FirebaseStorageService firebaseStorageService;
     
     /**
      * 팀 생성
@@ -50,10 +51,10 @@ public class TeamService {
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         
         // 팀 이름 검증
-        if (request.getName() == null || request.getName().trim().isEmpty()) {
+        if (request.getTeamName() == null || request.getTeamName().trim().isEmpty()) {
             throw new IllegalArgumentException("팀 이름은 필수입니다.");
         }
-        if (request.getName().length() > 10) {
+        if (request.getTeamName().length() > 10) {
             throw new IllegalArgumentException("팀 이름은 최대 10자까지 입력 가능합니다.");
         }
         
@@ -62,7 +63,7 @@ public class TeamService {
         
         // 팀 생성
         Team team = Team.builder()
-                .name(request.getName().trim())
+                .name(request.getTeamName().trim())
                 .inviteCode(inviteCode)
                 .owner(owner)
                 .imageUrl(null)
@@ -78,35 +79,6 @@ public class TeamService {
                 .isDefault(true)
                 .build();
         positionRepository.save(defaultPosition);
-        
-        // 요청된 포지션 생성 (최대 6개)
-        if (request.getPositions() != null && !request.getPositions().isEmpty()) {
-            if (request.getPositions().size() > 6) {
-                throw new IllegalArgumentException("포지션은 최대 6개까지 추가할 수 있습니다.");
-            }
-            
-            for (PositionCreateRequest posRequest : request.getPositions()) {
-                if (posRequest.getName() == null || posRequest.getName().trim().isEmpty()) {
-                    throw new IllegalArgumentException("포지션 이름은 필수입니다.");
-                }
-                if (posRequest.getName().length() > 10) {
-                    throw new IllegalArgumentException("직군 이름은 최대 10자까지 입력 가능합니다.");
-                }
-                
-                // 중복 체크
-                if (positionRepository.findByTeamIdAndName(team.getId(), posRequest.getName().trim()).isPresent()) {
-                    throw new IllegalArgumentException("이미 존재하는 포지션 이름입니다: " + posRequest.getName());
-                }
-                
-                Position position = Position.builder()
-                        .team(team)
-                        .name(posRequest.getName().trim())
-                        .colorHex(posRequest.getColorHex())
-                        .isDefault(false)
-                        .build();
-                positionRepository.save(position);
-            }
-        }
         
         // 팀장을 팀 멤버로 추가
         TeamMember ownerMember = TeamMember.builder()
@@ -127,19 +99,31 @@ public class TeamService {
         Team team = teamPermissionService.getTeamWithOwnerCheck(userId, teamId);
         
         // 부분 수정
-        if (request.getName() != null) {
-            if (request.getName().trim().isEmpty()) {
+        if (request.getTeamName() != null) {
+            if (request.getTeamName().trim().isEmpty()) {
                 throw new IllegalArgumentException("팀 이름은 비어있을 수 없습니다.");
             }
-            if (request.getName().length() > 10) {
+            if (request.getTeamName().length() > 10) {
                 throw new IllegalArgumentException("팀 이름은 최대 10자까지 입력 가능합니다.");
             }
-            team.setName(request.getName().trim());
+            team.setName(request.getTeamName().trim());
         }
 
         if (request.getDescription() != null) {
             team.setDescription(request.getDescription());
         }
+        
+        // 이미지 URL 삭제 처리
+        // 프론트엔드에서 이미지 삭제 시 "deleteImageUrl": true를 보내면 이미지가 삭제됩니다.
+        if (Boolean.TRUE.equals(request.getDeleteImageUrl())) {
+            String oldImageUrl = team.getImageUrl();
+            if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
+                // Firebase Storage에서 기존 이미지 삭제
+                firebaseStorageService.deleteImage(oldImageUrl);
+            }
+            team.setImageUrl(null);
+        }
+        // deleteImageUrl 필드가 요청에 포함되지 않았거나 false인 경우는 변경하지 않음
         
         team = teamRepository.save(team);
         
@@ -164,7 +148,7 @@ public class TeamService {
     public List<TeamDetailResponse> getTeamList(Long userId) {
         List<Team> teams = teamRepository.findByUserId(userId);
         return teams.stream()
-                .map(team -> toDetailResponse(team, userId))
+                .map(team -> toDetailResponseForList(team, userId))
                 .collect(Collectors.toList());
     }
     
@@ -225,8 +209,8 @@ public class TeamService {
         
         // 포지션 설정
         Position position = null;
-        if (request.getRoleCategoryId() != null) {
-            position = positionRepository.findById(request.getRoleCategoryId())
+        if (request.getPositionId() != null) {
+            position = positionRepository.findById(request.getPositionId())
                     .orElseThrow(() -> new IllegalArgumentException("포지션을 찾을 수 없습니다."));
             
             // 해당 포지션이 이 팀의 포지션인지 확인
@@ -239,17 +223,10 @@ public class TeamService {
                     .orElseThrow(() -> new IllegalArgumentException("기본 포지션을 찾을 수 없습니다."));
         }
         
-        // 닉네임 설정 (없으면 사용자 이름)
-        String nickname = request.getNickname();
-        if (nickname == null || nickname.trim().isEmpty()) {
-            nickname = user.getName();
-        }
-        
         // 팀 멤버 생성
         TeamMember member = TeamMember.builder()
                 .team(team)
                 .user(user)
-                .nickname(nickname.trim())
                 .position(position)
                 .build();
         
@@ -285,20 +262,40 @@ public class TeamService {
     }
     
     /**
-     * Team 엔티티를 TeamDetailResponse로 변환
+     * Team 엔티티를 TeamDetailResponse로 변환 (상세 조회용)
      */
     private TeamDetailResponse toDetailResponse(Team team, Long currentUserId) {
         boolean isOwner = team.getOwner().getId().equals(currentUserId);
         
         return TeamDetailResponse.builder()
-                .id(team.getId())
-                .name(team.getName())
+                .teamId(team.getId())
+                .teamName(team.getName())
                 .inviteCode(isOwner ? team.getInviteCode() : null)
                 .ownerId(team.getOwner().getId())
                 .ownerName(team.getOwner().getName())
                 .isOwner(isOwner)
                 .description(team.getDescription())
-                .imageUrl(team.getImageUrl())
+                .teamImageUrl(team.getImageUrl())
+                .createdAt(team.getCreatedAt())
+                .updatedAt(team.getUpdatedAt())
+                .build();
+    }
+    
+    /**
+     * Team 엔티티를 TeamDetailResponse로 변환 (목록 조회용, inviteCode 제외)
+     */
+    private TeamDetailResponse toDetailResponseForList(Team team, Long currentUserId) {
+        boolean isOwner = team.getOwner().getId().equals(currentUserId);
+        
+        return TeamDetailResponse.builder()
+                .teamId(team.getId())
+                .teamName(team.getName())
+                .inviteCode(null)  // 목록 조회에서는 inviteCode 제외
+                .ownerId(team.getOwner().getId())
+                .ownerName(team.getOwner().getName())
+                .isOwner(isOwner)
+                .description(team.getDescription())
+                .teamImageUrl(team.getImageUrl())
                 .createdAt(team.getCreatedAt())
                 .updatedAt(team.getUpdatedAt())
                 .build();
@@ -372,14 +369,6 @@ public class TeamService {
             throw new IllegalArgumentException("FORBIDDEN: 본인 정보만 수정할 수 있습니다.");
         }
         
-        // 닉네임 수정
-        if (request.getNickname() != null) {
-            if (request.getNickname().length() > 10) {
-                throw new IllegalArgumentException("닉네임은 최대 10자까지 입력 가능합니다.");
-            }
-            member.setNickname(request.getNickname().trim());
-        }
-        
         // 포지션 수정
         if (request.getPositionId() != null) {
             Position position = positionRepository.findById(request.getPositionId())
@@ -438,14 +427,13 @@ public class TeamService {
         boolean isOwner = member.getTeam().getOwner().getId().equals(member.getUser().getId());
         
         return TeamMemberResponse.builder()
-                .id(member.getId())
+                .teamMemberId(member.getId())
                 .teamId(member.getTeam().getId())
                 .teamName(member.getTeam().getName())
-                .imageUrl(member.getUser().getImageUrl())
+                .userImageUrl(member.getUser().getImageUrl())
                 .userId(member.getUser().getId())
                 .userName(member.getUser().getName())
                 .userEmail(member.getUser().getEmail())
-                .nickname(member.getNickname())
                 .positionId(position != null ? position.getId() : null)
                 .positionName(position != null ? position.getName() : null)
                 .positionColor(position != null ? position.getColorHex() : null)
@@ -458,19 +446,18 @@ public class TeamService {
      * TeamMember 엔티티를 TeamMemberListItemResponse로 변환
      */
     private TeamMemberListItemResponse toMemberListItemResponse(TeamMember member) {
-        // displayName: 닉네임이 있으면 닉네임, 없으면 사용자 이름
-        String displayName = member.getNickname() != null && !member.getNickname().trim().isEmpty()
-                ? member.getNickname()
-                : member.getUser().getName();
+        // displayName: 사용자 이름 사용
+        String displayName = member.getUser().getName();
         
         Position position = member.getPosition();
         
         return TeamMemberListItemResponse.builder()
-                .id(member.getId())
+                .teamMemberId(member.getId())
                 .userId(member.getUser().getId())
                 .displayName(displayName)
+                .positionId(position != null ? position.getId() : null)
                 .positionName(position != null ? position.getName() : null)
-                .imageUrl(member.getUser().getImageUrl())
+                .userImageUrl(member.getUser().getImageUrl())
                 .build();
     }
 }
