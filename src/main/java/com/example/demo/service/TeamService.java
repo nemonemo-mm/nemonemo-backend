@@ -8,7 +8,6 @@ import com.example.demo.repository.PositionRepository;
 import com.example.demo.repository.TeamMemberRepository;
 import com.example.demo.repository.TeamRepository;
 import com.example.demo.repository.UserRepository;
-import com.example.demo.dto.team.InviteCodeResponse;
 import com.example.demo.dto.team.TeamCreateRequest;
 import com.example.demo.dto.team.TeamDeleteResponse;
 import com.example.demo.dto.team.TeamDetailResponse;
@@ -19,7 +18,6 @@ import com.example.demo.dto.team.TeamMemberListItemResponse;
 import com.example.demo.dto.team.TeamMemberResponse;
 import com.example.demo.dto.team.TeamMemberUpdateRequest;
 import com.example.demo.dto.team.TeamUpdateRequest;
-import com.example.demo.service.FirebaseStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -167,20 +165,6 @@ public class TeamService {
         
         return TeamDeleteResponse.builder()
                 .teamId(teamId)
-                .build();
-    }
-    
-    /**
-     * 초대 코드 조회 (팀장만)
-     */
-    @Transactional(readOnly = true)
-    public InviteCodeResponse getInviteCode(Long userId, Long teamId) {
-        // 권한 확인 및 팀 조회 (팀장만 조회 가능)
-        Team team = teamPermissionService.getTeamWithOwnerCheck(userId, teamId);
-        
-        return InviteCodeResponse.builder()
-                .teamId(teamId)
-                .inviteCode(team.getInviteCode())
                 .build();
     }
     
@@ -349,8 +333,8 @@ public class TeamService {
      */
     @Transactional
     public TeamMemberResponse updateTeamMember(Long userId, Long teamId, Long memberId, TeamMemberUpdateRequest request) {
-        // 권한 확인 및 팀 조회 (팀원 모두 접근 가능)
-        Team team = teamPermissionService.getTeamWithMemberCheck(userId, teamId);
+        // 권한 확인 및 팀 조회 (팀장만 접근 가능)
+        Team team = teamPermissionService.getTeamWithOwnerCheck(userId, teamId);
         
         // 팀원 조회
         TeamMember member = teamMemberRepository.findById(memberId)
@@ -361,12 +345,10 @@ public class TeamService {
             throw new IllegalArgumentException("TEAM_MEMBER_NOT_FOUND: 팀원을 찾을 수 없습니다.");
         }
         
-        // 권한 확인 (본인 정보 수정은 모두 가능, 다른 팀원 정보 수정은 팀장만 가능)
+        // 권한 확인 (팀장만 수정 가능)
         boolean isOwner = team.getOwner().getId().equals(userId);
-        boolean isSelf = member.getUser().getId().equals(userId);
-        
-        if (!isSelf && !isOwner) {
-            throw new IllegalArgumentException("FORBIDDEN: 본인 정보만 수정할 수 있습니다.");
+        if (!isOwner) {
+            throw new IllegalArgumentException("FORBIDDEN: 팀장만 수정할 수 있습니다.");
         }
         
         // 포지션 수정
