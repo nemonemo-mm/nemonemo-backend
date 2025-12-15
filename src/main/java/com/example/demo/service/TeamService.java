@@ -8,7 +8,6 @@ import com.example.demo.repository.PositionRepository;
 import com.example.demo.repository.TeamMemberRepository;
 import com.example.demo.repository.TeamRepository;
 import com.example.demo.repository.UserRepository;
-import com.example.demo.dto.team.InviteCodeResponse;
 import com.example.demo.dto.team.TeamCreateRequest;
 import com.example.demo.dto.team.TeamDeleteResponse;
 import com.example.demo.dto.team.TeamDetailResponse;
@@ -19,7 +18,6 @@ import com.example.demo.dto.team.TeamMemberListItemResponse;
 import com.example.demo.dto.team.TeamMemberResponse;
 import com.example.demo.dto.team.TeamMemberUpdateRequest;
 import com.example.demo.dto.team.TeamUpdateRequest;
-import com.example.demo.service.FirebaseStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -167,20 +165,6 @@ public class TeamService {
         
         return TeamDeleteResponse.builder()
                 .teamId(teamId)
-                .build();
-    }
-    
-    /**
-     * 초대 코드 조회 (팀장만)
-     */
-    @Transactional(readOnly = true)
-    public InviteCodeResponse getInviteCode(Long userId, Long teamId) {
-        // 권한 확인 및 팀 조회 (팀장만 조회 가능)
-        Team team = teamPermissionService.getTeamWithOwnerCheck(userId, teamId);
-        
-        return InviteCodeResponse.builder()
-                .teamId(teamId)
-                .inviteCode(team.getInviteCode())
                 .build();
     }
     
