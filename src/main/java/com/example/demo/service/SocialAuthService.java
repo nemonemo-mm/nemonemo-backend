@@ -92,10 +92,16 @@ public class SocialAuthService {
             if (name == null || name.trim().isEmpty()) {
                 throw new IllegalArgumentException("AUTH_MISSING_NAME: 사용자 이름이 필요합니다.");
             }
+            
+            // 이름 길이 검증
+            String trimmedName = name.trim();
+            if (trimmedName.length() > 10) {
+                throw new IllegalArgumentException("사용자 이름은 최대 10자까지 입력 가능합니다.");
+            }
 
             user = User.builder()
                     .email(email)
-                    .name(name.trim())
+                    .name(trimmedName)
                     .provider(AuthProvider.GOOGLE)
                     .providerId(firebaseUid)  // Firebase UID 사용
                     .imageUrl(picture)
@@ -111,7 +117,12 @@ public class SocialAuthService {
             boolean updated = false;
             
             if (name != null && !name.trim().isEmpty() && !name.equals(user.getName())) {
-                user.setName(name.trim());
+                String trimmedName = name.trim();
+                // 이름 길이 검증
+                if (trimmedName.length() > 10) {
+                    throw new IllegalArgumentException("사용자 이름은 최대 10자까지 입력 가능합니다.");
+                }
+                user.setName(trimmedName);
                 updated = true;
             }
             

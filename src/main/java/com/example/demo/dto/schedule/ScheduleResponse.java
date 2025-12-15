@@ -29,10 +29,10 @@ public class ScheduleResponse {
     @Schema(description = "설명", example = "프로젝트 진행 상황 논의")
     private String description;
 
-    @Schema(description = "시작일시")
+    @Schema(description = "시작일시", example = "2024-01-15T10:30:00.000Z")
     private LocalDateTime startAt;
 
-    @Schema(description = "종료일시")
+    @Schema(description = "종료일시", example = "2024-01-15T12:30:00.000Z")
     private LocalDateTime endAt;
 
     @Schema(description = "종일 일정 여부", example = "false")
@@ -53,10 +53,10 @@ public class ScheduleResponse {
     @Schema(description = "생성자 이름", example = "홍길동")
     private String createdByName;
 
-    @Schema(description = "생성일시")
+    @Schema(description = "생성일시", example = "2024-01-15T10:30:00.000Z")
     private LocalDateTime createdAt;
 
-    @Schema(description = "수정일시")
+    @Schema(description = "수정일시", example = "2024-01-15T10:30:00.000Z")
     private LocalDateTime updatedAt;
 }
 

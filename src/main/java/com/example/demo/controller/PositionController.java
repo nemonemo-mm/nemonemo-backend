@@ -10,6 +10,7 @@ import com.example.demo.security.jwt.JwtAuthenticationHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -68,7 +69,15 @@ public class PositionController {
         @ApiResponse(responseCode = "200", description = "포지션 생성 성공",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = PositionResponse.class))),
         @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패, 중복 이름, 최대 개수 초과) - 에러 코드: VALIDATION_ERROR, INVALID_REQUEST",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = {
+                    @ExampleObject(name = "포지션 이름 필수", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"포지션 이름은 필수입니다.\"}"),
+                    @ExampleObject(name = "포지션 이름 길이 초과", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"포지션 이름은 최대 10자까지 입력 가능합니다.\"}"),
+                    @ExampleObject(name = "색상 코드 길이 초과", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"색상 코드는 최대 9자까지 입력 가능합니다.\"}"),
+                    @ExampleObject(name = "중복 이름", value = "{\"code\":\"INVALID_REQUEST\",\"message\":\"이미 존재하는 포지션 이름입니다.\"}"),
+                    @ExampleObject(name = "최대 개수 초과", value = "{\"code\":\"INVALID_REQUEST\",\"message\":\"포지션은 최대 6개까지 추가할 수 있습니다. (기본값 MEMBER 포함 시 7개)\"}")
+                })),
         @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "403", description = "권한 없음 (팀장만 생성 가능) - 에러 코드: FORBIDDEN",
@@ -103,7 +112,14 @@ public class PositionController {
         @ApiResponse(responseCode = "200", description = "포지션 수정 성공",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = PositionResponse.class))),
         @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패, 기본 포지션 이름 변경 시도, 중복 이름) - 에러 코드: VALIDATION_ERROR, INVALID_REQUEST",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = {
+                    @ExampleObject(name = "포지션 이름 길이 초과", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"포지션 이름은 최대 10자까지 입력 가능합니다.\"}"),
+                    @ExampleObject(name = "색상 코드 길이 초과", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"색상 코드는 최대 9자까지 입력 가능합니다.\"}"),
+                    @ExampleObject(name = "기본 포지션 이름 변경 불가", value = "{\"code\":\"INVALID_REQUEST\",\"message\":\"기본 포지션의 이름은 변경할 수 없습니다.\"}"),
+                    @ExampleObject(name = "중복 이름", value = "{\"code\":\"INVALID_REQUEST\",\"message\":\"이미 존재하는 포지션 이름입니다.\"}")
+                })),
         @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "403", description = "권한 없음 (팀장만 수정 가능) - 에러 코드: FORBIDDEN",

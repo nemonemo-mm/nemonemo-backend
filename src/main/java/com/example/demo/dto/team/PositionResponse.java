@@ -29,10 +29,10 @@ public class PositionResponse {
     @Schema(description = "기본 포지션 여부", example = "false")
     private Boolean isDefault;
 
-    @Schema(description = "생성일시")
+    @Schema(description = "생성일시", example = "2024-01-15T10:30:00.000Z")
     private LocalDateTime createdAt;
 
-    @Schema(description = "수정일시")
+    @Schema(description = "수정일시", example = "2024-01-15T10:30:00.000Z")
     private LocalDateTime updatedAt;
 }
 

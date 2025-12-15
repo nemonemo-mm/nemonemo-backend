@@ -29,10 +29,10 @@ public class TeamResponse {
     @Schema(description = "팀장 이름", example = "홍길동")
     private String ownerName;
 
-    @Schema(description = "생성일시")
+    @Schema(description = "생성일시", example = "2024-01-15T10:30:00.000Z")
     private LocalDateTime createdAt;
 
-    @Schema(description = "수정일시")
+    @Schema(description = "수정일시", example = "2024-01-15T10:30:00.000Z")
     private LocalDateTime updatedAt;
 }
 

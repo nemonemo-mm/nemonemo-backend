@@ -18,3 +18,4 @@ public class PositionDeleteResponse {
     @Schema(description = "포지션 ID", example = "1")
     private Long positionId;
 }
+

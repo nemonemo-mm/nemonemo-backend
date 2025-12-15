@@ -46,7 +46,10 @@ public class TeamController {
         @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패, 팀 이름 필수 또는 최대 길이 초과) - 에러 코드: VALIDATION_ERROR",
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"팀 이름은 필수입니다.\"}"))),
+                examples = {
+                    @ExampleObject(name = "팀 이름 필수", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"팀 이름은 필수입니다.\"}"),
+                    @ExampleObject(name = "팀 이름 길이 초과", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"팀 이름은 최대 10자까지 입력 가능합니다.\"}")
+                })),
         @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),
@@ -79,10 +82,10 @@ public class TeamController {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "팀 수정 성공",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamDetailResponse.class))),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패) - 가능한 에러 코드: VALIDATION_ERROR",
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패, 팀 이름 길이 초과) - 에러 코드: VALIDATION_ERROR",
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"팀 이름은 필수입니다.\"}"))),
+                examples = @ExampleObject(name = "팀 이름 길이 초과", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"팀 이름은 최대 10자까지 입력 가능합니다.\"}"))),
         @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),
@@ -438,10 +441,13 @@ public class TeamController {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "팀원 정보 수정 성공",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamMemberResponse.class))),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청 (유효하지 않은 포지션) - 에러 코드: VALIDATION_ERROR, POSITION_NOT_FOUND",
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패, 유효하지 않은 포지션) - 에러 코드: VALIDATION_ERROR, POSITION_NOT_FOUND",
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(value = "{\"code\":\"POSITION_NOT_FOUND\",\"message\":\"포지션을 찾을 수 없습니다.\"}"))),
+                examples = {
+                    @ExampleObject(name = "닉네임 길이 초과", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"닉네임은 최대 10자까지 입력 가능합니다.\"}"),
+                    @ExampleObject(name = "포지션 없음", value = "{\"code\":\"POSITION_NOT_FOUND\",\"message\":\"포지션을 찾을 수 없습니다.\"}")
+                })),
         @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),

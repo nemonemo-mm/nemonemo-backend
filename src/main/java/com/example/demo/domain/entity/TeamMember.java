@@ -33,7 +33,7 @@ public class TeamMember {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(length = 100)
+    @Column(length = 10)
     private String nickname;
 
     @ManyToOne(fetch = FetchType.LAZY)

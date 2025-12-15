@@ -50,7 +50,7 @@ public class TeamMemberResponse {
     @Schema(description = "팀장 여부", example = "false")
     private Boolean isOwner;
 
-    @Schema(description = "가입일시")
+    @Schema(description = "가입일시", example = "2024-01-15T10:30:00.000Z")
     private LocalDateTime joinedAt;
 }
 

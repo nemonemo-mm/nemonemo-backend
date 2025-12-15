@@ -31,7 +31,7 @@ public class Schedule {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(length = 255)
+    @Column(length = 100)
     private String place;
 
     @Column(name = "start_at", nullable = false)
@@ -51,7 +51,7 @@ public class Schedule {
     @Builder.Default
     private Boolean isPinned = false;
 
-    @Column(name = "url", length = 500)
+    @Column(name = "url", length = 1000)
     private String url;
 
     // 반복 일정 관련 필드
