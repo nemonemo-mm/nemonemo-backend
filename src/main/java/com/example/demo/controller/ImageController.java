@@ -5,7 +5,6 @@ import com.example.demo.domain.entity.User;
 import com.example.demo.repository.TeamRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.dto.common.ErrorResponse;
-import com.example.demo.dto.image.ImageDeleteResponse;
 import com.example.demo.dto.image.ImageUploadResponse;
 import com.example.demo.security.jwt.JwtAuthenticationHelper;
 import com.example.demo.service.FirebaseStorageService;
@@ -25,7 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-@Tag(name = "이미지", description = "이미지 업로드/삭제/수정 API")
+@Tag(name = "이미지", description = "이미지 업로드 API")
 @RestController
 @RequestMapping("/api/v1/images")
 @RequiredArgsConstructor
@@ -95,51 +94,6 @@ public class ImageController {
         }
     }
 
-    @Operation(summary = "프로필 이미지 삭제", description = "사용자 프로필 이미지를 삭제합니다.")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "이미지 삭제 성공",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ImageDeleteResponse.class))),
-        @ApiResponse(responseCode = "401", description = "인증 필요 - 에러 코드: UNAUTHORIZED",
-            content = @Content(mediaType = "application/json", 
-                schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
-        @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음 - 에러 코드: NOT_FOUND",
-            content = @Content(mediaType = "application/json", 
-                schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(value = "{\"code\":\"NOT_FOUND\",\"message\":\"사용자를 찾을 수 없습니다.\"}"))),
-        @ApiResponse(responseCode = "500", description = "서버 오류 - 에러 코드: INTERNAL_SERVER_ERROR",
-            content = @Content(mediaType = "application/json", 
-                schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"프로필 이미지 삭제 중 오류가 발생했습니다.\"}")))
-    })
-    @DeleteMapping("/users/me/profile")
-    public ResponseEntity<?> deleteUserProfileImage(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
-        try {
-            Long userId = jwtHelper.getUserIdFromHeader(authorizationHeader);
-            if (userId == null) {
-                return createUnauthorizedResponse("인증이 필요합니다.");
-            }
-
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new IllegalArgumentException("NOT_FOUND: 사용자를 찾을 수 없습니다."));
-
-            // 이미지 삭제
-            if (user.getImageUrl() != null) {
-                firebaseStorageService.deleteImage(user.getImageUrl());
-                user.setImageUrl(null);
-                userRepository.save(user);
-            }
-
-            return ResponseEntity.ok(ImageDeleteResponse.builder()
-                    .userId(userId)
-                    .build());
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
-        } catch (Exception e) {
-            return createErrorResponse("프로필 이미지 삭제 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
 
     @Operation(summary = "팀 이미지 업로드", description = "팀 이미지를 업로드합니다. 팀장만 가능합니다.")
     @ApiResponses({
@@ -203,56 +157,6 @@ public class ImageController {
         }
     }
 
-    @Operation(summary = "팀 이미지 삭제", description = "팀 이미지를 삭제합니다. 팀장만 가능합니다.")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "이미지 삭제 성공",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ImageDeleteResponse.class))),
-        @ApiResponse(responseCode = "401", description = "인증 필요 - 에러 코드: UNAUTHORIZED",
-            content = @Content(mediaType = "application/json", 
-                schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
-        @ApiResponse(responseCode = "403", description = "권한 없음 (팀장만 가능) - 에러 코드: FORBIDDEN",
-            content = @Content(mediaType = "application/json", 
-                schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(value = "{\"code\":\"FORBIDDEN\",\"message\":\"팀장만 이미지를 삭제할 수 있습니다.\"}"))),
-        @ApiResponse(responseCode = "404", description = "팀을 찾을 수 없음 - 에러 코드: TEAM_NOT_FOUND",
-            content = @Content(mediaType = "application/json", 
-                schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(value = "{\"code\":\"TEAM_NOT_FOUND\",\"message\":\"팀을 찾을 수 없습니다.\"}"))),
-        @ApiResponse(responseCode = "500", description = "서버 오류 - 에러 코드: INTERNAL_SERVER_ERROR",
-            content = @Content(mediaType = "application/json", 
-                schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"팀 이미지 삭제 중 오류가 발생했습니다.\"}")))
-    })
-    @DeleteMapping("/teams/{teamId}")
-    public ResponseEntity<?> deleteTeamImage(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
-            @Parameter(description = "팀 ID", required = true) @PathVariable Long teamId) {
-        try {
-            Long userId = jwtHelper.getUserIdFromHeader(authorizationHeader);
-            if (userId == null) {
-                return createUnauthorizedResponse("인증이 필요합니다.");
-            }
-
-            // 팀장 권한 확인
-            Team team = teamPermissionService.getTeamWithOwnerCheck(userId, teamId);
-
-            // 이미지 삭제
-            if (team.getImageUrl() != null) {
-                firebaseStorageService.deleteImage(team.getImageUrl());
-                team.setImageUrl(null);
-                teamRepository.save(team);
-            }
-
-            return ResponseEntity.ok(ImageDeleteResponse.builder()
-                    .teamId(teamId)
-                    .build());
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
-        } catch (Exception e) {
-            return createErrorResponse("팀 이미지 삭제 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
 
     /**
      * IllegalArgumentException 처리 (권한, 리소스 없음 등을 구분)

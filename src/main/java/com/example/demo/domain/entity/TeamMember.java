@@ -33,9 +33,6 @@ public class TeamMember {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(length = 10)
-    private String nickname;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "position_id")
     private Position position;

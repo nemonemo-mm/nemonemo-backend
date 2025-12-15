@@ -1,7 +1,8 @@
 -- V2__alter_column_lengths.sql
 -- 필드 길이 제한 변경 마이그레이션
--- 사용자 이름, 팀 이름, 닉네임, 포지션 이름을 10자로 제한
+-- 사용자 이름, 팀 이름, 포지션 이름을 10자로 제한
 -- 이미지 URL 및 일반 URL을 1000자로 확장
+-- 닉네임 컬럼 삭제 (더 이상 사용하지 않음)
 
 -- =========================================================
 -- 1. 사용자 (app_user) 테이블
@@ -35,9 +36,9 @@ ALTER TABLE team
 -- 3. 팀 멤버 (team_member) 테이블
 -- =========================================================
 
--- 닉네임: 100자 → 10자
+-- 닉네임 컬럼 삭제 (더 이상 사용하지 않음)
 ALTER TABLE team_member 
-    ALTER COLUMN nickname TYPE VARCHAR(10);
+    DROP COLUMN IF EXISTS nickname;
 
 -- =========================================================
 -- 4. 일정 (schedule) 테이블
@@ -58,4 +59,5 @@ ALTER TABLE schedule
 -- URL: 500자 → 1000자
 ALTER TABLE todo 
     ALTER COLUMN url TYPE VARCHAR(1000);
+
 

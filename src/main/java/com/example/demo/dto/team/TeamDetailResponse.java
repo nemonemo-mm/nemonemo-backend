@@ -16,10 +16,10 @@ import java.time.LocalDateTime;
 @Builder
 public class TeamDetailResponse {
     @Schema(description = "팀 ID", example = "1")
-    private Long id;
+    private Long teamId;
 
     @Schema(description = "팀 이름", example = "NemoNemo 팀")
-    private String name;
+    private String teamName;
 
     @Schema(description = "초대 코드 (팀장만 조회 가능)", example = "ABC123XY")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -38,7 +38,7 @@ public class TeamDetailResponse {
     private String description;
 
     @Schema(description = "팀 이미지 URL", example = "https://firebasestorage.googleapis.com/v0/b/your-project.appspot.com/o/teams%2F...")
-    private String imageUrl;
+    private String teamImageUrl;
 
     @Schema(description = "생성일시", example = "2024-01-15T10:30:00.000Z")
     private LocalDateTime createdAt;

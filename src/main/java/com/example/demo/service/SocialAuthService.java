@@ -72,7 +72,7 @@ public class SocialAuthService {
             // 새 사용자: name 필수 검증 후 회원가입
             // Firebase Token의 클레임에서 이름 추출 시도
             Map<String, Object> claims = decodedToken.getClaims();
-            String name = request.getName();
+            String name = request.getUserName();
             if (name == null || name.trim().isEmpty()) {
                 // 클레임에서 name 추출 시도
                 Object nameClaim = claims.get("name");
@@ -113,7 +113,7 @@ public class SocialAuthService {
             user = existingUserOpt.get();
             
             // 선택적으로 name 업데이트 (request에 제공된 경우)
-            String name = request.getName();
+            String name = request.getUserName();
             boolean updated = false;
             
             if (name != null && !name.trim().isEmpty() && !name.equals(user.getName())) {
@@ -148,9 +148,9 @@ public class SocialAuthService {
         String accessToken = jwtTokenProvider.createAccessToken(user.getId());
 
         UserResponse userResponse = UserResponse.builder()
-                .id(user.getId())
+                .userId(user.getId())
                 .email(user.getEmail())
-                .name(user.getName())
+                .userName(user.getName())
                 .provider(user.getProvider())
                 .providerId(user.getProviderId())
                 .createdAt(user.getCreatedAt())

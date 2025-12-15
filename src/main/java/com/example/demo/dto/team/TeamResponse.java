@@ -15,10 +15,10 @@ import java.time.LocalDateTime;
 @Builder
 public class TeamResponse {
     @Schema(description = "팀 ID", example = "1")
-    private Long id;
+    private Long teamId;
 
     @Schema(description = "팀 이름", example = "NemoNemo 팀")
-    private String name;
+    private String teamName;
 
     @Schema(description = "초대 코드", example = "ABC123XY")
     private String inviteCode;

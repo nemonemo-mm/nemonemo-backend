@@ -52,15 +52,15 @@ public class PositionService {
         Team team = teamPermissionService.getTeamWithOwnerCheck(userId, teamId);
         
         // 포지션 이름 검증
-        if (request.getName() == null || request.getName().trim().isEmpty()) {
+        if (request.getPositionName() == null || request.getPositionName().trim().isEmpty()) {
             throw new IllegalArgumentException("포지션 이름은 필수입니다.");
         }
-        if (request.getName().length() > 10) {
+        if (request.getPositionName().length() > 10) {
             throw new IllegalArgumentException("포지션 이름은 최대 10자까지 입력 가능합니다.");
         }
         
         // 중복 이름 체크
-        if (positionRepository.findByTeamIdAndName(teamId, request.getName().trim()).isPresent()) {
+        if (positionRepository.findByTeamIdAndName(teamId, request.getPositionName().trim()).isPresent()) {
             throw new IllegalArgumentException("DUPLICATE_POSITION_NAME: 이미 존재하는 포지션 이름입니다.");
         }
         
@@ -73,7 +73,7 @@ public class PositionService {
         // 포지션 생성
         Position position = Position.builder()
                 .team(team)
-                .name(request.getName().trim())
+                .name(request.getPositionName().trim())
                 .colorHex(request.getColorHex())
                 .isDefault(false) // 생성 시에는 항상 false
                 .build();
@@ -101,27 +101,27 @@ public class PositionService {
         }
         
         // 기본 포지션 이름 변경 불가 체크
-        if (request.getName() != null && position.getIsDefault() && position.getName().equals("MEMBER")) {
+        if (request.getPositionName() != null && position.getIsDefault() && position.getName().equals("MEMBER")) {
             throw new IllegalArgumentException("DEFAULT_POSITION_NAME_CANNOT_CHANGE: 기본 포지션의 이름은 변경할 수 없습니다.");
         }
         
         // 이름 수정
-        if (request.getName() != null) {
-            if (request.getName().trim().isEmpty()) {
+        if (request.getPositionName() != null) {
+            if (request.getPositionName().trim().isEmpty()) {
                 throw new IllegalArgumentException("포지션 이름은 비어있을 수 없습니다.");
             }
-            if (request.getName().length() > 10) {
+            if (request.getPositionName().length() > 10) {
                 throw new IllegalArgumentException("포지션 이름은 최대 10자까지 입력 가능합니다.");
             }
             
             // 중복 이름 체크 (현재 이름과 다를 때만)
-            if (!request.getName().trim().equals(position.getName())) {
-                if (positionRepository.findByTeamIdAndName(teamId, request.getName().trim()).isPresent()) {
+            if (!request.getPositionName().trim().equals(position.getName())) {
+                if (positionRepository.findByTeamIdAndName(teamId, request.getPositionName().trim()).isPresent()) {
                     throw new IllegalArgumentException("DUPLICATE_POSITION_NAME: 이미 존재하는 포지션 이름입니다.");
                 }
             }
             
-            position.setName(request.getName().trim());
+            position.setName(request.getPositionName().trim());
         }
         
         // 색상 수정
@@ -173,9 +173,9 @@ public class PositionService {
      */
     private PositionResponse toPositionResponse(Position position) {
         return PositionResponse.builder()
-                .id(position.getId())
+                .positionId(position.getId())
                 .teamId(position.getTeam().getId())
-                .name(position.getName())
+                .positionName(position.getName())
                 .colorHex(position.getColorHex())
                 .isDefault(position.getIsDefault())
                 .createdAt(position.getCreatedAt())
