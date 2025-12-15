@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @Builder
 public class TeamMemberResponse {
     @Schema(description = "팀 멤버 ID", example = "1")
-    private Long teamMemberId;
+    private Long memberId;
 
     @Schema(description = "팀 ID", example = "1")
     private Long teamId;

@@ -24,6 +24,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+
 @Tag(name = "이미지", description = "이미지 업로드 API")
 @RestController
 @RequestMapping("/api/v1/images")
@@ -89,6 +91,10 @@ public class ImageController {
                     .build());
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
+        } catch (IllegalStateException e) {
+            return handleStorageException(e);
+        } catch (IOException e) {
+            return handleIOException(e);
         } catch (Exception e) {
             return createErrorResponse("프로필 이미지 업로드 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -152,6 +158,10 @@ public class ImageController {
                     .build());
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
+        } catch (IllegalStateException e) {
+            return handleStorageException(e);
+        } catch (IOException e) {
+            return handleIOException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 이미지 업로드 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -231,6 +241,75 @@ public class ImageController {
                 .body(ErrorResponse.builder()
                         .code("UNAUTHORIZED")
                         .message(message)
+                        .build());
+    }
+
+    /**
+     * Storage 관련 예외 처리 (권한, 설정 오류, 네트워크 오류 등)
+     */
+    private ResponseEntity<ErrorResponse> handleStorageException(IllegalStateException e) {
+        String message = e.getMessage();
+        
+        // 에러 코드가 포함된 경우 (예: "STORAGE_PERMISSION_DENIED: ...", "STORAGE_NETWORK_ERROR: ...")
+        if (message != null && message.contains(":")) {
+            String errorCode = message.split(":")[0].trim();
+            String cleanMessage = message.split(":", 2)[1].trim();
+            
+            HttpStatus status;
+            if ("STORAGE_PERMISSION_DENIED".equals(errorCode)) {
+                status = HttpStatus.FORBIDDEN;
+            } else if ("STORAGE_NOT_FOUND".equals(errorCode)) {
+                status = HttpStatus.NOT_FOUND;
+            } else if ("STORAGE_NETWORK_ERROR".equals(errorCode) || 
+                       "STORAGE_TIMEOUT".equals(errorCode) || 
+                       "STORAGE_CONNECTION_ERROR".equals(errorCode)) {
+                // 네트워크 관련 오류는 503 Service Unavailable로 처리
+                status = HttpStatus.SERVICE_UNAVAILABLE;
+            } else {
+                status = HttpStatus.INTERNAL_SERVER_ERROR;
+            }
+            
+            return ResponseEntity.status(status)
+                    .body(ErrorResponse.builder()
+                            .code(errorCode)
+                            .message(cleanMessage)
+                            .build());
+        }
+        
+        // 에러 코드가 없는 경우
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ErrorResponse.builder()
+                        .code("STORAGE_ERROR")
+                        .message(message != null ? message : "이미지 저장소 접근 중 오류가 발생했습니다.")
+                        .build());
+    }
+
+    /**
+     * IOException 처리 (네트워크 오류 등)
+     */
+    private ResponseEntity<ErrorResponse> handleIOException(IOException e) {
+        String message = e.getMessage();
+        Throwable cause = e.getCause();
+        
+        // 원인 예외 확인
+        if (cause instanceof IllegalStateException) {
+            // IllegalStateException이 원인인 경우 (네트워크 오류 등)
+            return handleStorageException((IllegalStateException) cause);
+        }
+        
+        // 일반적인 IOException
+        if (message != null && (message.contains("네트워크") || message.contains("연결") || message.contains("timeout"))) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(ErrorResponse.builder()
+                            .code("NETWORK_ERROR")
+                            .message("네트워크 연결에 문제가 발생했습니다. 인터넷 연결을 확인하고 잠시 후 다시 시도해주세요.")
+                            .build());
+        }
+        
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ErrorResponse.builder()
+                        .code("IO_ERROR")
+                        .message("이미지 업로드 중 오류가 발생했습니다: " + (message != null ? message : "알 수 없는 오류"))
                         .build());
     }
 }
