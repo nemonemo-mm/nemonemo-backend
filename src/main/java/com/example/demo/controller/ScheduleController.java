@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.dto.common.ErrorResponse;
 import com.example.demo.dto.schedule.ScheduleCreateRequest;
 import com.example.demo.dto.schedule.ScheduleResponse;
+import com.example.demo.dto.schedule.ScheduleResponseDto;
 import com.example.demo.dto.schedule.ScheduleUpdateRequest;
 import com.example.demo.security.jwt.JwtAuthenticationHelper;
 import com.example.demo.service.ScheduleService;
@@ -38,7 +39,7 @@ public class ScheduleController {
     @Operation(summary = "스케줄 생성", description = "팀 단위 스케줄을 생성합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "생성 성공",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ScheduleResponse.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ScheduleResponseDto.class))),
             @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패, 잘못된 반복 규칙 등)",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
@@ -71,7 +72,7 @@ public class ScheduleController {
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
-            ScheduleResponse response = scheduleService.createSchedule(userId, request);
+            ScheduleResponseDto response = scheduleService.createSchedule(userId, request);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
@@ -83,7 +84,7 @@ public class ScheduleController {
     @Operation(summary = "스케줄 수정", description = "스케줄을 수정합니다. 반복 스케줄의 경우 scope 파라미터로 적용 범위를 선택할 수 있습니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "수정 성공",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ScheduleResponse.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ScheduleResponseDto.class))),
             @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패, 잘못된 scope 등)",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
@@ -120,7 +121,7 @@ public class ScheduleController {
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
-            ScheduleResponse response = scheduleService.updateSchedule(userId, scheduleId, request, scope);
+            ScheduleResponseDto response = scheduleService.updateSchedule(userId, scheduleId, request, scope);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
@@ -176,7 +177,7 @@ public class ScheduleController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공",
                     content = @Content(mediaType = "application/json",
-                            array = @ArraySchema(schema = @Schema(implementation = ScheduleResponse.class)))),
+                            array = @ArraySchema(schema = @Schema(implementation = ScheduleResponseDto.class)))),
             @ApiResponse(responseCode = "401", description = "인증 실패",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
@@ -212,7 +213,7 @@ public class ScheduleController {
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
-            List<ScheduleResponse> responses = scheduleService.getTeamSchedules(userId, teamId, start, end, positionIds);
+            List<ScheduleResponseDto> responses = scheduleService.getTeamSchedules(userId, teamId, start, end, positionIds);
             return ResponseEntity.ok(responses);
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
@@ -225,7 +226,7 @@ public class ScheduleController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공",
                     content = @Content(mediaType = "application/json",
-                            array = @ArraySchema(schema = @Schema(implementation = ScheduleResponse.class)))),
+                            array = @ArraySchema(schema = @Schema(implementation = ScheduleResponseDto.class)))),
             @ApiResponse(responseCode = "401", description = "인증 실패",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
@@ -253,7 +254,7 @@ public class ScheduleController {
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
-            List<ScheduleResponse> responses = scheduleService.getMySchedules(userId, start, end, teamId, positionIds);
+            List<ScheduleResponseDto> responses = scheduleService.getMySchedules(userId, start, end, teamId, positionIds);
             return ResponseEntity.ok(responses);
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);

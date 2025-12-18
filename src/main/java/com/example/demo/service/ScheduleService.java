@@ -5,6 +5,7 @@ import com.example.demo.domain.enums.RepeatType;
 import com.example.demo.domain.model.ScheduleRepeatRule;
 import com.example.demo.dto.schedule.ScheduleCreateRequest;
 import com.example.demo.dto.schedule.ScheduleResponse;
+import com.example.demo.dto.schedule.ScheduleResponseDto;
 import com.example.demo.dto.schedule.ScheduleUpdateRequest;
 import com.example.demo.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +36,7 @@ public class ScheduleService {
     }
 
     @Transactional
-    public ScheduleResponse createSchedule(Long userId, ScheduleCreateRequest request) {
+    public ScheduleResponseDto createSchedule(Long userId, ScheduleCreateRequest request) {
         Team team = teamRepository.findById(request.getTeamId())
                 .orElseThrow(() -> new IllegalArgumentException("팀을 찾을 수 없습니다."));
 
@@ -100,7 +101,7 @@ public class ScheduleService {
     }
 
     @Transactional
-    public ScheduleResponse updateSchedule(Long userId, Long scheduleId, ScheduleUpdateRequest request, RepeatScope scope) {
+    public ScheduleResponseDto updateSchedule(Long userId, Long scheduleId, ScheduleUpdateRequest request, RepeatScope scope) {
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다."));
 
@@ -136,7 +137,7 @@ public class ScheduleService {
     }
 
     @Transactional(readOnly = true)
-    public List<ScheduleResponse> getTeamSchedules(
+    public List<ScheduleResponseDto> getTeamSchedules(
             Long userId,
             Long teamId,
             LocalDateTime start,
@@ -146,19 +147,17 @@ public class ScheduleService {
         if (!teamMemberRepository.existsByTeamIdAndUserId(teamId, userId)) {
             throw new IllegalArgumentException("팀원이 아닌 사용자는 팀 일정을 조회할 수 없습니다.");
         }
-        List<Schedule> schedules;
+        List<ScheduleResponse> responses;
         if (positionIds != null && !positionIds.isEmpty()) {
-            schedules = scheduleRepository.findByTeamAndPositionsAndRange(teamId, positionIds, start, end);
+            responses = scheduleRepository.findByTeamAndPositionsAndRange(teamId, positionIds, start, end);
         } else {
-            schedules = scheduleRepository.findByTeamAndRange(teamId, start, end);
+            responses = scheduleRepository.findByTeamAndRange(teamId, start, end);
         }
-        return schedules.stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+        return enrichScheduleResponses(responses);
     }
 
     @Transactional(readOnly = true)
-    public List<ScheduleResponse> getMySchedules(
+    public List<ScheduleResponseDto> getMySchedules(
             Long userId,
             LocalDateTime start,
             LocalDateTime end,
@@ -181,25 +180,23 @@ public class ScheduleService {
             return List.of();
         }
         
-        List<Schedule> schedules;
+        List<ScheduleResponse> responses;
         if (teamId != null) {
             // 팀 필터링이 있는 경우
             if (positionIds != null && !positionIds.isEmpty()) {
-                schedules = scheduleRepository.findByAttendeesAndTeamAndPositionsAndRange(memberIds, teamId, positionIds, start, end);
+                responses = scheduleRepository.findByAttendeesAndTeamAndPositionsAndRange(memberIds, teamId, positionIds, start, end);
             } else {
-                schedules = scheduleRepository.findByAttendeesAndTeamAndRange(memberIds, teamId, start, end);
+                responses = scheduleRepository.findByAttendeesAndTeamAndRange(memberIds, teamId, start, end);
             }
         } else {
             // 팀 필터링이 없는 경우 (전체 팀)
             if (positionIds != null && !positionIds.isEmpty()) {
-                schedules = scheduleRepository.findByAttendeesAndPositionsAndRange(memberIds, positionIds, start, end);
+                responses = scheduleRepository.findByAttendeesAndPositionsAndRange(memberIds, positionIds, start, end);
             } else {
-                schedules = scheduleRepository.findByAttendeesAndRange(memberIds, start, end);
+                responses = scheduleRepository.findByAttendeesAndRange(memberIds, start, end);
             }
         }
-        return schedules.stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+        return enrichScheduleResponses(responses);
     }
 
     private void applyScheduleUpdate(Schedule schedule, ScheduleUpdateRequest request) {
@@ -291,7 +288,58 @@ public class ScheduleService {
         return null;
     }
 
-    private ScheduleResponse toResponse(Schedule schedule) {
+    private List<ScheduleResponseDto> enrichScheduleResponses(List<ScheduleResponse> responses) {
+        return responses.stream()
+                .map(response -> {
+                    // positionIds 가져오기
+                    List<Long> positionIds = scheduleRepository.findPositionIdsByScheduleId(response.getId());
+                    Long representativePositionId = positionIds.isEmpty() ? null : positionIds.get(0);
+                    
+                    // repeatSummary 계산
+                    Object[] repeatFields = scheduleRepository.findRepeatFieldsByScheduleId(response.getId());
+                    String repeatSummary = "반복 없음";
+                    if (repeatFields != null && repeatFields.length == 5) {
+                        String repeatType = (String) repeatFields[0];
+                        Integer repeatInterval = (Integer) repeatFields[1];
+                        Integer[] repeatDays = (Integer[]) repeatFields[2];
+                        Integer repeatMonthDay = (Integer) repeatFields[3];
+                        LocalDateTime repeatEndDate = (LocalDateTime) repeatFields[4];
+                        
+                        ScheduleRepeatRule rule = ScheduleRepeatRule.fromEntityFields(
+                                repeatType,
+                                repeatInterval,
+                                repeatDays,
+                                repeatMonthDay,
+                                repeatEndDate
+                        );
+                        repeatSummary = rule.toSummary();
+                    }
+                    
+                    return ScheduleResponseDto.builder()
+                            .id(response.getId())
+                            .teamId(response.getTeamId())
+                            .teamName(response.getTeamName())
+                            .title(response.getTitle())
+                            .description(response.getDescription())
+                            .startAt(response.getStartAt())
+                            .endAt(response.getEndAt())
+                            .isAllDay(response.getIsAllDay())
+                            .place(response.getPlace())
+                            .url(response.getUrl())
+                            .createdById(response.getCreatedById())
+                            .createdByName(response.getCreatedByName())
+                            .createdAt(response.getCreatedAt())
+                            .updatedAt(response.getUpdatedAt())
+                            .positionIds(positionIds)
+                            .representativePositionId(representativePositionId)
+                            .repeatSummary(repeatSummary)
+                            .parentScheduleId(response.getParentScheduleId())
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    private ScheduleResponseDto toResponse(Schedule schedule) {
         ScheduleRepeatRule rule = ScheduleRepeatRule.fromEntityFields(
                 schedule.getRepeatType(),
                 schedule.getRepeatInterval(),
@@ -312,7 +360,7 @@ public class ScheduleService {
 
         Long representativePositionId = positionIds.isEmpty() ? null : positionIds.get(0);
 
-        return ScheduleResponse.builder()
+        return ScheduleResponseDto.builder()
                 .id(schedule.getId())
                 .teamId(schedule.getTeam().getId())
                 .teamName(schedule.getTeam().getName())

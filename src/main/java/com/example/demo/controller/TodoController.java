@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.dto.common.ErrorResponse;
 import com.example.demo.dto.todo.TodoCreateRequest;
 import com.example.demo.dto.todo.TodoResponse;
+import com.example.demo.dto.todo.TodoResponseDto;
 import com.example.demo.dto.todo.TodoUpdateRequest;
 import com.example.demo.security.jwt.JwtAuthenticationHelper;
 import com.example.demo.service.TodoService;
@@ -37,7 +38,7 @@ public class TodoController {
     @Operation(summary = "투두 생성", description = "팀 단위 투두를 생성합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "생성 성공",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = TodoResponse.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = TodoResponseDto.class))),
             @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패 등)",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
@@ -70,7 +71,7 @@ public class TodoController {
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
-            TodoResponse response = todoService.createTodo(userId, request);
+            TodoResponseDto response = todoService.createTodo(userId, request);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
@@ -82,7 +83,7 @@ public class TodoController {
     @Operation(summary = "투두 수정", description = "투두를 수정합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "수정 성공",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = TodoResponse.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = TodoResponseDto.class))),
             @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패 등)",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
@@ -117,7 +118,7 @@ public class TodoController {
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
-            TodoResponse response = todoService.updateTodo(userId, todoId, request);
+            TodoResponseDto response = todoService.updateTodo(userId, todoId, request);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
@@ -171,7 +172,7 @@ public class TodoController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공",
                     content = @Content(mediaType = "application/json",
-                            array = @ArraySchema(schema = @Schema(implementation = TodoResponse.class)))),
+                            array = @ArraySchema(schema = @Schema(implementation = TodoResponseDto.class)))),
             @ApiResponse(responseCode = "401", description = "인증 실패",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
@@ -205,7 +206,7 @@ public class TodoController {
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
-            List<TodoResponse> responses = todoService.getTeamTodos(userId, teamId, start, end);
+            List<TodoResponseDto> responses = todoService.getTeamTodos(userId, teamId, start, end);
             return ResponseEntity.ok(responses);
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
@@ -218,7 +219,7 @@ public class TodoController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공",
                     content = @Content(mediaType = "application/json",
-                            array = @ArraySchema(schema = @Schema(implementation = TodoResponse.class)))),
+                            array = @ArraySchema(schema = @Schema(implementation = TodoResponseDto.class)))),
             @ApiResponse(responseCode = "401", description = "인증 실패",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
@@ -242,7 +243,7 @@ public class TodoController {
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
-            List<TodoResponse> responses = todoService.getMyTodos(userId, start, end);
+            List<TodoResponseDto> responses = todoService.getMyTodos(userId, start, end);
             return ResponseEntity.ok(responses);
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
