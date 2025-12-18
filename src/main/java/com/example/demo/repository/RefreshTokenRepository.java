@@ -25,4 +25,9 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     Optional<RefreshToken> findByTokenWithLock(@Param("token") String token);
 
     void deleteByUserAndToken(User user, String token);
+    
+    /**
+     * 사용자의 모든 Refresh Token 삭제
+     */
+    void deleteByUser(User user);
 }
