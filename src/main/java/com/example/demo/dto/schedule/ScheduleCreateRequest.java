@@ -7,7 +7,9 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -16,8 +18,8 @@ public class ScheduleCreateRequest {
     private Long teamId;
 
     @NotBlank(message = "제목은 필수입니다.")
-    @Size(max = 200, message = "제목은 최대 200자까지 입력 가능합니다.")
-    @Schema(description = "일정 제목 (필수, 최대 200자)", requiredMode = Schema.RequiredMode.REQUIRED, example = "프로젝트 회의")
+    @Size(max = 20, message = "제목은 최대 20자까지 입력 가능합니다.")
+    @Schema(description = "일정 제목 (필수, 최대 20자)", requiredMode = Schema.RequiredMode.REQUIRED, example = "프로젝트 회의")
     private String title;
 
     @Schema(description = "일정 설명 (선택, TEXT 타입, 길이 제한 없음)", example = "프로젝트 진행 상황 논의")
@@ -33,14 +35,36 @@ public class ScheduleCreateRequest {
 
     private Boolean isAllDay;
 
-    private Boolean isPinned;
-
     @Size(max = 100, message = "장소는 최대 100자까지 입력 가능합니다.")
     @Schema(description = "장소 (선택, 최대 100자)", example = "회의실 A")
     private String place;
 
-    // 개별 일정 알림 오프셋 (end_at 기준 n분 전)
-    private Integer reminderOffsetMinutes;
+    @Size(max = 1000, message = "URL은 최대 1000자까지 입력 가능합니다.")
+    @Schema(description = "URL (선택, 최대 1000자)", example = "https://example.com")
+    private String url;
+
+    // 반복 관련 필드
+    @Schema(description = "반복 유형 (NONE, DAILY, WEEKLY, MONTHLY, YEARLY)", example = "NONE")
+    private String repeatType;
+
+    @Schema(description = "반복 간격 (예: 2일 간격, 2주 간격)", example = "1")
+    private Integer repeatInterval;
+
+    @Schema(description = "반복 요일 배열 (주간 반복 시, 0=일요일, 1=월요일, ...)", example = "[1,3]")
+    private List<Integer> repeatDays;
+
+    @Schema(description = "월간 반복 - 날짜 (매월 n일)", example = "15")
+    private Integer repeatMonthDay;
+
+    @Schema(description = "반복 종료일 (미설정 시 무기한)", example = "2026-01-17")
+    private LocalDate repeatEndDate;
+
+    // 포지션 및 참석자
+    @Schema(description = "연결할 포지션 ID 목록 (첫 번째가 대표 포지션)", example = "[1,2]")
+    private List<Long> positionIds;
+
+    @Schema(description = "참석자 팀멤버 ID 목록 (비어있으면 생성자가 기본 참석자)", example = "[10,11]")
+    private List<Long> attendeeMemberIds;
 }
 
 

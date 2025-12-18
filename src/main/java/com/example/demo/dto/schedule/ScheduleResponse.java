@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Schema(description = "일정 정보")
 @Getter
@@ -38,14 +39,11 @@ public class ScheduleResponse {
     @Schema(description = "종일 일정 여부", example = "false")
     private Boolean isAllDay;
 
-    @Schema(description = "고정 여부", example = "false")
-    private Boolean isPinned;
-
     @Schema(description = "장소", example = "회의실 A")
     private String place;
 
-    @Schema(description = "리마인더 오프셋(분)", example = "30")
-    private Integer reminderOffsetMinutes;
+    @Schema(description = "URL", example = "https://example.com")
+    private String url;
 
     @Schema(description = "생성자 사용자 ID", example = "1")
     private Long createdById;
@@ -58,6 +56,18 @@ public class ScheduleResponse {
 
     @Schema(description = "수정일시", example = "2024-01-15T10:30:00.000Z")
     private LocalDateTime updatedAt;
+
+    @Schema(description = "포지션 ID 목록 (첫 번째가 대표 포지션)", example = "[1,2]")
+    private List<Long> positionIds;
+
+    @Schema(description = "대표 포지션 ID", example = "1")
+    private Long representativePositionId;
+
+    @Schema(description = "반복 요약 문자열", example = "2주 간격 · 월, 수")
+    private String repeatSummary;
+
+    @Schema(description = "부모 스케줄 ID (반복 기준)", example = "1")
+    private Long parentScheduleId;
 }
 
 
