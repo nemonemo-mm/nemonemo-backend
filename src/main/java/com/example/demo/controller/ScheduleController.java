@@ -172,7 +172,7 @@ public class ScheduleController {
         }
     }
 
-    @Operation(summary = "팀 스케줄 조회", description = "특정 팀의 기간 내 스케줄 목록을 조회합니다.")
+    @Operation(summary = "팀 스케줄 조회", description = "특정 팀의 기간 내 스케줄 목록을 조회합니다. positionIds 파라미터로 포지션별 필터링이 가능합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공",
                     content = @Content(mediaType = "application/json",
@@ -203,14 +203,16 @@ public class ScheduleController {
             @Parameter(description = "조회 시작일시 (ISO 8601)", example = "2025-01-01T00:00:00Z")
             @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @Parameter(description = "조회 종료일시 (ISO 8601)", example = "2025-01-31T23:59:59Z")
-            @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end
+            @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end,
+            @Parameter(description = "포지션 ID 목록 (선택, 포지션별 필터링)", example = "[1, 2, 3]")
+            @RequestParam(value = "positionIds", required = false) List<Long> positionIds
     ) {
         try {
             Long userId = getUserIdFromHeader(authorizationHeader);
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
-            List<ScheduleResponse> responses = scheduleService.getTeamSchedules(userId, teamId, start, end);
+            List<ScheduleResponse> responses = scheduleService.getTeamSchedules(userId, teamId, start, end, positionIds);
             return ResponseEntity.ok(responses);
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
@@ -219,7 +221,7 @@ public class ScheduleController {
         }
     }
 
-    @Operation(summary = "내 스케줄 조회", description = "개인 화면용으로, 내가 참석자로 포함된 스케줄만 기간 내 조회합니다.")
+    @Operation(summary = "내 스케줄 조회", description = "개인 화면용으로, 내가 참석자로 포함된 스케줄만 기간 내 조회합니다. teamId로 특정 팀 필터링, positionIds로 포지션별 필터링이 가능합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공",
                     content = @Content(mediaType = "application/json",
@@ -240,14 +242,18 @@ public class ScheduleController {
             @Parameter(description = "조회 시작일시 (ISO 8601)", example = "2025-01-01T00:00:00Z")
             @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @Parameter(description = "조회 종료일시 (ISO 8601)", example = "2025-01-31T23:59:59Z")
-            @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end
+            @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end,
+            @Parameter(description = "팀 ID (선택, 특정 팀으로 필터링)", example = "1")
+            @RequestParam(value = "teamId", required = false) Long teamId,
+            @Parameter(description = "포지션 ID 목록 (선택, 포지션별 필터링)", example = "[1, 2, 3]")
+            @RequestParam(value = "positionIds", required = false) List<Long> positionIds
     ) {
         try {
             Long userId = getUserIdFromHeader(authorizationHeader);
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
-            List<ScheduleResponse> responses = scheduleService.getMySchedules(userId, start, end);
+            List<ScheduleResponse> responses = scheduleService.getMySchedules(userId, start, end, teamId, positionIds);
             return ResponseEntity.ok(responses);
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);

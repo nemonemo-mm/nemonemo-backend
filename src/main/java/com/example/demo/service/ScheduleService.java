@@ -140,12 +140,18 @@ public class ScheduleService {
             Long userId,
             Long teamId,
             LocalDateTime start,
-            LocalDateTime end
+            LocalDateTime end,
+            List<Long> positionIds
     ) {
         if (!teamMemberRepository.existsByTeamIdAndUserId(teamId, userId)) {
             throw new IllegalArgumentException("팀원이 아닌 사용자는 팀 일정을 조회할 수 없습니다.");
         }
-        List<Schedule> schedules = scheduleRepository.findByTeamAndRange(teamId, start, end);
+        List<Schedule> schedules;
+        if (positionIds != null && !positionIds.isEmpty()) {
+            schedules = scheduleRepository.findByTeamAndPositionsAndRange(teamId, positionIds, start, end);
+        } else {
+            schedules = scheduleRepository.findByTeamAndRange(teamId, start, end);
+        }
         return schedules.stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -155,14 +161,42 @@ public class ScheduleService {
     public List<ScheduleResponse> getMySchedules(
             Long userId,
             LocalDateTime start,
-            LocalDateTime end
+            LocalDateTime end,
+            Long teamId,
+            List<Long> positionIds
     ) {
-        List<TeamMember> members = teamMemberRepository.findByUserId(userId);
+        List<TeamMember> members;
+        if (teamId != null) {
+            // 특정 팀으로 필터링: 해당 팀의 멤버만 조회
+            TeamMember member = teamMemberRepository.findByTeamIdAndUserId(teamId, userId)
+                    .orElseThrow(() -> new IllegalArgumentException("해당 팀의 팀원이 아닙니다."));
+            members = List.of(member);
+        } else {
+            // 전체 팀: 사용자가 속한 모든 팀의 멤버 조회
+            members = teamMemberRepository.findByUserId(userId);
+        }
+        
         List<Long> memberIds = members.stream().map(TeamMember::getId).toList();
         if (memberIds.isEmpty()) {
             return List.of();
         }
-        List<Schedule> schedules = scheduleRepository.findByAttendeesAndRange(memberIds, start, end);
+        
+        List<Schedule> schedules;
+        if (teamId != null) {
+            // 팀 필터링이 있는 경우
+            if (positionIds != null && !positionIds.isEmpty()) {
+                schedules = scheduleRepository.findByAttendeesAndTeamAndPositionsAndRange(memberIds, teamId, positionIds, start, end);
+            } else {
+                schedules = scheduleRepository.findByAttendeesAndTeamAndRange(memberIds, teamId, start, end);
+            }
+        } else {
+            // 팀 필터링이 없는 경우 (전체 팀)
+            if (positionIds != null && !positionIds.isEmpty()) {
+                schedules = scheduleRepository.findByAttendeesAndPositionsAndRange(memberIds, positionIds, start, end);
+            } else {
+                schedules = scheduleRepository.findByAttendeesAndRange(memberIds, start, end);
+            }
+        }
         return schedules.stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
