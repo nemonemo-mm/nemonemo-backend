@@ -28,4 +28,13 @@ public class SocialLoginRequest {
 
     @Schema(description = "사용자 이름 (신규 회원가입 시 필수, 기존 사용자 로그인 시 선택사항)", example = "홍길동 | null")
     private String userName;
+
+    @Schema(description = "FCM 디바이스 토큰 (선택, 푸시 알림 수신 시 필요)", example = "fcm_device_token_here")
+    private String deviceToken;
+
+    @Schema(description = "디바이스 타입 (선택)", example = "iOS", allowableValues = {"iOS", "Android"})
+    private String deviceType;
+
+    @Schema(description = "디바이스 정보 (선택)", example = "iPhone 14 Pro")
+    private String deviceInfo;
 }
