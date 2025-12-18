@@ -27,22 +27,25 @@ public class TeamNotificationSettingService {
      */
     @Transactional(readOnly = true)
     public TeamNotificationSettingResponse getTeamNotificationSetting(Long userId, Long teamId) {
-        User user = userRepository.findById(userId)
+        userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-        Team team = teamRepository.findById(teamId)
+        teamRepository.findById(teamId)
                 .orElseThrow(() -> new IllegalArgumentException("팀을 찾을 수 없습니다."));
 
-        NotificationSetting setting = notificationSettingRepository.findByUserAndTeam(user, team)
+        return notificationSettingRepository.findResponseByUserIdAndTeamId(userId, teamId)
                 .orElseGet(() -> {
                     // 기본값으로 생성
+                    User user = userRepository.findById(userId).orElseThrow();
+                    Team team = teamRepository.findById(teamId).orElseThrow();
                     NotificationSetting defaultSetting = NotificationSetting.builder()
                             .user(user)
                             .team(team)
                             .build();
-                    return notificationSettingRepository.save(defaultSetting);
+                    notificationSettingRepository.save(defaultSetting);
+                    // 저장 후 다시 조회하여 인터페이스 프로젝션으로 반환
+                    return notificationSettingRepository.findResponseByUserIdAndTeamId(userId, teamId)
+                            .orElseThrow(() -> new IllegalStateException("알림 설정 저장 후 조회 실패"));
                 });
-
-        return toResponse(setting);
     }
 
     /**
@@ -88,26 +91,8 @@ public class TeamNotificationSettingService {
         }
 
         setting = notificationSettingRepository.save(setting);
-        return toResponse(setting);
-    }
-
-    private TeamNotificationSettingResponse toResponse(NotificationSetting setting) {
-        return TeamNotificationSettingResponse.builder()
-                .id(setting.getId())
-                .userId(setting.getUser().getId())
-                .teamId(setting.getTeam().getId())
-                .teamName(setting.getTeam().getName())
-                .enableTeamAlarm(setting.getEnableTeamAlarm())
-                .enableScheduleChangeNotification(setting.getEnableScheduleChangeNotification())
-                .enableSchedulePreNotification(setting.getEnableSchedulePreNotification())
-                .schedulePreNotificationMinutes(setting.getSchedulePreNotificationMinutes())
-                .enableTodoChangeNotification(setting.getEnableTodoChangeNotification())
-                .enableTodoDeadlineNotification(setting.getEnableTodoDeadlineNotification())
-                .todoDeadlineNotificationMinutes(setting.getTodoDeadlineNotificationMinutes())
-                .enableTeamMemberNotification(setting.getEnableTeamMemberNotification())
-                .createdAt(setting.getCreatedAt())
-                .updatedAt(setting.getUpdatedAt())
-                .build();
+        return notificationSettingRepository.findResponseByUserIdAndTeamId(userId, teamId)
+                .orElseThrow(() -> new IllegalStateException("알림 설정 저장 후 조회 실패"));
     }
 }
 

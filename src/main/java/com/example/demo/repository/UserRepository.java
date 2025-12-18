@@ -2,6 +2,7 @@ package com.example.demo.repository;
 
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.AuthProvider;
+import com.example.demo.dto.user.UserProfileResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,4 +25,18 @@ public interface UserRepository extends JpaRepository<User, Long> {
     default Optional<User> findByProviderAndProviderId(AuthProvider provider, String providerId) {
         return findByProviderAndProviderIdNative(provider.name(), providerId);
     }
+    
+    /**
+     * 사용자 프로필 조회 (인터페이스 프로젝션)
+     */
+    @Query("""
+            select 
+                u.id as userId,
+                u.name as userName,
+                u.email as userEmail,
+                u.imageUrl as userImageUrl
+            from User u
+            where u.id = :userId
+            """)
+    Optional<UserProfileResponse> findProfileResponseById(@Param("userId") Long userId);
 }

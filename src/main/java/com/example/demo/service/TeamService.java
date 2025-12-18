@@ -251,7 +251,8 @@ public class TeamService {
         
         member = teamMemberRepository.save(member);
         
-        return toMemberResponse(member);
+        return teamMemberRepository.findResponseById(member.getId())
+                .orElseThrow(() -> new IllegalStateException("팀원 저장 후 조회 실패"));
     }
     
     /**
@@ -315,12 +316,8 @@ public class TeamService {
             throw new IllegalArgumentException("해당 팀의 멤버만 조회할 수 있습니다.");
         }
         
-        // 팀원 목록 조회
-        List<TeamMember> members = teamMemberRepository.findByTeamId(teamId);
-        
-        return members.stream()
-                .map(this::toMemberListItemResponse)
-                .collect(Collectors.toList());
+        // 팀원 목록 조회 (인터페이스 프로젝션 사용)
+        return teamMemberRepository.findListItemResponsesByTeamId(teamId);
     }
     
     /**
@@ -331,16 +328,16 @@ public class TeamService {
         // 권한 확인 및 팀 조회 (팀원 모두 조회 가능)
         teamPermissionService.verifyTeamMember(userId, teamId);
         
-        // 팀원 조회
-        TeamMember member = teamMemberRepository.findById(memberId)
+        // 팀원 조회 (인터페이스 프로젝션 사용)
+        TeamMemberResponse response = teamMemberRepository.findResponseById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("TEAM_MEMBER_NOT_FOUND: 팀원을 찾을 수 없습니다."));
         
         // 해당 팀의 멤버인지 확인
-        if (!member.getTeam().getId().equals(teamId)) {
+        if (!response.getTeamId().equals(teamId)) {
             throw new IllegalArgumentException("TEAM_MEMBER_NOT_FOUND: 팀원을 찾을 수 없습니다.");
         }
         
-        return toMemberResponse(member);
+        return response;
     }
     
     /**
@@ -381,7 +378,8 @@ public class TeamService {
         
         member = teamMemberRepository.save(member);
         
-        return toMemberResponse(member);
+        return teamMemberRepository.findResponseById(member.getId())
+                .orElseThrow(() -> new IllegalStateException("팀원 저장 후 조회 실패"));
     }
     
     /**
@@ -416,45 +414,4 @@ public class TeamService {
                 .build();
     }
     
-    /**
-     * TeamMember 엔티티를 TeamMemberResponse로 변환
-     */
-    private TeamMemberResponse toMemberResponse(TeamMember member) {
-        Position position = member.getPosition();
-        boolean isOwner = member.getTeam().getOwner().getId().equals(member.getUser().getId());
-        
-        return TeamMemberResponse.builder()
-                .memberId(member.getId())
-                .teamId(member.getTeam().getId())
-                .teamName(member.getTeam().getName())
-                .userImageUrl(member.getUser().getImageUrl())
-                .userId(member.getUser().getId())
-                .userName(member.getUser().getName())
-                .userEmail(member.getUser().getEmail())
-                .positionId(position != null ? position.getId() : null)
-                .positionName(position != null ? position.getName() : null)
-                .positionColor(position != null ? position.getColorHex() : null)
-                .isOwner(isOwner)
-                .joinedAt(member.getJoinedAt())
-                .build();
-    }
-    
-    /**
-     * TeamMember 엔티티를 TeamMemberListItemResponse로 변환
-     */
-    private TeamMemberListItemResponse toMemberListItemResponse(TeamMember member) {
-        // displayName: 사용자 이름 사용
-        String displayName = member.getUser().getName();
-        
-        Position position = member.getPosition();
-        
-        return TeamMemberListItemResponse.builder()
-                .memberId(member.getId())
-                .userId(member.getUser().getId())
-                .displayName(displayName)
-                .positionId(position != null ? position.getId() : null)
-                .positionName(position != null ? position.getName() : null)
-                .userImageUrl(member.getUser().getImageUrl())
-                .build();
-    }
 }

@@ -4,7 +4,6 @@ import com.example.demo.service.TeamService;
 import com.example.demo.dto.common.ErrorResponse;
 import com.example.demo.dto.team.TeamCreateRequest;
 import com.example.demo.dto.team.TeamDeleteResponse;
-import com.example.demo.dto.team.TeamDetailResponse;
 import com.example.demo.dto.team.TeamDetailResponseDto;
 import com.example.demo.dto.team.TeamJoinRequest;
 import com.example.demo.dto.team.TeamLeaveResponse;

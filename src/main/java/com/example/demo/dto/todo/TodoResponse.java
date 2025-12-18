@@ -4,7 +4,6 @@ import com.example.demo.domain.enums.TodoStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Schema(description = "투두 정보")
 public interface TodoResponse {

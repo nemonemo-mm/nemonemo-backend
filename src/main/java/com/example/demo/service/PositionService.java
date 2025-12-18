@@ -1,10 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.entity.Position;
-import com.example.demo.domain.entity.Team;
 import com.example.demo.repository.PositionRepository;
-import com.example.demo.repository.TeamMemberRepository;
-import com.example.demo.repository.TeamRepository;
 import com.example.demo.dto.team.PositionCreateRequest;
 import com.example.demo.dto.team.PositionDeleteResponse;
 import com.example.demo.dto.team.PositionResponse;
@@ -15,16 +12,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class PositionService {
     
-    private final TeamRepository teamRepository;
     private final PositionRepository positionRepository;
-    private final TeamMemberRepository teamMemberRepository;
     private final TeamPermissionService teamPermissionService;
     
     /**
@@ -35,12 +29,8 @@ public class PositionService {
         // 권한 확인 및 팀 조회 (팀원 모두 조회 가능)
         teamPermissionService.verifyTeamMember(userId, teamId);
         
-        // 포지션 목록 조회
-        List<Position> positions = positionRepository.findByTeamId(teamId);
-        
-        return positions.stream()
-                .map(this::toPositionResponse)
-                .collect(Collectors.toList());
+        // 포지션 목록 조회 (인터페이스 프로젝션 사용)
+        return positionRepository.findResponsesByTeamId(teamId);
     }
     
     /**
@@ -49,7 +39,7 @@ public class PositionService {
     @Transactional
     public PositionResponse createPosition(Long userId, Long teamId, PositionCreateRequest request) {
         // 권한 확인 및 팀 조회 (팀장만 생성 가능)
-        Team team = teamPermissionService.getTeamWithOwnerCheck(userId, teamId);
+        com.example.demo.domain.entity.Team team = teamPermissionService.getTeamWithOwnerCheck(userId, teamId);
         
         // 포지션 이름 검증
         if (request.getPositionName() == null || request.getPositionName().trim().isEmpty()) {
@@ -80,7 +70,8 @@ public class PositionService {
         
         position = positionRepository.save(position);
         
-        return toPositionResponse(position);
+        return positionRepository.findResponseById(position.getId())
+                .orElseThrow(() -> new IllegalStateException("포지션 저장 후 조회 실패"));
     }
     
     /**
@@ -89,7 +80,7 @@ public class PositionService {
     @Transactional
     public PositionResponse updatePosition(Long userId, Long teamId, Long positionId, PositionUpdateRequest request) {
         // 권한 확인 및 팀 조회 (팀장만 수정 가능)
-        Team team = teamPermissionService.getTeamWithOwnerCheck(userId, teamId);
+        teamPermissionService.getTeamWithOwnerCheck(userId, teamId);
         
         // 포지션 조회
         Position position = positionRepository.findById(positionId)
@@ -134,7 +125,8 @@ public class PositionService {
         
         position = positionRepository.save(position);
         
-        return toPositionResponse(position);
+        return positionRepository.findResponseById(position.getId())
+                .orElseThrow(() -> new IllegalStateException("포지션 저장 후 조회 실패"));
     }
     
     /**
@@ -168,18 +160,4 @@ public class PositionService {
                 .build();
     }
     
-    /**
-     * Position 엔티티를 PositionResponse로 변환
-     */
-    private PositionResponse toPositionResponse(Position position) {
-        return PositionResponse.builder()
-                .positionId(position.getId())
-                .teamId(position.getTeam().getId())
-                .positionName(position.getName())
-                .colorHex(position.getColorHex())
-                .isDefault(position.getIsDefault())
-                .createdAt(position.getCreatedAt())
-                .updatedAt(position.getUpdatedAt())
-                .build();
-    }
 }

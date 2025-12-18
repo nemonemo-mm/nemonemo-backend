@@ -2,7 +2,6 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.common.ErrorResponse;
 import com.example.demo.dto.todo.TodoCreateRequest;
-import com.example.demo.dto.todo.TodoResponse;
 import com.example.demo.dto.todo.TodoResponseDto;
 import com.example.demo.dto.todo.TodoUpdateRequest;
 import com.example.demo.security.jwt.JwtAuthenticationHelper;

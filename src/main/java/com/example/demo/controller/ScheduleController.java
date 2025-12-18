@@ -2,7 +2,6 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.common.ErrorResponse;
 import com.example.demo.dto.schedule.ScheduleCreateRequest;
-import com.example.demo.dto.schedule.ScheduleResponse;
 import com.example.demo.dto.schedule.ScheduleResponseDto;
 import com.example.demo.dto.schedule.ScheduleUpdateRequest;
 import com.example.demo.security.jwt.JwtAuthenticationHelper;

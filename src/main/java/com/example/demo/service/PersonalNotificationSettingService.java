@@ -24,19 +24,21 @@ public class PersonalNotificationSettingService {
      */
     @Transactional(readOnly = true)
     public PersonalNotificationSettingResponse getPersonalNotificationSetting(Long userId) {
-        User user = userRepository.findById(userId)
+        userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        PersonalNotificationSetting setting = personalNotificationSettingRepository.findByUser(user)
+        return personalNotificationSettingRepository.findResponseByUserId(userId)
                 .orElseGet(() -> {
                     // 기본값으로 생성
+                    User user = userRepository.findById(userId).orElseThrow();
                     PersonalNotificationSetting defaultSetting = PersonalNotificationSetting.builder()
                             .user(user)
                             .build();
-                    return personalNotificationSettingRepository.save(defaultSetting);
+                    personalNotificationSettingRepository.save(defaultSetting);
+                    // 저장 후 다시 조회하여 인터페이스 프로젝션으로 반환
+                    return personalNotificationSettingRepository.findResponseByUserId(userId)
+                            .orElseThrow(() -> new IllegalStateException("알림 설정 저장 후 조회 실패"));
                 });
-
-        return toResponse(setting);
     }
 
     /**
@@ -79,24 +81,8 @@ public class PersonalNotificationSettingService {
         }
 
         setting = personalNotificationSettingRepository.save(setting);
-        return toResponse(setting);
-    }
-
-    private PersonalNotificationSettingResponse toResponse(PersonalNotificationSetting setting) {
-        return PersonalNotificationSettingResponse.builder()
-                .id(setting.getId())
-                .userId(setting.getUser().getId())
-                .enableAllPersonalNotifications(setting.getEnableAllPersonalNotifications())
-                .enableScheduleChangeNotification(setting.getEnableScheduleChangeNotification())
-                .enableSchedulePreNotification(setting.getEnableSchedulePreNotification())
-                .schedulePreNotificationMinutes(setting.getSchedulePreNotificationMinutes())
-                .enableTodoChangeNotification(setting.getEnableTodoChangeNotification())
-                .enableTodoDeadlineNotification(setting.getEnableTodoDeadlineNotification())
-                .todoDeadlineNotificationMinutes(setting.getTodoDeadlineNotificationMinutes())
-                .enableNoticeNotification(setting.getEnableNoticeNotification())
-                .createdAt(setting.getCreatedAt())
-                .updatedAt(setting.getUpdatedAt())
-                .build();
+        return personalNotificationSettingRepository.findResponseByUserId(userId)
+                .orElseThrow(() -> new IllegalStateException("알림 설정 저장 후 조회 실패"));
     }
 }
 
