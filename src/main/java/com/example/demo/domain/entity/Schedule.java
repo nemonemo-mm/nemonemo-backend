@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "schedule")
@@ -25,7 +26,7 @@ public class Schedule {
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
 
-    @Column(nullable = false, length = 200)
+    @Column(nullable = false, length = 20)
     private String title;
 
     @Column(columnDefinition = "TEXT")
@@ -40,16 +41,9 @@ public class Schedule {
     @Column(name = "end_at", nullable = false)
     private LocalDateTime endAt;
 
-    @Column(name = "reminder_offset_minutes")
-    private Integer reminderOffsetMinutes;
-
     @Column(name = "is_all_day", nullable = false)
     @Builder.Default
     private Boolean isAllDay = false;
-
-    @Column(name = "is_pinned", nullable = false)
-    @Builder.Default
-    private Boolean isPinned = false;
 
     @Column(name = "url", length = 1000)
     private String url;
@@ -68,18 +62,18 @@ public class Schedule {
     @Column(name = "repeat_month_day")
     private Integer repeatMonthDay;  // 매월 반복 시 날짜 (1-31)
 
-    @Column(name = "repeat_week_ordinal")
-    private Integer repeatWeekOrdinal;  // 매월 n째주 (1=첫째주, 2=둘째주, ...)
-
-    @Column(name = "repeat_week_day")
-    private Integer repeatWeekDay;  // 매월 n째주 요일 (0=일요일, 1=월요일, ...)
-
     @Column(name = "repeat_end_date")
     private LocalDateTime repeatEndDate;  // 반복 종료일
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_schedule_id")
     private Schedule parentSchedule;  // 반복 일정의 부모 일정
+
+    @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ScheduleAttendee> attendees;
+
+    @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SchedulePosition> positions;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id", nullable = false)
