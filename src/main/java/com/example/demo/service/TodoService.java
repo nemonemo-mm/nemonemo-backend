@@ -5,6 +5,7 @@ import com.example.demo.domain.enums.TodoStatus;
 import com.example.demo.dto.todo.TodoAssigneeDto;
 import com.example.demo.dto.todo.TodoCreateRequest;
 import com.example.demo.dto.todo.TodoResponse;
+import com.example.demo.dto.todo.TodoResponseDto;
 import com.example.demo.dto.todo.TodoUpdateRequest;
 import com.example.demo.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,7 @@ public class TodoService {
     private final UserRepository userRepository;
 
     @Transactional
-    public TodoResponse createTodo(Long userId, TodoCreateRequest request) {
+    public TodoResponseDto createTodo(Long userId, TodoCreateRequest request) {
         Team team = teamRepository.findById(request.getTeamId())
                 .orElseThrow(() -> new IllegalArgumentException("팀을 찾을 수 없습니다."));
 
@@ -87,7 +88,7 @@ public class TodoService {
     }
 
     @Transactional
-    public TodoResponse updateTodo(Long userId, Long todoId, TodoUpdateRequest request) {
+    public TodoResponseDto updateTodo(Long userId, Long todoId, TodoUpdateRequest request) {
         Todo todo = todoRepository.findById(todoId)
                 .orElseThrow(() -> new IllegalArgumentException("투두를 찾을 수 없습니다."));
 
@@ -141,23 +142,23 @@ public class TodoService {
     }
 
     @Transactional(readOnly = true)
-    public List<TodoResponse> getTeamTodos(Long userId, Long teamId, LocalDateTime start, LocalDateTime end) {
+    public List<TodoResponseDto> getTeamTodos(Long userId, Long teamId, LocalDateTime start, LocalDateTime end) {
         if (!teamMemberRepository.existsByTeamIdAndUserId(teamId, userId)) {
             throw new IllegalArgumentException("팀원이 아닌 사용자는 팀 투두를 조회할 수 없습니다.");
         }
-        List<Todo> todos = todoRepository.findByTeamAndRange(teamId, start, end);
-        return todos.stream().map(this::toResponse).collect(Collectors.toList());
+        List<TodoResponse> responses = todoRepository.findByTeamAndRange(teamId, start, end);
+        return enrichTodoResponses(responses);
     }
 
     @Transactional(readOnly = true)
-    public List<TodoResponse> getMyTodos(Long userId, LocalDateTime start, LocalDateTime end) {
+    public List<TodoResponseDto> getMyTodos(Long userId, LocalDateTime start, LocalDateTime end) {
         List<TeamMember> members = teamMemberRepository.findByUserId(userId);
         List<Long> memberIds = members.stream().map(TeamMember::getId).toList();
         if (memberIds.isEmpty()) {
             return List.of();
         }
-        List<Todo> todos = todoRepository.findByAssigneesAndRange(memberIds, start, end);
-        return todos.stream().map(this::toResponse).collect(Collectors.toList());
+        List<TodoResponse> responses = todoRepository.findByAssigneesAndRange(memberIds, start, end);
+        return enrichTodoResponses(responses);
     }
 
     private TodoAttendee buildTodoAttendee(Todo todo, TeamMember member) {
@@ -169,7 +170,50 @@ public class TodoService {
                 .build();
     }
 
-    private TodoResponse toResponse(Todo todo) {
+    private List<TodoResponseDto> enrichTodoResponses(List<TodoResponse> responses) {
+        return responses.stream()
+                .map(response -> {
+                    // positionIds 가져오기
+                    List<Long> positionIds = todoRepository.findPositionIdsByTodoId(response.getId());
+                    Long representativePositionId = positionIds.isEmpty() ? null : positionIds.get(0);
+                    
+                    // assignees 가져오기
+                    List<Object[]> assigneeInfoList = todoRepository.findAssigneeInfoByTodoId(response.getId());
+                    List<TodoAssigneeDto> assignees = assigneeInfoList.stream()
+                            .map(info -> TodoAssigneeDto.builder()
+                                    .memberId((Long) info[0])
+                                    .userName((String) info[1])
+                                    .build())
+                            .collect(Collectors.toList());
+                    
+                    Long primaryAssigneeId = assignees.isEmpty() ? null : assignees.get(0).getMemberId();
+                    String primaryAssigneeName = assignees.isEmpty() ? null : assignees.get(0).getUserName();
+                    
+                    return TodoResponseDto.builder()
+                            .id(response.getId())
+                            .teamId(response.getTeamId())
+                            .teamName(response.getTeamName())
+                            .title(response.getTitle())
+                            .description(response.getDescription())
+                            .status(response.getStatus())
+                            .endAt(response.getEndAt())
+                            .place(response.getPlace())
+                            .url(response.getUrl())
+                            .createdById(response.getCreatedById())
+                            .createdByName(response.getCreatedByName())
+                            .assigneeMemberId(primaryAssigneeId)
+                            .assigneeMemberUserName(primaryAssigneeName)
+                            .assignees(assignees)
+                            .positionIds(positionIds)
+                            .representativePositionId(representativePositionId)
+                            .createdAt(response.getCreatedAt())
+                            .updatedAt(response.getUpdatedAt())
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    private TodoResponseDto toResponse(Todo todo) {
         List<TodoPosition> sortedPositions = todo.getPositions() == null
                 ? List.of()
                 : todo.getPositions().stream()
@@ -194,7 +238,7 @@ public class TodoService {
 
         Long representativePositionId = positionIds.isEmpty() ? null : positionIds.get(0);
 
-        return TodoResponse.builder()
+        return TodoResponseDto.builder()
                 .id(todo.getId())
                 .teamId(todo.getTeam().getId())
                 .teamName(todo.getTeam().getName())

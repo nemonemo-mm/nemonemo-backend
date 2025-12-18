@@ -1,6 +1,7 @@
 package com.example.demo.repository;
 
 import com.example.demo.domain.entity.Team;
+import com.example.demo.dto.team.TeamDetailResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,9 +12,34 @@ import java.util.Optional;
 public interface TeamRepository extends JpaRepository<Team, Long> {
     Optional<Team> findByInviteCode(String inviteCode);
     
-    @Query("SELECT t FROM Team t WHERE t.owner.id = :ownerId")
-    List<Team> findByOwnerId(@Param("ownerId") Long ownerId);
+    @Query("""
+            select 
+                t.id as teamId,
+                t.name as teamName,
+                t.owner.id as ownerId,
+                t.owner.name as ownerName,
+                t.description as description,
+                t.imageUrl as teamImageUrl,
+                t.createdAt as createdAt,
+                t.updatedAt as updatedAt
+            from Team t
+            where t.owner.id = :ownerId
+            """)
+    List<TeamDetailResponse> findByOwnerId(@Param("ownerId") Long ownerId);
     
-    @Query("SELECT t FROM Team t JOIN TeamMember tm ON tm.team.id = t.id WHERE tm.user.id = :userId")
-    List<Team> findByUserId(@Param("userId") Long userId);
+    @Query("""
+            select distinct
+                t.id as teamId,
+                t.name as teamName,
+                t.owner.id as ownerId,
+                t.owner.name as ownerName,
+                t.description as description,
+                t.imageUrl as teamImageUrl,
+                t.createdAt as createdAt,
+                t.updatedAt as updatedAt
+            from Team t
+            join TeamMember tm on tm.team.id = t.id
+            where tm.user.id = :userId
+            """)
+    List<TeamDetailResponse> findByUserId(@Param("userId") Long userId);
 }

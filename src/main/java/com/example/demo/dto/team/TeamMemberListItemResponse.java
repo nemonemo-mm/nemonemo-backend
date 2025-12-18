@@ -1,34 +1,26 @@
 package com.example.demo.dto.team;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 @Schema(description = "팀 멤버 목록 항목")
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class TeamMemberListItemResponse {
+public interface TeamMemberListItemResponse {
     @Schema(description = "팀 멤버 ID", example = "1")
-    private Long memberId;
+    Long getMemberId();
 
     @Schema(description = "사용자 ID", example = "1")
-    private Long userId;
+    Long getUserId();
 
     @Schema(description = "표시 이름 (사용자 이름)", example = "홍길동")
-    private String displayName; // 사용자 이름
+    String getDisplayName(); // 사용자 이름
 
     @Schema(description = "포지션 ID", example = "1")
-    private Long positionId;
+    Long getPositionId();
 
     @Schema(description = "포지션 이름", example = "Design")
-    private String positionName;
+    String getPositionName();
 
     @Schema(description = "사용자 프로필 이미지 URL", example = "https://example.com/profile.jpg")
-    private String userImageUrl;
+    String getUserImageUrl();
 }
 
 

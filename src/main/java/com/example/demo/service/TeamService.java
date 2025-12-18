@@ -11,6 +11,7 @@ import com.example.demo.repository.UserRepository;
 import com.example.demo.dto.team.TeamCreateRequest;
 import com.example.demo.dto.team.TeamDeleteResponse;
 import com.example.demo.dto.team.TeamDetailResponse;
+import com.example.demo.dto.team.TeamDetailResponseDto;
 import com.example.demo.dto.team.TeamJoinRequest;
 import com.example.demo.dto.team.TeamLeaveResponse;
 import com.example.demo.dto.team.TeamMemberDeleteResponse;
@@ -43,7 +44,7 @@ public class TeamService {
      * 팀 생성
      */
     @Transactional
-    public TeamDetailResponse createTeam(Long userId, TeamCreateRequest request) {
+    public TeamDetailResponseDto createTeam(Long userId, TeamCreateRequest request) {
         // 사용자 조회
         User owner = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
@@ -105,7 +106,7 @@ public class TeamService {
      * 팀 수정 (부분 수정)
      */
     @Transactional
-    public TeamDetailResponse updateTeam(Long userId, Long teamId, TeamUpdateRequest request) {
+    public TeamDetailResponseDto updateTeam(Long userId, Long teamId, TeamUpdateRequest request) {
         // 권한 확인 및 팀 조회 (팀장만 수정 가능)
         Team team = teamPermissionService.getTeamWithOwnerCheck(userId, teamId);
         
@@ -145,7 +146,7 @@ public class TeamService {
      * 팀 상세 조회
      */
     @Transactional(readOnly = true)
-    public TeamDetailResponse getTeamDetail(Long userId, Long teamId) {
+    public TeamDetailResponseDto getTeamDetail(Long userId, Long teamId) {
         // 권한 확인 및 팀 조회 (팀원 모두 조회 가능)
         Team team = teamPermissionService.getTeamWithMemberCheck(userId, teamId);
         
@@ -156,11 +157,32 @@ public class TeamService {
      * 팀 목록 조회 (사용자가 속한 팀들)
      */
     @Transactional(readOnly = true)
-    public List<TeamDetailResponse> getTeamList(Long userId) {
-        List<Team> teams = teamRepository.findByUserId(userId);
-        return teams.stream()
-                .map(team -> toDetailResponseForList(team, userId))
+    public List<TeamDetailResponseDto> getTeamList(Long userId) {
+        List<TeamDetailResponse> responses = teamRepository.findByUserId(userId);
+        return responses.stream()
+                .map(response -> enrichTeamDetailResponse(response, userId))
                 .collect(Collectors.toList());
+    }
+    
+    private TeamDetailResponseDto enrichTeamDetailResponse(TeamDetailResponse response, Long userId) {
+        Team team = teamRepository.findById(response.getTeamId())
+                .orElseThrow(() -> new IllegalArgumentException("팀을 찾을 수 없습니다."));
+        
+        boolean isOwner = team.getOwner().getId().equals(userId);
+        String inviteCode = isOwner ? team.getInviteCode() : null;
+        
+        return TeamDetailResponseDto.builder()
+                .teamId(response.getTeamId())
+                .teamName(response.getTeamName())
+                .inviteCode(inviteCode)
+                .ownerId(response.getOwnerId())
+                .ownerName(response.getOwnerName())
+                .isOwner(isOwner)
+                .description(response.getDescription())
+                .teamImageUrl(response.getTeamImageUrl())
+                .createdAt(response.getCreatedAt())
+                .updatedAt(response.getUpdatedAt())
+                .build();
     }
     
     /**
@@ -229,7 +251,8 @@ public class TeamService {
         
         member = teamMemberRepository.save(member);
         
-        return toMemberResponse(member);
+        return teamMemberRepository.findResponseById(member.getId())
+                .orElseThrow(() -> new IllegalStateException("팀원 저장 후 조회 실패"));
     }
     
     /**
@@ -259,35 +282,15 @@ public class TeamService {
     }
     
     /**
-     * Team 엔티티를 TeamDetailResponse로 변환 (상세 조회용)
+     * Team 엔티티를 TeamDetailResponseDto로 변환 (상세 조회용)
      */
-    private TeamDetailResponse toDetailResponse(Team team, Long currentUserId) {
+    private TeamDetailResponseDto toDetailResponse(Team team, Long currentUserId) {
         boolean isOwner = team.getOwner().getId().equals(currentUserId);
         
-        return TeamDetailResponse.builder()
+        return TeamDetailResponseDto.builder()
                 .teamId(team.getId())
                 .teamName(team.getName())
                 .inviteCode(isOwner ? team.getInviteCode() : null)
-                .ownerId(team.getOwner().getId())
-                .ownerName(team.getOwner().getName())
-                .isOwner(isOwner)
-                .description(team.getDescription())
-                .teamImageUrl(team.getImageUrl())
-                .createdAt(team.getCreatedAt())
-                .updatedAt(team.getUpdatedAt())
-                .build();
-    }
-    
-    /**
-     * Team 엔티티를 TeamDetailResponse로 변환 (목록 조회용, inviteCode 제외)
-     */
-    private TeamDetailResponse toDetailResponseForList(Team team, Long currentUserId) {
-        boolean isOwner = team.getOwner().getId().equals(currentUserId);
-        
-        return TeamDetailResponse.builder()
-                .teamId(team.getId())
-                .teamName(team.getName())
-                .inviteCode(null)  // 목록 조회에서는 inviteCode 제외
                 .ownerId(team.getOwner().getId())
                 .ownerName(team.getOwner().getName())
                 .isOwner(isOwner)
@@ -313,12 +316,8 @@ public class TeamService {
             throw new IllegalArgumentException("해당 팀의 멤버만 조회할 수 있습니다.");
         }
         
-        // 팀원 목록 조회
-        List<TeamMember> members = teamMemberRepository.findByTeamId(teamId);
-        
-        return members.stream()
-                .map(this::toMemberListItemResponse)
-                .collect(Collectors.toList());
+        // 팀원 목록 조회 (인터페이스 프로젝션 사용)
+        return teamMemberRepository.findListItemResponsesByTeamId(teamId);
     }
     
     /**
@@ -329,16 +328,16 @@ public class TeamService {
         // 권한 확인 및 팀 조회 (팀원 모두 조회 가능)
         teamPermissionService.verifyTeamMember(userId, teamId);
         
-        // 팀원 조회
-        TeamMember member = teamMemberRepository.findById(memberId)
+        // 팀원 조회 (인터페이스 프로젝션 사용)
+        TeamMemberResponse response = teamMemberRepository.findResponseById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("TEAM_MEMBER_NOT_FOUND: 팀원을 찾을 수 없습니다."));
         
         // 해당 팀의 멤버인지 확인
-        if (!member.getTeam().getId().equals(teamId)) {
+        if (!response.getTeamId().equals(teamId)) {
             throw new IllegalArgumentException("TEAM_MEMBER_NOT_FOUND: 팀원을 찾을 수 없습니다.");
         }
         
-        return toMemberResponse(member);
+        return response;
     }
     
     /**
@@ -379,7 +378,8 @@ public class TeamService {
         
         member = teamMemberRepository.save(member);
         
-        return toMemberResponse(member);
+        return teamMemberRepository.findResponseById(member.getId())
+                .orElseThrow(() -> new IllegalStateException("팀원 저장 후 조회 실패"));
     }
     
     /**
@@ -414,45 +414,4 @@ public class TeamService {
                 .build();
     }
     
-    /**
-     * TeamMember 엔티티를 TeamMemberResponse로 변환
-     */
-    private TeamMemberResponse toMemberResponse(TeamMember member) {
-        Position position = member.getPosition();
-        boolean isOwner = member.getTeam().getOwner().getId().equals(member.getUser().getId());
-        
-        return TeamMemberResponse.builder()
-                .memberId(member.getId())
-                .teamId(member.getTeam().getId())
-                .teamName(member.getTeam().getName())
-                .userImageUrl(member.getUser().getImageUrl())
-                .userId(member.getUser().getId())
-                .userName(member.getUser().getName())
-                .userEmail(member.getUser().getEmail())
-                .positionId(position != null ? position.getId() : null)
-                .positionName(position != null ? position.getName() : null)
-                .positionColor(position != null ? position.getColorHex() : null)
-                .isOwner(isOwner)
-                .joinedAt(member.getJoinedAt())
-                .build();
-    }
-    
-    /**
-     * TeamMember 엔티티를 TeamMemberListItemResponse로 변환
-     */
-    private TeamMemberListItemResponse toMemberListItemResponse(TeamMember member) {
-        // displayName: 사용자 이름 사용
-        String displayName = member.getUser().getName();
-        
-        Position position = member.getPosition();
-        
-        return TeamMemberListItemResponse.builder()
-                .memberId(member.getId())
-                .userId(member.getUser().getId())
-                .displayName(displayName)
-                .positionId(position != null ? position.getId() : null)
-                .positionName(position != null ? position.getName() : null)
-                .userImageUrl(member.getUser().getImageUrl())
-                .build();
-    }
 }

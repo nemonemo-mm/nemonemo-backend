@@ -7,6 +7,7 @@ import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.AuthProvider;
 import com.example.demo.repository.RefreshTokenRepository;
 import com.example.demo.repository.TeamRepository;
+import com.example.demo.dto.team.TeamDetailResponse;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.dto.user.UserResponse;
 import com.example.demo.domain.entity.Team;
@@ -324,7 +325,7 @@ public class SocialAuthService {
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         
         // 팀장인지 확인 (팀장은 회원탈퇴 불가)
-        List<Team> ownedTeams = teamRepository.findByOwnerId(userId);
+        List<TeamDetailResponse> ownedTeams = teamRepository.findByOwnerId(userId);
         if (!ownedTeams.isEmpty()) {
             throw new IllegalArgumentException("FORBIDDEN: 팀장은 회원탈퇴할 수 없습니다. 먼저 소유한 팀을 삭제해주세요.");
         }

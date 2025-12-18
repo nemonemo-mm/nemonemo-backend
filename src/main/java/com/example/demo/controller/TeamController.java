@@ -4,7 +4,7 @@ import com.example.demo.service.TeamService;
 import com.example.demo.dto.common.ErrorResponse;
 import com.example.demo.dto.team.TeamCreateRequest;
 import com.example.demo.dto.team.TeamDeleteResponse;
-import com.example.demo.dto.team.TeamDetailResponse;
+import com.example.demo.dto.team.TeamDetailResponseDto;
 import com.example.demo.dto.team.TeamJoinRequest;
 import com.example.demo.dto.team.TeamLeaveResponse;
 import com.example.demo.dto.team.TeamMemberDeleteResponse;
@@ -42,7 +42,7 @@ public class TeamController {
     @Operation(summary = "팀 생성", description = "새로운 팀을 생성합니다. 인증된 사용자는 누구나 팀을 생성할 수 있습니다.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "팀 생성 성공",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamDetailResponse.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamDetailResponseDto.class))),
         @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패, 팀 이름 필수 또는 최대 길이 초과) - 에러 코드: VALIDATION_ERROR",
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),
@@ -69,7 +69,7 @@ public class TeamController {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
             
-            TeamDetailResponse response = teamService.createTeam(userId, request);
+            TeamDetailResponseDto response = teamService.createTeam(userId, request);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
@@ -81,7 +81,7 @@ public class TeamController {
     @Operation(summary = "팀 수정", description = "팀 정보를 수정합니다. 팀장만 수정 가능하며, 부분 수정이 가능합니다.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "팀 수정 성공",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamDetailResponse.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamDetailResponseDto.class))),
         @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패, 팀 이름 길이 초과) - 에러 코드: VALIDATION_ERROR",
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),
@@ -114,7 +114,7 @@ public class TeamController {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
             
-            TeamDetailResponse response = teamService.updateTeam(userId, id, request);
+            TeamDetailResponseDto response = teamService.updateTeam(userId, id, request);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
@@ -126,7 +126,7 @@ public class TeamController {
     @Operation(summary = "팀 상세 조회", description = "팀 상세 정보를 조회합니다. 팀원 모두 조회 가능합니다.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "팀 조회 성공",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamDetailResponse.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamDetailResponseDto.class))),
         @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),
@@ -154,7 +154,7 @@ public class TeamController {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
             
-            TeamDetailResponse response = teamService.getTeamDetail(userId, id);
+            TeamDetailResponseDto response = teamService.getTeamDetail(userId, id);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
@@ -167,7 +167,7 @@ public class TeamController {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "팀 목록 조회 성공",
             content = @Content(mediaType = "application/json",
-                array = @ArraySchema(schema = @Schema(implementation = TeamDetailResponse.class)),
+                array = @ArraySchema(schema = @Schema(implementation = TeamDetailResponseDto.class)),
                 examples = @ExampleObject(value = "[\n" +
                     "  {\n" +
                     "    \"id\": 1,\n" +
@@ -210,7 +210,7 @@ public class TeamController {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
             
-            List<TeamDetailResponse> teams = teamService.getTeamList(userId);
+            List<TeamDetailResponseDto> teams = teamService.getTeamList(userId);
             return ResponseEntity.ok(teams);
         } catch (Exception e) {
             return createErrorResponse("팀 목록 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
