@@ -11,7 +11,6 @@ import com.example.demo.service.DeviceTokenService;
 import com.example.demo.service.PersonalNotificationSettingService;
 import com.example.demo.service.TeamNotificationSettingService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -45,9 +44,9 @@ public class NotificationController {
     })
     @GetMapping("/personal")
     public ResponseEntity<?> getPersonalNotificationSetting(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -70,10 +69,9 @@ public class NotificationController {
     })
     @PutMapping("/personal")
     public ResponseEntity<?> updatePersonalNotificationSetting(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody PersonalNotificationSettingRequest request) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -100,10 +98,9 @@ public class NotificationController {
     })
     @GetMapping("/teams/{teamId}")
     public ResponseEntity<?> getTeamNotificationSetting(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @PathVariable Long teamId) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -128,11 +125,10 @@ public class NotificationController {
     })
     @PutMapping("/teams/{teamId}")
     public ResponseEntity<?> updateTeamNotificationSetting(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @PathVariable Long teamId,
             @Valid @RequestBody TeamNotificationSettingRequest request) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -158,10 +154,9 @@ public class NotificationController {
     })
     @PostMapping("/device-token")
     public ResponseEntity<?> registerDeviceToken(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody DeviceTokenRequest request) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -178,9 +173,6 @@ public class NotificationController {
 
     // ========== 헬퍼 메서드 ==========
 
-    private Long getUserIdFromHeader(String authorizationHeader) {
-        return jwtHelper.getUserIdFromHeader(authorizationHeader);
-    }
 
     private ResponseEntity<ErrorResponse> createUnauthorizedResponse(String message) {
         ErrorResponse error = new ErrorResponse("UNAUTHORIZED", message);

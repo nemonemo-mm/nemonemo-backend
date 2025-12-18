@@ -6,7 +6,6 @@ import com.example.demo.dto.user.UserProfileUpdateRequest;
 import com.example.demo.security.jwt.JwtAuthenticationHelper;
 import com.example.demo.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -53,10 +52,9 @@ public class UserController {
                 examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"프로필 조회 중 오류가 발생했습니다.\"}")))
     })
     @GetMapping("/me")
-    public ResponseEntity<?> getMyProfile(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+    public ResponseEntity<?> getMyProfile() {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -103,10 +101,9 @@ public class UserController {
     })
     @PutMapping("/me")
     public ResponseEntity<?> updateMyProfile(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody UserProfileUpdateRequest request) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -118,10 +115,6 @@ public class UserController {
         } catch (Exception e) {
             return createErrorResponse("프로필 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }
-
-    private Long getUserIdFromHeader(String authorizationHeader) {
-        return jwtHelper.getUserIdFromHeader(authorizationHeader);
     }
 
     private ResponseEntity<ErrorResponse> createUnauthorizedResponse(String message) {

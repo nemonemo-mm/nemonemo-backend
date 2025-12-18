@@ -61,14 +61,13 @@ public class ImageController {
     })
     @PostMapping(value = "/users/me/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadUserProfileImage(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(
                 description = "이미지 파일 (jpg, jpeg, png, gif, webp, 최대 5MB)",
                 required = true,
                 content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE)
             ) @RequestParam("file") MultipartFile file) {
         try {
-            Long userId = jwtHelper.getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -128,7 +127,6 @@ public class ImageController {
     })
     @PostMapping(value = "/teams/{teamId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadTeamImage(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "팀 ID", required = true) @PathVariable Long teamId,
             @Parameter(
                 description = "이미지 파일 (jpg, jpeg, png, gif, webp, 최대 5MB)",
@@ -136,7 +134,7 @@ public class ImageController {
                 content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE)
             ) @RequestParam("file") MultipartFile file) {
         try {
-            Long userId = jwtHelper.getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }

@@ -61,10 +61,9 @@ public class TeamController {
     })
     @PostMapping
     public ResponseEntity<?> createTeam(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody TeamCreateRequest request) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -105,11 +104,10 @@ public class TeamController {
     })
     @PatchMapping("/{id}")
     public ResponseEntity<?> updateTeam(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "팀 ID", required = true) @PathVariable Long id,
             @Valid @RequestBody TeamUpdateRequest request) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -146,10 +144,9 @@ public class TeamController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<?> getTeamDetail(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "팀 ID", required = true) @PathVariable Long id) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -205,7 +202,7 @@ public class TeamController {
     public ResponseEntity<?> getTeamList(
             @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -240,10 +237,9 @@ public class TeamController {
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteTeam(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "팀 ID", required = true) @PathVariable Long id) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -284,10 +280,9 @@ public class TeamController {
     })
     @PostMapping("/join")
     public ResponseEntity<?> joinTeam(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody TeamJoinRequest request) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -324,10 +319,9 @@ public class TeamController {
     })
     @DeleteMapping("/{id}/members/me")
     public ResponseEntity<?> leaveTeam(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "팀 ID", required = true) @PathVariable Long id) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -383,10 +377,9 @@ public class TeamController {
     })
     @GetMapping("/{id}/members")
     public ResponseEntity<?> getTeamMemberList(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "팀 ID", required = true) @PathVariable Long id) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -423,11 +416,10 @@ public class TeamController {
     })
     @GetMapping("/{id}/members/{memberId}")
     public ResponseEntity<?> getTeamMemberDetail(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "팀 ID", required = true) @PathVariable Long id,
             @Parameter(description = "팀원 ID", required = true) @PathVariable Long memberId) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -470,12 +462,11 @@ public class TeamController {
     })
     @PatchMapping("/{id}/members/{memberId}")
     public ResponseEntity<?> updateTeamMember(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "팀 ID", required = true) @PathVariable Long id,
             @Parameter(description = "팀원 ID", required = true) @PathVariable Long memberId,
             @Valid @RequestBody TeamMemberUpdateRequest request) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -512,11 +503,10 @@ public class TeamController {
     })
     @DeleteMapping("/{id}/members/{memberId}")
     public ResponseEntity<?> deleteTeamMember(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "팀 ID", required = true) @PathVariable Long id,
             @Parameter(description = "팀원 ID", required = true) @PathVariable Long memberId) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -530,12 +520,6 @@ public class TeamController {
         }
     }
     
-    /**
-     * Authorization 헤더에서 사용자 ID를 추출합니다.
-     */
-    private Long getUserIdFromHeader(String authorizationHeader) {
-        return jwtHelper.getUserIdFromHeader(authorizationHeader);
-    }
     
     /**
      * IllegalArgumentException 처리 (권한, 리소스 없음 등을 구분)

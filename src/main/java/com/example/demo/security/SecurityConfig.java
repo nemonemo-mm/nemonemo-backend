@@ -1,5 +1,7 @@
 package com.example.demo.security;
 
+import com.example.demo.security.jwt.JwtAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -7,6 +9,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -16,7 +19,11 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -24,6 +31,10 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                )
                 .authorizeHttpRequests(auth -> auth
                         // Swagger UI 및 API 문서 경로 허용
                         .requestMatchers(
@@ -34,10 +45,12 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
+                        // 테스트 에서만 - Static 리소스 허용 (Firebase 테스트 페이지 허용)
+                        .requestMatchers("/firebase-token-test.html").permitAll()
                         // 인증 관련 API 허용 (소셜 로그인 등)
                         .requestMatchers("/api/v1/auth/**").permitAll()
-                        // 나머지 모든 요청은 인증 필요 (나중에 JWT 필터 추가 시 활성화)
-                        .anyRequest().permitAll() // 일단 개발 중이므로 모두 허용
+                        // 나머지 모든 요청은 인증 필요
+                        .anyRequest().authenticated()
                 );
 
         return http.build();

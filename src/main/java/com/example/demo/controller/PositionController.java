@@ -78,10 +78,9 @@ public class PositionController {
     })
     @GetMapping
     public ResponseEntity<?> getPositionList(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "팀 ID", required = true) @PathVariable Long id) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -120,11 +119,10 @@ public class PositionController {
     })
     @PostMapping
     public ResponseEntity<?> createPosition(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "팀 ID", required = true) @PathVariable Long id,
             @Valid @RequestBody PositionCreateRequest request) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -162,12 +160,11 @@ public class PositionController {
     })
     @PatchMapping("/{positionId}")
     public ResponseEntity<?> updatePosition(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "팀 ID", required = true) @PathVariable Long id,
             @Parameter(description = "포지션 ID", required = true) @PathVariable Long positionId,
             @Valid @RequestBody PositionUpdateRequest request) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -198,11 +195,10 @@ public class PositionController {
     })
     @DeleteMapping("/{positionId}")
     public ResponseEntity<?> deletePosition(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "팀 ID", required = true) @PathVariable Long id,
             @Parameter(description = "포지션 ID", required = true) @PathVariable Long positionId) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -219,9 +215,6 @@ public class PositionController {
     /**
      * Authorization 헤더에서 사용자 ID를 추출합니다.
      */
-    private Long getUserIdFromHeader(String authorizationHeader) {
-        return jwtHelper.getUserIdFromHeader(authorizationHeader);
-    }
     
     /**
      * IllegalArgumentException 처리 (권한, 리소스 없음 등을 구분)

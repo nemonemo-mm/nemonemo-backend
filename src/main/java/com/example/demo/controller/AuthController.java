@@ -181,7 +181,7 @@ public class AuthController {
     public ResponseEntity<?> logout(
             @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -216,10 +216,9 @@ public class AuthController {
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
     })
     @DeleteMapping("/user")
-    public ResponseEntity<?> deleteUser(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+    public ResponseEntity<?> deleteUser() {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -235,10 +234,6 @@ public class AuthController {
                             .message("회원탈퇴 중 오류가 발생했습니다.")
                             .build());
         }
-    }
-
-    private Long getUserIdFromHeader(String authorizationHeader) {
-        return jwtHelper.getUserIdFromHeader(authorizationHeader);
     }
 
     private ResponseEntity<ErrorResponse> createUnauthorizedResponse(String message) {
