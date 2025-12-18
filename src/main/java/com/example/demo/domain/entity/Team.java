@@ -34,7 +34,7 @@ public class Team {
     @Column(name = "image_url", length = 1000)
     private String imageUrl;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 20)
     private String description;
 
     @Column(name = "created_at", nullable = false, updatable = false)

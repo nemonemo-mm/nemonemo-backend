@@ -13,7 +13,8 @@ public class TeamUpdateRequest {
     @Size(max = 10, message = "팀 이름은 최대 10자까지 입력 가능합니다.")
     private String teamName;
     
-    @Schema(description = "팀 소개 (선택, TEXT 타입, 길이 제한 없음)", example = "수정된 팀 소개입니다")
+    @Schema(description = "팀 소개 (선택, 최대 20자)", example = "수정된 팀 소개입니다")
+    @Size(max = 20, message = "팀 소개는 최대 20자까지 입력 가능합니다.")
     private String description;
     
     @Schema(description = "팀 이미지 URL 삭제 플래그 (선택). true면 이미지 삭제, false 또는 null이면 이미지 유지", 
