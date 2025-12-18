@@ -76,12 +76,25 @@ public class TeamService {
                 .name("MEMBER")
                 .isDefault(true)
                 .build();
-        positionRepository.save(defaultPosition);
+        defaultPosition = positionRepository.save(defaultPosition);
+        
+        // 팀장의 포지션 설정
+        Position ownerPosition = defaultPosition;
+        if (request.getOwnerPositionId() != null) {
+            Position selectedPosition = positionRepository.findById(request.getOwnerPositionId())
+                    .orElseThrow(() -> new IllegalArgumentException("포지션을 찾을 수 없습니다."));
+            // 해당 포지션이 이 팀의 포지션인지 확인
+            if (!selectedPosition.getTeam().getId().equals(team.getId())) {
+                throw new IllegalArgumentException("해당 팀의 포지션이 아닙니다.");
+            }
+            ownerPosition = selectedPosition;
+        }
         
         // 팀장을 팀 멤버로 추가
         TeamMember ownerMember = TeamMember.builder()
                 .team(team)
                 .user(owner)
+                .position(ownerPosition)
                 .build();
         teamMemberRepository.save(ownerMember);
         
