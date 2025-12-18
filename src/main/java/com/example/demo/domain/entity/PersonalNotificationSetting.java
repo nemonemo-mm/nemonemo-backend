@@ -10,32 +10,28 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "notification_setting",
+@Table(name = "personal_notification_setting",
         uniqueConstraints = @UniqueConstraint(
-                name = "uq_notification_setting_user_team",
-                columnNames = {"user_id", "team_id"}
+                name = "uq_personal_notification_setting_user",
+                columnNames = {"user_id"}
         ))
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class NotificationSetting {
+public class PersonalNotificationSetting {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id", nullable = false)
-    private Team team;
-
-    @Column(name = "enable_team_alarm", nullable = false)
+    @Column(name = "enable_all_personal_notifications", nullable = false)
     @Builder.Default
-    private Boolean enableTeamAlarm = true;
+    private Boolean enableAllPersonalNotifications = false;
 
     @Column(name = "enable_schedule_change_notification", nullable = false)
     @Builder.Default
@@ -59,17 +55,9 @@ public class NotificationSetting {
     @Column(name = "todo_deadline_notification_minutes", columnDefinition = "INTEGER[]")
     private Integer[] todoDeadlineNotificationMinutes;  // 10, 30, 60 (분)
 
-    @Column(name = "enable_team_member_notification", nullable = false)
+    @Column(name = "enable_notice_notification", nullable = false)
     @Builder.Default
-    private Boolean enableTeamMemberNotification = true;
-
-    // 기존 필드 유지 (하위 호환성)
-    @Column(name = "enable_schedule_start_alarm", nullable = false)
-    @Builder.Default
-    private Boolean enableScheduleStartAlarm = true;
-
-    @Column(name = "schedule_start_before_minutes")
-    private Integer scheduleStartBeforeMinutes;  // 10, 30, 60 (분)
+    private Boolean enableNoticeNotification = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
@@ -84,15 +72,4 @@ public class NotificationSetting {
         updatedAt = LocalDateTime.now();
     }
 }
-
-
-
-
-
-
-
-
-
-
-
 

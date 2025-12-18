@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Schema(description = "투두 정보")
 @Getter
@@ -33,11 +34,14 @@ public class TodoResponse {
     @Schema(description = "상태", example = "TODO")
     private TodoStatus status;
 
-    @Schema(description = "마감일시", example = "2024-01-15T10:30:00.000Z")
-    private LocalDateTime dueAt;
+    @Schema(description = "종료일시", example = "2024-01-15T11:30:00.000Z")
+    private LocalDateTime endAt;
 
-    @Schema(description = "리마인더 오프셋(분)", example = "30")
-    private Integer reminderOffsetMinutes;
+    @Schema(description = "장소", example = "회의실 A")
+    private String place;
+
+    @Schema(description = "URL", example = "https://example.com")
+    private String url;
 
     @Schema(description = "생성자 사용자 ID", example = "1")
     private Long createdById;
@@ -50,6 +54,15 @@ public class TodoResponse {
 
     @Schema(description = "담당자 사용자 이름", example = "홍길동")
     private String assigneeMemberUserName;
+
+    @Schema(description = "담당자 목록", example = "[{\"memberId\":2,\"userName\":\"홍길동\"}]")
+    private List<TodoAssigneeDto> assignees;
+
+    @Schema(description = "포지션 ID 목록", example = "[1,2]")
+    private List<Long> positionIds;
+
+    @Schema(description = "대표 포지션 ID", example = "1")
+    private Long representativePositionId;
 
     @Schema(description = "생성일시", example = "2024-01-15T10:30:00.000Z")
     private LocalDateTime createdAt;

@@ -6,9 +6,12 @@ import com.example.demo.domain.entity.RefreshToken;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.AuthProvider;
 import com.example.demo.repository.RefreshTokenRepository;
+import com.example.demo.repository.TeamRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.dto.user.UserResponse;
+import com.example.demo.domain.entity.Team;
 import com.example.demo.security.jwt.JwtTokenProvider;
+import com.example.demo.service.DeviceTokenService;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -20,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -31,7 +35,9 @@ public class SocialAuthService {
     private final FirebaseIdTokenVerifierService firebaseVerifier;
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final TeamRepository teamRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final DeviceTokenService deviceTokenService;
 
     @Transactional
     public AuthTokensResponse loginWithGoogle(SocialLoginRequest request) throws FirebaseAuthException {
@@ -147,6 +153,22 @@ public class SocialAuthService {
 
         String accessToken = jwtTokenProvider.createAccessToken(user.getId());
 
+        // 디바이스 토큰 등록 (제공된 경우)
+        if (request.getDeviceToken() != null && !request.getDeviceToken().trim().isEmpty()) {
+            try {
+                com.example.demo.dto.notification.DeviceTokenRequest deviceTokenRequest = 
+                    new com.example.demo.dto.notification.DeviceTokenRequest();
+                deviceTokenRequest.setDeviceToken(request.getDeviceToken());
+                deviceTokenRequest.setDeviceType(request.getDeviceType());
+                deviceTokenRequest.setDeviceInfo(request.getDeviceInfo());
+                deviceTokenService.registerDeviceToken(user.getId(), deviceTokenRequest);
+                log.info("로그인 시 디바이스 토큰 등록 완료: userId={}", user.getId());
+            } catch (Exception e) {
+                // 디바이스 토큰 등록 실패해도 로그인은 성공 처리
+                log.warn("로그인 시 디바이스 토큰 등록 실패: userId={}, error={}", user.getId(), e.getMessage());
+            }
+        }
+
         UserResponse userResponse = UserResponse.builder()
                 .userId(user.getId())
                 .email(user.getEmail())
@@ -256,5 +278,65 @@ public class SocialAuthService {
             log.error("토큰 재발급 중 오류 발생", e);
             throw new IllegalArgumentException("INVALID_REFRESH_TOKEN: 토큰 재발급에 실패했습니다.");
         }
+    }
+
+    /**
+     * 로그아웃: Refresh Token과 Device Token 삭제
+     * 
+     * @param userId 사용자 ID
+     * @param refreshToken 삭제할 Refresh Token (선택적, 제공되지 않으면 사용자의 모든 Refresh Token 삭제)
+     */
+    @Transactional
+    public void logout(Long userId, String refreshToken) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        
+        // Refresh Token 삭제
+        if (refreshToken != null && !refreshToken.trim().isEmpty()) {
+            // 특정 Refresh Token만 삭제
+            refreshTokenRepository.findByToken(refreshToken)
+                    .ifPresent(rt -> {
+                        if (rt.getUser().getId().equals(userId)) {
+                            refreshTokenRepository.delete(rt);
+                            log.info("로그아웃: Refresh Token 삭제 완료 - userId={}, token={}", userId, refreshToken);
+                        } else {
+                            log.warn("로그아웃: Refresh Token 소유자 불일치 - userId={}, tokenUserId={}", userId, rt.getUser().getId());
+                        }
+                    });
+        } else {
+            // 사용자의 모든 Refresh Token 삭제
+            refreshTokenRepository.deleteByUser(user);
+            log.info("로그아웃: 모든 Refresh Token 삭제 완료 - userId={}", userId);
+        }
+        
+        // Device Token 삭제
+        deviceTokenService.deleteDeviceTokenByUserId(userId);
+        log.info("로그아웃 완료: userId={}", userId);
+    }
+
+    /**
+     * 회원탈퇴: 사용자 삭제
+     * 팀장인 경우 회원탈퇴 불가 (먼저 팀을 삭제해야 함)
+     */
+    @Transactional
+    public void deleteUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        
+        // 팀장인지 확인 (팀장은 회원탈퇴 불가)
+        List<Team> ownedTeams = teamRepository.findByOwnerId(userId);
+        if (!ownedTeams.isEmpty()) {
+            throw new IllegalArgumentException("FORBIDDEN: 팀장은 회원탈퇴할 수 없습니다. 먼저 소유한 팀을 삭제해주세요.");
+        }
+        
+        // Refresh Token 삭제
+        refreshTokenRepository.deleteByUser(user);
+        
+        // Device Token 삭제
+        deviceTokenService.deleteDeviceTokenByUserId(userId);
+        
+        // 사용자 삭제 (CASCADE로 관련 데이터 자동 삭제)
+        userRepository.delete(user);
+        log.info("회원탈퇴 완료: userId={}", userId);
     }
 }

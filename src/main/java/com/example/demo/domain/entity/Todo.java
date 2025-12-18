@@ -11,6 +11,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "todo")
@@ -28,7 +29,7 @@ public class Todo {
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
 
-    @Column(nullable = false, length = 200)
+    @Column(nullable = false, length = 20)
     private String title;
 
     @Column(columnDefinition = "TEXT")
@@ -44,17 +45,11 @@ public class Todo {
     @Builder.Default
     private TodoStatus status = TodoStatus.TODO;
 
-    @Column(name = "start_at")
-    private LocalDateTime startAt;  // 시작 시간
-
-    @Column(name = "end_at")
+    @Column(name = "end_at", nullable = false)
     private LocalDateTime endAt;  // 종료 시간
 
-    @Column(name = "due_at")
-    private LocalDateTime dueAt;  // 마감일 (기존 호환성 유지)
-
-    @Column(name = "reminder_offset_minutes")
-    private Integer reminderOffsetMinutes;
+    @Column(length = 100)
+    private String place;
 
     @Column(name = "url", length = 1000)
     private String url;
@@ -62,6 +57,12 @@ public class Todo {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id", nullable = false)
     private User createdBy;
+
+    @OneToMany(mappedBy = "todo", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TodoAttendee> assignees;
+
+    @OneToMany(mappedBy = "todo", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TodoPosition> positions;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default

@@ -14,7 +14,11 @@ public class TeamCreateRequest {
     @Size(max = 10, message = "팀 이름은 최대 10자까지 입력 가능합니다.")
     private String teamName;
     
-    @Schema(description = "팀 소개 (선택, TEXT 타입, 길이 제한 없음)", example = "우리팀 소개입니다")
+    @Schema(description = "팀 소개 (선택, 최대 20자)", example = "우리팀 소개입니다")
+    @Size(max = 20, message = "팀 소개는 최대 20자까지 입력 가능합니다.")
     private String description;
+
+    @Schema(description = "팀 생성자의 포지션 ID (선택, 미선택 시 기본 포지션 MEMBER로 자동 할당)", example = "1")
+    private Long ownerPositionId;
 }
 
