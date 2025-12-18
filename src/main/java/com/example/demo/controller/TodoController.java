@@ -61,12 +61,10 @@ public class TodoController {
     })
     @PostMapping("/todos")
     public ResponseEntity<?> createTodo(
-            @Parameter(hidden = true)
-            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody TodoCreateRequest request
     ) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -106,14 +104,12 @@ public class TodoController {
     })
     @PatchMapping("/todos/{todoId}")
     public ResponseEntity<?> updateTodo(
-            @Parameter(hidden = true)
-            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "투두 ID", example = "1")
             @PathVariable Long todoId,
             @Valid @RequestBody TodoUpdateRequest request
     ) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -148,13 +144,11 @@ public class TodoController {
     })
     @DeleteMapping("/todos/{todoId}")
     public ResponseEntity<?> deleteTodo(
-            @Parameter(hidden = true)
-            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "투두 ID", example = "1")
             @PathVariable Long todoId
     ) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -191,8 +185,6 @@ public class TodoController {
     })
     @GetMapping("/teams/{teamId}/todos")
     public ResponseEntity<?> getTeamTodos(
-            @Parameter(hidden = true)
-            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "팀 ID", example = "1")
             @PathVariable Long teamId,
             @Parameter(description = "조회 시작일시 (ISO 8601)", example = "2025-01-01T00:00:00Z")
@@ -201,7 +193,7 @@ public class TodoController {
             @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end
     ) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -230,15 +222,13 @@ public class TodoController {
     })
     @GetMapping("/me/todos")
     public ResponseEntity<?> getMyTodos(
-            @Parameter(hidden = true)
-            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "조회 시작일시 (ISO 8601)", example = "2025-01-01T00:00:00Z")
             @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @Parameter(description = "조회 종료일시 (ISO 8601)", example = "2025-01-31T23:59:59Z")
             @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end
     ) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -249,10 +239,6 @@ public class TodoController {
         } catch (Exception e) {
             return createErrorResponse("내 투두 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }
-
-    private Long getUserIdFromHeader(String authorizationHeader) {
-        return jwtHelper.getUserIdFromHeader(authorizationHeader);
     }
 
     private ResponseEntity<ErrorResponse> createUnauthorizedResponse(String message) {

@@ -62,12 +62,10 @@ public class ScheduleController {
     })
     @PostMapping("/schedules")
     public ResponseEntity<?> createSchedule(
-            @Parameter(hidden = true)
-            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody ScheduleCreateRequest request
     ) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -107,8 +105,6 @@ public class ScheduleController {
     })
     @PatchMapping("/schedules/{scheduleId}")
     public ResponseEntity<?> updateSchedule(
-            @Parameter(hidden = true)
-            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "스케줄 ID", example = "1")
             @PathVariable Long scheduleId,
             @Parameter(description = "반복 스케줄 수정 범위 (기본값: ALL)", example = "ALL")
@@ -116,7 +112,7 @@ public class ScheduleController {
             @Valid @RequestBody ScheduleUpdateRequest request
     ) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -151,15 +147,13 @@ public class ScheduleController {
     })
     @DeleteMapping("/schedules/{scheduleId}")
     public ResponseEntity<?> deleteSchedule(
-            @Parameter(hidden = true)
-            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "스케줄 ID", example = "1")
             @PathVariable Long scheduleId,
             @Parameter(description = "반복 스케줄 삭제 범위 (기본값: ALL)", example = "THIS_ONLY")
             @RequestParam(name = "scope", required = false, defaultValue = "ALL") RepeatScope scope
     ) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -196,8 +190,6 @@ public class ScheduleController {
     })
     @GetMapping("/teams/{teamId}/schedules")
     public ResponseEntity<?> getTeamSchedules(
-            @Parameter(hidden = true)
-            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "팀 ID", example = "1")
             @PathVariable Long teamId,
             @Parameter(description = "조회 시작일시 (ISO 8601)", example = "2025-01-01T00:00:00Z")
@@ -208,7 +200,7 @@ public class ScheduleController {
             @RequestParam(value = "positionIds", required = false) List<Long> positionIds
     ) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -237,8 +229,6 @@ public class ScheduleController {
     })
     @GetMapping("/me/schedules")
     public ResponseEntity<?> getMySchedules(
-            @Parameter(hidden = true)
-            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Parameter(description = "조회 시작일시 (ISO 8601)", example = "2025-01-01T00:00:00Z")
             @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @Parameter(description = "조회 종료일시 (ISO 8601)", example = "2025-01-31T23:59:59Z")
@@ -249,7 +239,7 @@ public class ScheduleController {
             @RequestParam(value = "positionIds", required = false) List<Long> positionIds
     ) {
         try {
-            Long userId = getUserIdFromHeader(authorizationHeader);
+            Long userId = jwtHelper.getCurrentUserId();
             if (userId == null) {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
@@ -260,10 +250,6 @@ public class ScheduleController {
         } catch (Exception e) {
             return createErrorResponse("내 일정 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }
-
-    private Long getUserIdFromHeader(String authorizationHeader) {
-        return jwtHelper.getUserIdFromHeader(authorizationHeader);
     }
 
     private ResponseEntity<ErrorResponse> createUnauthorizedResponse(String message) {
