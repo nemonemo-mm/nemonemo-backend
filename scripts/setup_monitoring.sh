@@ -8,6 +8,17 @@ set -e
 APP_DIR="/home/ubuntu/app"
 MONITORING_DIR="$APP_DIR/monitoring"
 
+# 환경 변수 로드 (setup_env.sh 또는 .env 파일에서)
+if [ -f "$APP_DIR/scripts/setup_env.sh" ]; then
+    source "$APP_DIR/scripts/setup_env.sh"
+    echo "환경 변수를 setup_env.sh에서 로드했습니다."
+elif [ -f "$APP_DIR/.env" ]; then
+    set -a
+    source "$APP_DIR/.env"
+    set +a
+    echo "환경 변수를 .env 파일에서 로드했습니다."
+fi
+
 echo "=========================================="
 echo "모니터링 스택 설정 시작"
 echo "=========================================="
@@ -42,7 +53,7 @@ if [ -f "$APP_DIR/docker-compose.monitoring.prod.yml" ]; then
 fi
 
 if [ -f "$APP_DIR/prometheus.prod.yml" ]; then
-    cp "$APP_DIR/prometheus.prod.yml" "$MONITORING_DIR/prometheus.yml"
+    cp "$APP_DIR/prometheus.prod.yml" "$MONITORING_DIR/prometheus.prod.yml"
 fi
 
 # Grafana provisioning 디렉토리 복사
@@ -60,15 +71,19 @@ fi
 # Grafana 도메인 자동 설정 (EC2 IP 또는 localhost)
 if [ -z "$GRAFANA_DOMAIN" ]; then
     # EC2인지 확인 (AWS 메타데이터 서버 접근 가능한지)
-    EC2_IP=$(curl -s --max-time 2 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null)
-    if [ -n "$EC2_IP" ]; then
+    EC2_IP=$(curl -s --max-time 5 --connect-timeout 2 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo "")
+    
+    # IP가 비어있거나 잘못된 값인지 확인 (유효한 IP 형식인지 체크)
+    if [ -n "$EC2_IP" ] && [ "$EC2_IP" != "EC2_IP" ] && [[ "$EC2_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
         # EC2 환경
         export GRAFANA_DOMAIN="${EC2_IP}:3000"
         echo "EC2 환경 감지: Grafana 도메인을 ${GRAFANA_DOMAIN}로 설정합니다."
     else
-        # 로컬 환경
+        # 로컬 환경 또는 IP 감지 실패
+        echo "경고: EC2 IP를 자동 감지하지 못했습니다."
+        echo "환경 변수 GRAFANA_DOMAIN을 설정하거나, 수동으로 IP를 확인하세요."
         export GRAFANA_DOMAIN="localhost:3000"
-        echo "로컬 환경: Grafana 도메인을 ${GRAFANA_DOMAIN}로 설정합니다."
+        echo "임시로 Grafana 도메인을 ${GRAFANA_DOMAIN}로 설정합니다."
     fi
 else
     echo "환경 변수에서 Grafana 도메인을 읽었습니다: ${GRAFANA_DOMAIN}"
@@ -91,7 +106,10 @@ echo "=========================================="
 docker-compose ps
 
 # EC2 공인 IP 확인 (표시용)
-EC2_IP=$(curl -s --max-time 2 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo "localhost")
+EC2_IP=$(curl -s --max-time 5 --connect-timeout 2 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo "localhost")
+if [ -z "$EC2_IP" ] || [ "$EC2_IP" = "EC2_IP" ] || ! [[ "$EC2_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    EC2_IP="localhost"
+fi
 
 echo ""
 echo "=========================================="
