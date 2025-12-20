@@ -1,0 +1,32 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'nemonemo-production'
+    environment: 'production'
+
+# AlertManager 설정 (선택사항)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
+
+scrape_configs:
+  # Spring Boot 애플리케이션 메트릭 수집
+  - job_name: 'nemonemo-backend'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8080']  # Docker 컨테이너에서 호스트의 8080 포트 접근
+        labels:
+          application: 'nemonemo'
+          environment: 'production'
+          instance: 'backend-1'
+    scrape_interval: 5s
+    scrape_timeout: 5s
+
+  # Prometheus 자체 메트릭 (선택사항)
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:9090']  # Docker 컨테이너에서 호스트의 9090 포트 접근
+

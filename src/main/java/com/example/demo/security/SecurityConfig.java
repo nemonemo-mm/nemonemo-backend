@@ -47,6 +47,8 @@ public class SecurityConfig {
                         ).permitAll()
                         // 테스트 에서만 - Static 리소스 허용 (Firebase 테스트 페이지 허용)
                         .requestMatchers("/firebase-token-test.html").permitAll()
+                        // Actuator 엔드포인트 허용 (Prometheus/Grafana용)
+                        .requestMatchers("/actuator/**").permitAll()
                         // 인증 관련 API 허용 (소셜 로그인 등)
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         // 나머지 모든 요청은 인증 필요
