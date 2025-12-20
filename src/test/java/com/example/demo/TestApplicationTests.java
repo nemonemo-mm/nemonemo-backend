@@ -29,6 +29,9 @@ import com.example.demo.repository.ScheduleAttendeeRepository;
 import com.example.demo.repository.SchedulePositionRepository;
 import com.example.demo.repository.NotificationSettingRepository;
 import com.example.demo.repository.PersonalNotificationSettingRepository;
+import com.example.demo.repository.NoticeRepository;
+import com.example.demo.service.NoticeService;
+import com.example.demo.service.NoticeNotificationHelper;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -124,6 +127,15 @@ class TestApplicationTests {
     
     @MockBean
     private PersonalNotificationSettingRepository personalNotificationSettingRepository;
+
+    @MockBean
+    private NoticeRepository noticeRepository;
+
+    @MockBean
+    private NoticeService noticeService;
+
+    @MockBean
+    private NoticeNotificationHelper noticeNotificationHelper;
 
 	@Test
 	void contextLoads() {

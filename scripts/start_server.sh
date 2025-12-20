@@ -20,10 +20,10 @@ fi
 echo "Java version:"
 java -version
 
-# 데이터베이스 자동 생성 (필요한 경우)
+# 데이터베이스 자동 생성 
 if [ -f "$APP_DIR/scripts/setup_database.sh" ]; then
     echo "Setting up database..."
-    # 환경 변수 로드 (EC2에 직접 생성해야 함, GitHub에 올라가지 않음)
+    # 환경 변수 로드 (EC2에 직접 생성해야 함)
     if [ -f "$APP_DIR/scripts/setup_env.sh" ]; then
         source "$APP_DIR/scripts/setup_env.sh"
     fi
@@ -62,8 +62,6 @@ if [ -f "$APP_DIR/scripts/setup_env.sh" ]; then
     export DB_HOST DB_PORT DB_USER DB_PASSWORD DB_NAME
     export GOOGLE_CLIENT_ID_WEB GOOGLE_CLIENT_SECRET_WEB
     export JWT_SECRET
-    export FIREBASE_SERVICE_ACCOUNT_KEY_PATH
-    export FIREBASE_SERVICE_ACCOUNT_KEY_JSON
     export FIREBASE_SERVICE_ACCOUNT_KEY_JSON_BASE64
     export FIREBASE_STORAGE_BUCKET
 fi

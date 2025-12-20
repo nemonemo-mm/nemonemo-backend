@@ -47,3 +47,8 @@ public class TeamDetailResponseDto {
     private LocalDateTime updatedAt;
 }
 
+
+
+
+
+

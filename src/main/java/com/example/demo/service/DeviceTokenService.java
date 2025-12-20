@@ -38,9 +38,6 @@ public class DeviceTokenService {
             if (request.getDeviceType() != null) {
                 existingToken.setDeviceType(request.getDeviceType());
             }
-            if (request.getDeviceInfo() != null) {
-                existingToken.setDeviceInfo(request.getDeviceInfo());
-            }
             deviceTokenRepository.save(existingToken);
             log.info("디바이스 토큰 업데이트: token={}, userId={}", request.getDeviceToken(), userId);
         } else {
@@ -49,7 +46,6 @@ public class DeviceTokenService {
                     .user(user)
                     .deviceToken(request.getDeviceToken())
                     .deviceType(request.getDeviceType())
-                    .deviceInfo(request.getDeviceInfo())
                     .build();
             deviceTokenRepository.save(deviceToken);
             log.info("새 디바이스 토큰 등록: token={}, userId={}", request.getDeviceToken(), userId);

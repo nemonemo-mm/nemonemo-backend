@@ -34,7 +34,4 @@ public class SocialLoginRequest {
 
     @Schema(description = "디바이스 타입 (선택)", example = "iOS", allowableValues = {"iOS", "Android"})
     private String deviceType;
-
-    @Schema(description = "디바이스 정보 (선택)", example = "iPhone 14 Pro")
-    private String deviceInfo;
 }

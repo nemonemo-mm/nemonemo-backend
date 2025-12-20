@@ -31,6 +31,14 @@ public class TeamNotificationSettingRequest {
 
     @Schema(description = "팀원 알림", example = "true")
     private Boolean enableTeamMemberNotification;
+
+    @Schema(description = "공지 알림", example = "true")
+    private Boolean enableNoticeNotification;
 }
+
+
+
+
+
 
 

@@ -79,15 +79,61 @@ public class TeamService {
                 .build();
         defaultPosition = positionRepository.save(defaultPosition);
         
+        // 요청에 포함된 포지션들 생성
+        if (request.getPositions() != null && !request.getPositions().isEmpty()) {
+            // 포지션 개수 체크 (기본 MEMBER 포함 최대 7개)
+            int totalPositionCount = 1 + request.getPositions().size(); // MEMBER + 요청된 포지션들
+            if (totalPositionCount > 7) {
+                throw new IllegalArgumentException("포지션은 최대 6개까지 추가할 수 있습니다. (기본값 MEMBER 포함 시 7개)");
+            }
+            
+            // 포지션 이름 중복 체크
+            List<String> positionNames = request.getPositions().stream()
+                    .map(p -> p.getPositionName() != null ? p.getPositionName().trim() : null)
+                    .filter(name -> name != null && !name.isEmpty())
+                    .toList();
+            
+            // MEMBER와 중복 체크
+            if (positionNames.stream().anyMatch(name -> "MEMBER".equalsIgnoreCase(name))) {
+                throw new IllegalArgumentException("MEMBER는 기본 포지션이므로 추가할 수 없습니다.");
+            }
+            
+            // 포지션 이름 중복 체크
+            long distinctCount = positionNames.stream().distinct().count();
+            if (distinctCount != positionNames.size()) {
+                throw new IllegalArgumentException("중복된 포지션 이름이 있습니다.");
+            }
+            
+            // 포지션 생성
+            for (com.example.demo.dto.team.PositionCreateRequest positionRequest : request.getPositions()) {
+                String positionName = positionRequest.getPositionName();
+                if (positionName == null || positionName.trim().isEmpty()) {
+                    continue; // 빈 이름은 건너뛰기
+                }
+                
+                positionName = positionName.trim();
+                
+                // 이미 존재하는지 확인 (MEMBER 제외하고는 아직 생성 안 했으므로 체크 불필요하지만 안전을 위해)
+                if (positionRepository.findByTeamIdAndName(team.getId(), positionName).isPresent()) {
+                    throw new IllegalArgumentException("이미 존재하는 포지션 이름입니다: " + positionName);
+                }
+                
+                Position position = Position.builder()
+                        .team(team)
+                        .name(positionName)
+                        .colorHex(positionRequest.getColorHex())
+                        .isDefault(false)
+                        .build();
+                positionRepository.save(position);
+            }
+        }
+        
         // 팀장의 포지션 설정
         Position ownerPosition = defaultPosition;
-        if (request.getOwnerPositionId() != null) {
-            Position selectedPosition = positionRepository.findById(request.getOwnerPositionId())
-                    .orElseThrow(() -> new IllegalArgumentException("포지션을 찾을 수 없습니다."));
-            // 해당 포지션이 이 팀의 포지션인지 확인
-            if (!selectedPosition.getTeam().getId().equals(team.getId())) {
-                throw new IllegalArgumentException("해당 팀의 포지션이 아닙니다.");
-            }
+        if (request.getOwnerPositionName() != null && !request.getOwnerPositionName().trim().isEmpty()) {
+            String ownerPositionName = request.getOwnerPositionName().trim();
+            Position selectedPosition = positionRepository.findByTeamIdAndName(team.getId(), ownerPositionName)
+                    .orElseThrow(() -> new IllegalArgumentException("포지션을 찾을 수 없습니다: " + ownerPositionName));
             ownerPosition = selectedPosition;
         }
         

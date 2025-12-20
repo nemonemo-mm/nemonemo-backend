@@ -42,6 +42,9 @@ public interface TeamNotificationSettingResponse {
     @Schema(description = "팀원 알림", example = "true")
     Boolean getEnableTeamMemberNotification();
 
+    @Schema(description = "공지 알림", example = "true")
+    Boolean getEnableNoticeNotification();
+
     @Schema(description = "생성일시", example = "2024-01-15T10:30:00.000Z")
     LocalDateTime getCreatedAt();
 

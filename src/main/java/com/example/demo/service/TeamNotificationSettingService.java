@@ -89,6 +89,9 @@ public class TeamNotificationSettingService {
         if (request.getEnableTeamMemberNotification() != null) {
             setting.setEnableTeamMemberNotification(request.getEnableTeamMemberNotification());
         }
+        if (request.getEnableNoticeNotification() != null) {
+            setting.setEnableNoticeNotification(request.getEnableNoticeNotification());
+        }
 
         setting = notificationSettingRepository.save(setting);
         return notificationSettingRepository.findResponseByUserIdAndTeamId(userId, teamId)

@@ -5,3 +5,8 @@ ALTER TABLE team
     ALTER COLUMN description TYPE VARCHAR(20);
 
 
+
+
+
+
+

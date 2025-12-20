@@ -29,6 +29,9 @@ public class TodoService {
     private final TodoAttendeeRepository todoAttendeeRepository;
     private final TodoPositionRepository todoPositionRepository;
     private final UserRepository userRepository;
+    private final FcmNotificationService fcmNotificationService;
+    private final DeviceTokenService deviceTokenService;
+    private final NotificationSettingRepository notificationSettingRepository;
 
     @Transactional
     public TodoResponseDto createTodo(Long userId, TodoCreateRequest request) {
@@ -84,6 +87,9 @@ public class TodoService {
             todoPositionRepository.saveAll(todoPositions);
         }
 
+        // 투두 생성 알림 전송 (생성자 제외)
+        sendTodoChangeNotification(todo, userId);
+
         return toResponse(todo);
     }
 
@@ -125,6 +131,9 @@ public class TodoService {
                 todo.getPositions().add(tp);
             }
         }
+
+        // 투두 수정 알림 전송 (수정자 제외)
+        sendTodoChangeNotification(todo, userId);
 
         return toResponse(todo);
     }
@@ -258,6 +267,47 @@ public class TodoService {
                 .createdAt(todo.getCreatedAt())
                 .updatedAt(todo.getUpdatedAt())
                 .build();
+    }
+
+    /**
+     * 투두 변경 알림 전송
+     * @param todo 투두
+     * @param excludeUserId 알림을 보내지 않을 사용자 ID (생성자/수정자)
+     */
+    private void sendTodoChangeNotification(Todo todo, Long excludeUserId) {
+        if (todo.getAssignees() == null || todo.getAssignees().isEmpty()) {
+            return;
+        }
+
+        Long teamId = todo.getTeam().getId();
+        String todoTitle = todo.getTitle();
+        String teamName = todo.getTeam().getName();
+
+        // 담당자 중 알림을 받을 사용자 목록 수집
+        List<String> deviceTokens = new ArrayList<>();
+        for (TodoAttendee attendee : todo.getAssignees()) {
+            Long userId = attendee.getMember().getUser().getId();
+            
+            // 생성자/수정자 제외
+            if (userId.equals(excludeUserId)) {
+                continue;
+            }
+
+            // 알림 설정 확인
+            boolean shouldNotify = notificationSettingRepository.findByUserIdAndTeamId(userId, teamId)
+                    .map(setting -> Boolean.TRUE.equals(setting.getEnableTeamAlarm()) &&
+                            Boolean.TRUE.equals(setting.getEnableTodoChangeNotification()))
+                    .orElse(true); // 설정이 없으면 기본값으로 알림 전송
+
+            if (shouldNotify) {
+                deviceTokenService.getDeviceTokenByUserId(userId)
+                        .ifPresent(deviceTokens::add);
+            }
+        }
+
+        if (!deviceTokens.isEmpty()) {
+            fcmNotificationService.sendTodoChangeNotification(deviceTokens, todoTitle, teamName);
+        }
     }
 }
 

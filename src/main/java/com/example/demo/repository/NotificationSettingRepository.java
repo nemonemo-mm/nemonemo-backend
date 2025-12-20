@@ -38,6 +38,7 @@ public interface NotificationSettingRepository extends JpaRepository<Notificatio
                 ns.enableTodoDeadlineNotification as enableTodoDeadlineNotification,
                 ns.todoDeadlineNotificationMinutes as todoDeadlineNotificationMinutes,
                 ns.enableTeamMemberNotification as enableTeamMemberNotification,
+                ns.enableNoticeNotification as enableNoticeNotification,
                 ns.createdAt as createdAt,
                 ns.updatedAt as updatedAt
             from NotificationSetting ns

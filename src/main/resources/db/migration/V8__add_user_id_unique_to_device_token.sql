@@ -31,3 +31,8 @@ WHERE EXISTS (
 ALTER TABLE device_token
     ADD CONSTRAINT uq_device_token_user_id UNIQUE (user_id);
 
+
+
+
+
+

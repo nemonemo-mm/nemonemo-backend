@@ -10,9 +10,7 @@ import com.example.demo.repository.TeamRepository;
 import com.example.demo.dto.team.TeamDetailResponse;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.dto.user.UserResponse;
-import com.example.demo.domain.entity.Team;
 import com.example.demo.security.jwt.JwtTokenProvider;
-import com.example.demo.service.DeviceTokenService;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -161,7 +159,6 @@ public class SocialAuthService {
                     new com.example.demo.dto.notification.DeviceTokenRequest();
                 deviceTokenRequest.setDeviceToken(request.getDeviceToken());
                 deviceTokenRequest.setDeviceType(request.getDeviceType());
-                deviceTokenRequest.setDeviceInfo(request.getDeviceInfo());
                 deviceTokenService.registerDeviceToken(user.getId(), deviceTokenRequest);
                 log.info("로그인 시 디바이스 토큰 등록 완료: userId={}", user.getId());
             } catch (Exception e) {
