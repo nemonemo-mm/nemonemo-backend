@@ -161,6 +161,46 @@
             border-radius: 3px;
             font-size: 13px;
         }
+        .api-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e3f2fd;
+            border-radius: 5px;
+            display: none;
+        }
+        .api-section h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #1976d2;
+        }
+        .api-response {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            border: 1px solid #2196f3;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+        .api-config {
+            margin-bottom: 15px;
+        }
+        .api-config label {
+            display: inline-block;
+            width: 120px;
+        }
+        .api-config input {
+            width: calc(100% - 130px);
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -207,6 +247,19 @@
             <h2>Firebase ID Token</h2>
             <textarea id="idToken" rows="6" readonly></textarea>
             <button class="copy-btn" onclick="copyToken()">토큰 복사</button>
+        </div>
+
+        <div id="apiSection" class="api-section">
+            <h2>백엔드 API 테스트</h2>
+            <div class="api-config">
+                <input type="text" id="apiBaseUrl" value="http://localhost:8080">
+            </div>
+            <div class="api-config">
+                <label for="userName">사용자 이름:</label>
+                <input type="text" id="userName" placeholder="신규 회원가입 시 필수">
+            </div>
+            <button onclick="testBackendLogin()">백엔드 로그인 테스트</button>
+            <div id="apiResponse" class="api-response" style="display:none;"></div>
         </div>
     </div>
 
@@ -282,6 +335,9 @@
                 document.getElementById('idToken').value = idToken;
                 document.getElementById('tokenSection').style.display = 'block';
                 
+                // API 테스트 섹션 표시
+                document.getElementById('apiSection').style.display = 'block';
+                
                 document.getElementById('loginBtn').style.display = 'none';
                 document.getElementById('logoutBtn').style.display = 'inline-block';
                 document.getElementById('logoutBtn').disabled = false;
@@ -300,6 +356,8 @@
                 await firebaseSignOut(auth);
                 document.getElementById('tokenSection').style.display = 'none';
                 document.getElementById('userInfo').style.display = 'none';
+                document.getElementById('apiSection').style.display = 'none';
+                document.getElementById('apiResponse').style.display = 'none';
                 document.getElementById('loginBtn').style.display = 'inline-block';
                 document.getElementById('logoutBtn').style.display = 'none';
                 document.getElementById('errorMsg').style.display = 'none';
@@ -315,6 +373,64 @@
             }).catch(err => {
                 showError('복사 실패: ' + err.message);
             });
+        };
+
+        window.testBackendLogin = async function() {
+            const idToken = document.getElementById('idToken').value;
+            if (!idToken) {
+                showError('먼저 Google 로그인을 해주세요.');
+                return;
+            }
+
+            const apiBaseUrl = document.getElementById('apiBaseUrl').value || 'http://localhost:8080';
+            const userName = document.getElementById('userName').value;
+            const responseDiv = document.getElementById('apiResponse');
+            
+            // 요청 데이터 구성
+            const requestData = {
+                provider: 'GOOGLE',
+                firebaseIdToken: idToken,
+                clientType: 'WEB'
+            };
+            
+            if (userName && userName.trim()) {
+                requestData.userName = userName.trim();
+            }
+
+            responseDiv.style.display = 'block';
+            responseDiv.className = 'api-response';
+            responseDiv.textContent = '요청 중...';
+
+            try {
+                const response = await fetch(`${apiBaseUrl}/api/v1/auth/social/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                const responseData = await response.json();
+                
+                if (response.ok) {
+                    responseDiv.className = 'api-response success';
+                    responseDiv.textContent = JSON.stringify(responseData, null, 2);
+                    
+                    // Access Token을 별도로 표시할 수도 있습니다
+                    if (responseData.accessToken) {
+                        console.log('Access Token:', responseData.accessToken);
+                        console.log('Refresh Token:', responseData.refreshToken);
+                    }
+                } else {
+                    responseDiv.className = 'api-response';
+                    responseDiv.textContent = `에러 (${response.status}):\n${JSON.stringify(responseData, null, 2)}`;
+                    showError(`백엔드 로그인 실패: ${responseData.message || response.statusText}`);
+                }
+            } catch (error) {
+                responseDiv.className = 'api-response';
+                responseDiv.textContent = `네트워크 오류:\n${error.message}`;
+                showError('백엔드 API 호출 실패: ' + error.message);
+            }
         };
 
         function showError(message) {

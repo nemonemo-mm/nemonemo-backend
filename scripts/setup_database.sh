@@ -6,7 +6,7 @@
 
 set -e
 
-# 환경 변수에서 데이터베이스 설정 읽기 (없으면 기본값 사용)
+# 환경 변수에서 데이터베이스 설정 읽기 
 DB_HOST="${DB_HOST:-mm-db.c7oqe62yydsa.ap-southeast-2.rds.amazonaws.com}"
 DB_PORT="${DB_PORT:-5432}"
 DB_USER="${DB_USER:-postgres}"

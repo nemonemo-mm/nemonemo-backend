@@ -63,6 +63,10 @@ public class NotificationSetting {
     @Builder.Default
     private Boolean enableTeamMemberNotification = true;
 
+    @Column(name = "enable_notice_notification", nullable = false)
+    @Builder.Default
+    private Boolean enableNoticeNotification = true;
+
     // 기존 필드 유지 (하위 호환성)
     @Column(name = "enable_schedule_start_alarm", nullable = false)
     @Builder.Default

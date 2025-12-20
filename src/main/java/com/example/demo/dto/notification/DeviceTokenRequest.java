@@ -15,8 +15,5 @@ public class DeviceTokenRequest {
 
     @Schema(description = "디바이스 타입", example = "iOS")
     private String deviceType;
-
-    @Schema(description = "디바이스 정보", example = "iPhone 14 Pro")
-    private String deviceInfo;
 }
 

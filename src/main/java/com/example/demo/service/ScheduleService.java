@@ -30,6 +30,9 @@ public class ScheduleService {
     private final ScheduleAttendeeRepository scheduleAttendeeRepository;
     private final SchedulePositionRepository schedulePositionRepository;
     private final UserRepository userRepository;
+    private final FcmNotificationService fcmNotificationService;
+    private final DeviceTokenService deviceTokenService;
+    private final NotificationSettingRepository notificationSettingRepository;
 
     public enum RepeatScope {
         THIS_ONLY, FOLLOWING, ALL
@@ -97,6 +100,9 @@ public class ScheduleService {
             schedulePositionRepository.saveAll(schedulePositions);
         }
 
+        // 스케줄 생성 알림 전송 (생성자 제외)
+        sendScheduleChangeNotification(schedule, userId);
+
         return toResponse(schedule);
     }
 
@@ -119,6 +125,9 @@ public class ScheduleService {
             applyScheduleUpdate(schedule, request);
             scheduleRepository.save(schedule);
         }
+
+        // 스케줄 수정 알림 전송 (수정자 제외)
+        sendScheduleChangeNotification(schedule, userId);
 
         return toResponse(schedule);
     }
@@ -380,6 +389,47 @@ public class ScheduleService {
                 .repeatSummary(rule.toSummary())
                 .parentScheduleId(schedule.getParentSchedule() == null ? null : schedule.getParentSchedule().getId())
                 .build();
+    }
+
+    /**
+     * 스케줄 변경 알림 전송
+     * @param schedule 스케줄
+     * @param excludeUserId 알림을 보내지 않을 사용자 ID (생성자/수정자)
+     */
+    private void sendScheduleChangeNotification(Schedule schedule, Long excludeUserId) {
+        if (schedule.getAttendees() == null || schedule.getAttendees().isEmpty()) {
+            return;
+        }
+
+        Long teamId = schedule.getTeam().getId();
+        String scheduleTitle = schedule.getTitle();
+        String teamName = schedule.getTeam().getName();
+
+        // 참석자 중 알림을 받을 사용자 목록 수집
+        List<String> deviceTokens = new ArrayList<>();
+        for (ScheduleAttendee attendee : schedule.getAttendees()) {
+            Long userId = attendee.getMember().getUser().getId();
+            
+            // 생성자/수정자 제외
+            if (userId.equals(excludeUserId)) {
+                continue;
+            }
+
+            // 알림 설정 확인
+            boolean shouldNotify = notificationSettingRepository.findByUserIdAndTeamId(userId, teamId)
+                    .map(setting -> Boolean.TRUE.equals(setting.getEnableTeamAlarm()) &&
+                            Boolean.TRUE.equals(setting.getEnableScheduleChangeNotification()))
+                    .orElse(true); // 설정이 없으면 기본값으로 알림 전송
+
+            if (shouldNotify) {
+                deviceTokenService.getDeviceTokenByUserId(userId)
+                        .ifPresent(deviceTokens::add);
+            }
+        }
+
+        if (!deviceTokens.isEmpty()) {
+            fcmNotificationService.sendScheduleChangeNotification(deviceTokens, scheduleTitle, teamName);
+        }
     }
 }
 
