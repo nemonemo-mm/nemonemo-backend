@@ -13,6 +13,8 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=30d'  # 30일간 데이터 보관
+      - '--web.external-url=/prometheus/'  # Nginx 리버스 프록시를 위한 하위 경로 설정
+      - '--web.route-prefix=/prometheus/'  # Nginx 리버스 프록시를 위한 하위 경로 설정
     extra_hosts:
       - "host.docker.internal:host-gateway"  # Linux에서 호스트 접근을 위한 설정
     networks:
