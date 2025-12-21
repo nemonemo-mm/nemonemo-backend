@@ -28,5 +28,5 @@ scrape_configs:
   # Prometheus 자체 메트릭 (선택사항)
   - job_name: 'prometheus'
     static_configs:
-      - targets: ['host.docker.internal:9090']  # Docker 컨테이너에서 호스트의 9090 포트 접근
+      - targets: ['localhost:9090']  # 컨테이너 내부에서 직접 접근
 
