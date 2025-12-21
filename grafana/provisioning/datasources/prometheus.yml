@@ -4,9 +4,10 @@ datasources:
   - name: Prometheus
     type: prometheus
     access: proxy
-    url: http://prometheus:9090
+    url: http://prometheus:9090/prometheus  # Prometheus 서브패스 경로 포함
     isDefault: true
     editable: true
     jsonData:
       timeInterval: "5s"
+
 
