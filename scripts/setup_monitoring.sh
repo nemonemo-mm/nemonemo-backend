@@ -10,7 +10,9 @@ MONITORING_DIR="$APP_DIR/monitoring"
 
 # 환경 변수 로드 (setup_env.sh 또는 .env 파일에서)
 if [ -f "$APP_DIR/scripts/setup_env.sh" ]; then
+    set -a  # 자동으로 export되도록 설정
     source "$APP_DIR/scripts/setup_env.sh"
+    set +a
     echo "환경 변수를 setup_env.sh에서 로드했습니다."
 elif [ -f "$APP_DIR/.env" ]; then
     set -a
