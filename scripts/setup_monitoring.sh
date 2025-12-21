@@ -96,6 +96,8 @@ fi
 
 # 모니터링 스택 시작
 echo "모니터링 스택 시작 중..."
+# 환경 변수를 export하여 docker-compose에 전달
+export GRAFANA_ADMIN_USER GRAFANA_ADMIN_PASSWORD GRAFANA_DOMAIN
 docker-compose up -d
 
 # 상태 확인
