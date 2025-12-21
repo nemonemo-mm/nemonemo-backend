@@ -34,6 +34,10 @@ jobs:
           cp appspec.yml deploy-package/
           cp docker-compose.prod.yml deploy-package/docker-compose.prod.yml
           cp Dockerfile.prod deploy-package/Dockerfile.prod
+          # 모니터링 관련 파일 포함
+          cp prometheus.prod.yml deploy-package/
+          cp docker-compose.monitoring.prod.yml deploy-package/
+          cp -r grafana deploy-package/ 2>/dev/null || true
           cd deploy-package
           zip -r ../deploy.zip .
 

@@ -27,6 +27,7 @@ scrape_configs:
 
   # Prometheus 자체 메트릭 (선택사항)
   - job_name: 'prometheus'
+    metrics_path: '/prometheus/metrics'  # web.route-prefix 설정으로 인한 경로
     static_configs:
       - targets: ['localhost:9090']  # 컨테이너 내부에서 직접 접근
 
