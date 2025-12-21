@@ -28,10 +28,10 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=http://${GRAFANA_DOMAIN}/  # 환경 변수에서 읽기 (프로토콜 포함)
+      - GF_SERVER_ROOT_URL=http://${GRAFANA_DOMAIN}  # setup_env.sh에서 로드된 환경 변수 사용
       - GF_SERVER_SERVE_FROM_SUB_PATH=true  # 서브패스에서 서빙 활성화
       - GF_SECURITY_COOKIE_SECURE=false
       - GF_SECURITY_COOKIE_SAMESITE=strict

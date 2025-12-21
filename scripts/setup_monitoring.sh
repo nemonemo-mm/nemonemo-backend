@@ -96,6 +96,7 @@ fi
 
 # 모니터링 스택 시작
 echo "모니터링 스택 시작 중..."
+# setup_env.sh에서 이미 export된 환경 변수를 docker-compose가 사용
 docker-compose up -d
 
 # 상태 확인
