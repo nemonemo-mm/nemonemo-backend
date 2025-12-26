@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.domain.entity.NotificationSetting;
 import com.example.demo.domain.entity.Position;
 import com.example.demo.domain.entity.Team;
 import com.example.demo.domain.entity.TeamMember;
@@ -19,15 +20,12 @@ import com.example.demo.dto.team.TeamMemberListItemResponse;
 import com.example.demo.dto.team.TeamMemberResponse;
 import com.example.demo.dto.team.TeamMemberUpdateRequest;
 import com.example.demo.dto.team.TeamUpdateRequest;
-import com.example.demo.dto.websocket.TeamMemberWebSocketMessage;
 import com.example.demo.repository.NotificationSettingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,7 +42,6 @@ public class TeamService {
     private final InviteCodeGenerator inviteCodeGenerator;
     private final TeamPermissionService teamPermissionService;
     private final FirebaseStorageService firebaseStorageService;
-    private final SimpMessagingTemplate messagingTemplate;
     private final FcmNotificationService fcmNotificationService;
     private final DeviceTokenService deviceTokenService;
     private final NotificationSettingRepository notificationSettingRepository;
@@ -153,6 +150,15 @@ public class TeamService {
                 .position(ownerPosition)
                 .build();
         teamMemberRepository.save(ownerMember);
+        
+        // 팀장의 팀 알림 설정 생성
+        if (!notificationSettingRepository.findByUserIdAndTeamId(userId, team.getId()).isPresent()) {
+            NotificationSetting ownerNotificationSetting = NotificationSetting.builder()
+                    .user(owner)
+                    .team(team)
+                    .build();
+            notificationSettingRepository.save(ownerNotificationSetting);
+        }
         
         return toDetailResponse(team, userId);
     }
@@ -306,12 +312,18 @@ public class TeamService {
         
         member = teamMemberRepository.save(member);
         
+        // 팀 알림 설정 생성 (없는 경우에만)
+        if (!notificationSettingRepository.findByUserIdAndTeamId(userId, team.getId()).isPresent()) {
+            NotificationSetting notificationSetting = NotificationSetting.builder()
+                    .user(user)
+                    .team(team)
+                    .build();
+            notificationSettingRepository.save(notificationSetting);
+        }
+        
         // 팀원 정보 조회
         TeamMemberResponse memberResponse = teamMemberRepository.findResponseById(member.getId())
                 .orElseThrow(() -> new IllegalStateException("팀원 저장 후 조회 실패"));
-        
-        // 팀 참여 WebSocket 브로드캐스트
-        broadcastTeamMemberUpdate(team.getId(), "JOINED", memberResponse);
         
         // 팀 참여 FCM 알림 전송 (참여한 사용자 제외)
         sendTeamMemberNotification(team, user.getName(), userId, true);
@@ -337,17 +349,8 @@ public class TeamService {
         String memberName = member.getUser().getName();
         Team team = member.getTeam();
         
-        // 멤버 정보 조회 (삭제 전에)
-        TeamMemberResponse memberResponse = teamMemberRepository.findResponseById(memberId)
-                .orElse(null);
-        
         // 멤버 삭제
         teamMemberRepository.delete(member);
-        
-        // 멤버 퇴장 WebSocket 브로드캐스트
-        if (memberResponse != null) {
-            broadcastTeamMemberUpdate(teamId, "LEFT", memberResponse);
-        }
         
         // 멤버 퇴장 FCM 알림 전송 (퇴장한 사용자 제외)
         sendTeamMemberNotification(team, memberName, memberUserId, false);
@@ -485,16 +488,9 @@ public class TeamService {
         // 삭제 전에 멤버 정보 조회
         Long memberUserId = member.getUser().getId();
         String memberName = member.getUser().getName();
-        TeamMemberResponse memberResponse = teamMemberRepository.findResponseById(memberId)
-                .orElse(null);
         
         // 팀원 삭제
         teamMemberRepository.delete(member);
-        
-        // 팀원 삭제 WebSocket 브로드캐스트
-        if (memberResponse != null) {
-            broadcastTeamMemberUpdate(teamId, "LEFT", memberResponse);
-        }
         
         // 팀원 삭제 FCM 알림 전송 (삭제된 사용자 제외)
         sendTeamMemberNotification(team, memberName, memberUserId, false);
@@ -504,23 +500,6 @@ public class TeamService {
                 .memberId(memberId)
                 .userId(memberUserId)
                 .build();
-    }
-    
-    /**
-     * 팀 멤버 변경 WebSocket 브로드캐스트
-     * @param teamId 팀 ID
-     * @param action 액션 타입 (JOINED, LEFT)
-     * @param member 멤버 정보
-     */
-    private void broadcastTeamMemberUpdate(Long teamId, String action, TeamMemberResponse member) {
-        String destination = "/topic/team/" + teamId + "/members";
-        TeamMemberWebSocketMessage message = TeamMemberWebSocketMessage.builder()
-                .action(action)
-                .member(member)
-                .teamId(teamId)
-                .timestamp(LocalDateTime.now())
-                .build();
-        messagingTemplate.convertAndSend(destination, message);
     }
     
     /**

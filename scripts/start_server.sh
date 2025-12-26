@@ -64,7 +64,6 @@ if [ -f "$APP_DIR/scripts/setup_env.sh" ]; then
     export JWT_SECRET
     export FIREBASE_SERVICE_ACCOUNT_KEY_JSON_BASE64
     export FIREBASE_STORAGE_BUCKET
-    export WEBSOCKET_ALLOWED_ORIGINS
 fi
 
 nohup java -jar "$JAR_FILE" \

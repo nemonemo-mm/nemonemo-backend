@@ -8,9 +8,7 @@ import com.example.demo.dto.schedule.ScheduleResponse;
 import com.example.demo.dto.schedule.ScheduleResponseDto;
 import com.example.demo.dto.schedule.ScheduleUpdateRequest;
 import com.example.demo.repository.*;
-import com.example.demo.dto.websocket.ScheduleWebSocketMessage;
 import lombok.RequiredArgsConstructor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,7 +33,6 @@ public class ScheduleService {
     private final FcmNotificationService fcmNotificationService;
     private final DeviceTokenService deviceTokenService;
     private final NotificationSettingRepository notificationSettingRepository;
-    private final SimpMessagingTemplate messagingTemplate;
 
     public enum RepeatScope {
         THIS_ONLY, FOLLOWING, ALL
@@ -106,9 +103,6 @@ public class ScheduleService {
         // 스케줄 생성 알림 전송 (생성자 제외)
         sendScheduleChangeNotification(schedule, userId);
 
-        // 스케줄 생성 WebSocket 브로드캐스트
-        broadcastScheduleUpdate(team.getId(), "CREATED", toResponse(schedule));
-
         return toResponse(schedule);
     }
 
@@ -135,9 +129,6 @@ public class ScheduleService {
         // 스케줄 수정 알림 전송 (수정자 제외)
         sendScheduleChangeNotification(schedule, userId);
 
-        // 스케줄 수정 WebSocket 브로드캐스트
-        broadcastScheduleUpdate(schedule.getTeam().getId(), "UPDATED", toResponse(schedule));
-
         return toResponse(schedule);
     }
 
@@ -151,16 +142,7 @@ public class ScheduleService {
         }
 
         // 단순 구현: scope에 상관없이 해당 스케줄만 삭제
-        Long teamId = schedule.getTeam().getId();
-        Long deletedScheduleId = schedule.getId();
-        
         scheduleRepository.delete(schedule);
-        
-        // 스케줄 삭제 WebSocket 브로드캐스트
-        ScheduleResponseDto deletedSchedule = ScheduleResponseDto.builder()
-                .id(deletedScheduleId)
-                .build();
-        broadcastScheduleUpdate(teamId, "DELETED", deletedSchedule);
     }
 
     @Transactional(readOnly = true)
@@ -458,21 +440,6 @@ public class ScheduleService {
         }
     }
 
-    /**
-     * 스케줄 변경 WebSocket 브로드캐스트
-     * @param teamId 팀 ID
-     * @param action 액션 타입 (CREATED, UPDATED, DELETED)
-     * @param schedule 스케줄 정보
-     */
-    private void broadcastScheduleUpdate(Long teamId, String action, ScheduleResponseDto schedule) {
-        String destination = "/topic/team/" + teamId + "/schedules";
-        ScheduleWebSocketMessage message = ScheduleWebSocketMessage.builder()
-                .action(action)
-                .schedule(schedule)
-                .timestamp(LocalDateTime.now())
-                .build();
-        messagingTemplate.convertAndSend(destination, message);
-    }
 }
 
 
