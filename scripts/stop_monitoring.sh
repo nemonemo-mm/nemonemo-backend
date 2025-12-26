@@ -15,3 +15,4 @@ else
     echo "모니터링 디렉토리를 찾을 수 없습니다: $MONITORING_DIR"
 fi
 
+

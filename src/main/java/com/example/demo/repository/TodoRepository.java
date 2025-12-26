@@ -82,6 +82,22 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
             order by tp.orderIndex
             """)
     List<Long> findPositionIdsByTodoId(@Param("todoId") Long todoId);
+
+    /**
+     * 마감 시간이 가까운 투두 조회 (알림 스케줄러용)
+     * TODO 상태이고, endAt이 지정된 시간 범위 내에 있는 투두를 조회합니다.
+     */
+    @Query("""
+            select t
+            from Todo t
+            where t.status = 'TODO'
+              and t.endAt > :start
+              and t.endAt < :end
+            """)
+    List<Todo> findUpcomingTodosForNotification(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
 }
 
 

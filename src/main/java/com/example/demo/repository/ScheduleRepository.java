@@ -203,6 +203,22 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             where s.id = :scheduleId
             """)
     Object[] findRepeatFieldsByScheduleId(@Param("scheduleId") Long scheduleId);
+
+    /**
+     * 시작 시간이 가까운 스케줄 조회 (알림 스케줄러용)
+     * startAt이 지정된 시간 범위 내에 있고, 반복 일정의 부모인 스케줄을 조회합니다.
+     */
+    @Query("""
+            select s
+            from Schedule s
+            where s.startAt > :start
+              and s.startAt < :end
+              and s.parentSchedule is null
+            """)
+    List<Schedule> findUpcomingSchedulesForNotification(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
 }
 
 
