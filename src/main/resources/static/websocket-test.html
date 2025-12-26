@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket 연결 테스트 - NemoNemo</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+        }
+        
+        .btn-connect {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .btn-connect:hover:not(:disabled) {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+        }
+        
+        .btn-disconnect {
+            background: #f44336;
+            color: white;
+        }
+        
+        .btn-disconnect:hover:not(:disabled) {
+            background: #da190b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .status.connected {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 2px solid #4caf50;
+        }
+        
+        .status.disconnected {
+            background: #ffebee;
+            color: #c62828;
+            border: 2px solid #f44336;
+        }
+        
+        .status.connecting {
+            background: #fff3e0;
+            color: #e65100;
+            border: 2px solid #ff9800;
+        }
+        
+        .messages {
+            background: #f5f5f5;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        
+        .message {
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            word-wrap: break-word;
+        }
+        
+        .message.info {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .message.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .message.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .message.received {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        
+        .timestamp {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-right: 8px;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        
+        .info-box ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        
+        .info-box li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔌 WebSocket 연결 테스트</h1>
+            <p>NemoNemo WebSocket 서버 연결 상태를 확인합니다</p>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <h2>연결 설정</h2>
+                <div class="form-group">
+                    <label for="serverUrl">서버 URL</label>
+                    <input type="text" id="serverUrl" value="http://localhost:8080" placeholder="http://localhost:8080">
+                </div>
+                <div class="form-group">
+                    <label for="teamId">팀 ID (테스트용)</label>
+                    <input type="number" id="teamId" value="1" placeholder="팀 ID를 입력하세요">
+                </div>
+                <div class="button-group">
+                    <button id="connectBtn" class="btn-connect" onclick="connect()">연결</button>
+                    <button id="disconnectBtn" class="btn-disconnect" onclick="disconnect()" disabled>연결 해제</button>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>연결 상태</h2>
+                <div id="status" class="status disconnected">연결 안 됨</div>
+            </div>
+            
+            <div class="section">
+                <h2>메시지 로그</h2>
+                <div id="messages" class="messages"></div>
+            </div>
+            
+            <div class="section">
+                <h2>사용 방법</h2>
+                <div class="info-box">
+                    <p><strong>WebSocket 연결 테스트 가이드:</strong></p>
+                    <ul>
+                        <li>서버 URL을 입력하고 "연결" 버튼을 클릭하세요</li>
+                        <li>연결 성공 시 스케줄 및 팀 멤버 변경 알림을 구독합니다</li>
+                        <li>다른 브라우저나 탭에서 스케줄을 생성/수정/삭제하면 실시간으로 메시지를 받을 수 있습니다</li>
+                        <li>연결 상태와 수신한 메시지는 아래 로그에 표시됩니다</li>
+                    </ul>
+                    <p style="margin-top: 15px;"><strong>구독 토픽:</strong></p>
+                    <ul>
+                        <li><code>/topic/team/{teamId}/schedules</code> - 스케줄 변경 알림</li>
+                        <li><code>/topic/team/{teamId}/members</code> - 팀 멤버 변경 알림</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let stompClient = null;
+        let connected = false;
+
+        function getServerUrl() {
+            return document.getElementById('serverUrl').value.trim() || 'http://localhost:8080';
+        }
+
+        function getTeamId() {
+            return document.getElementById('teamId').value || '1';
+        }
+
+        function addMessage(type, message) {
+            const messagesDiv = document.getElementById('messages');
+            const timestamp = new Date().toLocaleTimeString();
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.innerHTML = `<span class="timestamp">[${timestamp}]</span>${message}`;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function updateStatus(status, message) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${status}`;
+            statusDiv.textContent = message;
+        }
+
+        function connect() {
+            const serverUrl = getServerUrl();
+            const wsUrl = serverUrl.replace('http://', 'ws://').replace('https://', 'wss://');
+            const socket = new SockJS(serverUrl + '/ws');
+            
+            stompClient = Stomp.over(socket);
+            
+            // 디버그 로그 비활성화 (필요시 주석 해제)
+            stompClient.debug = function(str) {
+                // console.log(str);
+            };
+            
+            updateStatus('connecting', '연결 중...');
+            addMessage('info', `서버에 연결 시도 중: ${serverUrl}/ws`);
+            
+            stompClient.connect({}, function(frame) {
+                connected = true;
+                updateStatus('connected', '연결됨 ✓');
+                addMessage('success', 'WebSocket 연결 성공!');
+                
+                const teamId = getTeamId();
+                
+                // 스케줄 변경 구독
+                const scheduleTopic = `/topic/team/${teamId}/schedules`;
+                stompClient.subscribe(scheduleTopic, function(message) {
+                    const data = JSON.parse(message.body);
+                    addMessage('received', `📅 스케줄 변경: ${data.action} - ${JSON.stringify(data, null, 2)}`);
+                });
+                addMessage('info', `스케줄 토픽 구독: ${scheduleTopic}`);
+                
+                // 팀 멤버 변경 구독
+                const memberTopic = `/topic/team/${teamId}/members`;
+                stompClient.subscribe(memberTopic, function(message) {
+                    const data = JSON.parse(message.body);
+                    addMessage('received', `👥 팀 멤버 변경: ${data.action} - ${JSON.stringify(data, null, 2)}`);
+                });
+                addMessage('info', `팀 멤버 토픽 구독: ${memberTopic}`);
+                
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('disconnectBtn').disabled = false;
+            }, function(error) {
+                connected = false;
+                updateStatus('disconnected', '연결 실패');
+                addMessage('error', `연결 실패: ${error}`);
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = true;
+            });
+        }
+
+        function disconnect() {
+            if (stompClient !== null && connected) {
+                stompClient.disconnect();
+                addMessage('info', 'WebSocket 연결 해제됨');
+            }
+            connected = false;
+            updateStatus('disconnected', '연결 안 됨');
+            document.getElementById('connectBtn').disabled = false;
+            document.getElementById('disconnectBtn').disabled = true;
+        }
+
+        // 페이지 로드 시 서버 정보 확인
+        window.onload = function() {
+            const serverUrl = getServerUrl();
+            fetch(`${serverUrl}/api/v1/websocket/info`)
+                .then(response => response.json())
+                .then(data => {
+                    addMessage('info', `서버 정보: ${JSON.stringify(data, null, 2)}`);
+                })
+                .catch(error => {
+                    addMessage('error', `서버 정보 조회 실패: ${error.message}`);
+                });
+        };
+    </script>
+</body>
+</html>
+
+
+
+

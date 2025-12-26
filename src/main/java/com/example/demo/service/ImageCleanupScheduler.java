@@ -65,36 +65,22 @@ public class ImageCleanupScheduler {
             int deletedCount = 0;
             int errorCount = 0;
             
-            // users 폴더의 파일들 확인
-            for (Blob blob : storage.list(bucketName, Storage.BlobListOption.prefix("users/")).iterateAll()) {
-                String blobUrl = generateBlobUrl(blob.getName());
-                if (!usedImageUrls.contains(blobUrl)) {
-                    try {
-                        boolean deleted = storage.delete(BlobId.of(bucketName, blob.getName()));
-                        if (deleted) {
-                            deletedCount++;
-                            log.debug("사용되지 않는 이미지 삭제: {}", blob.getName());
+            // users와 teams 폴더의 파일들 확인
+            String[] prefixes = {"users/", "teams/"};
+            for (String prefix : prefixes) {
+                for (Blob blob : storage.list(bucketName, Storage.BlobListOption.prefix(prefix)).iterateAll()) {
+                    String blobUrl = generateBlobUrl(blob.getName());
+                    if (!usedImageUrls.contains(blobUrl)) {
+                        try {
+                            boolean deleted = storage.delete(BlobId.of(bucketName, blob.getName()));
+                            if (deleted) {
+                                deletedCount++;
+                                log.debug("사용되지 않는 이미지 삭제: {}", blob.getName());
+                            }
+                        } catch (Exception e) {
+                            errorCount++;
+                            log.warn("이미지 삭제 실패: {}", blob.getName(), e);
                         }
-                    } catch (Exception e) {
-                        errorCount++;
-                        log.warn("이미지 삭제 실패: {}", blob.getName(), e);
-                    }
-                }
-            }
-            
-            // teams 폴더의 파일들 확인
-            for (Blob blob : storage.list(bucketName, Storage.BlobListOption.prefix("teams/")).iterateAll()) {
-                String blobUrl = generateBlobUrl(blob.getName());
-                if (!usedImageUrls.contains(blobUrl)) {
-                    try {
-                        boolean deleted = storage.delete(BlobId.of(bucketName, blob.getName()));
-                        if (deleted) {
-                            deletedCount++;
-                            log.debug("사용되지 않는 이미지 삭제: {}", blob.getName());
-                        }
-                    } catch (Exception e) {
-                        errorCount++;
-                        log.warn("이미지 삭제 실패: {}", blob.getName(), e);
                     }
                 }
             }

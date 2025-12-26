@@ -88,8 +88,6 @@ public class ImageController {
                     .userId(userId)
                     .imageUrl(newImageUrl)
                     .build());
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (IllegalStateException e) {
             return handleStorageException(e);
         } catch (IOException e) {
@@ -154,8 +152,6 @@ public class ImageController {
                     .teamId(teamId)
                     .imageUrl(newImageUrl)
                     .build());
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (IllegalStateException e) {
             return handleStorageException(e);
         } catch (IOException e) {
@@ -165,60 +161,6 @@ public class ImageController {
         }
     }
 
-
-    /**
-     * IllegalArgumentException 처리 (권한, 리소스 없음 등을 구분)
-     */
-    private ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
-        String message = e.getMessage();
-        
-        // 에러 코드가 포함된 경우 (예: "FORBIDDEN: ...", "NOT_FOUND: ...")
-        if (message != null && message.contains(":")) {
-            String errorCode = message.split(":")[0].trim();
-            String cleanMessage = message.split(":", 2)[1].trim();
-            
-            HttpStatus status;
-            if ("FORBIDDEN".equals(errorCode)) {
-                status = HttpStatus.FORBIDDEN;
-            } else if ("TEAM_NOT_FOUND".equals(errorCode) || "TEAM_MEMBER_NOT_FOUND".equals(errorCode) 
-                    || "POSITION_NOT_FOUND".equals(errorCode) || "NOT_FOUND".equals(errorCode)) {
-                status = HttpStatus.NOT_FOUND;
-            } else {
-                status = HttpStatus.BAD_REQUEST;
-            }
-            
-            return ResponseEntity.status(status)
-                    .body(ErrorResponse.builder()
-                            .code(errorCode)
-                            .message(cleanMessage)
-                            .build());
-        }
-        
-        // 에러 코드가 없는 경우 메시지로 판단
-        String code = "INVALID_REQUEST";
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-        
-        if (message != null) {
-            if (message.contains("권한") || message.contains("FORBIDDEN") || message.contains("멤버만")) {
-                code = "FORBIDDEN";
-                status = HttpStatus.FORBIDDEN;
-            } else if (message.contains("찾을 수 없습니다") || message.contains("NOT_FOUND")) {
-                code = "NOT_FOUND";
-                status = HttpStatus.NOT_FOUND;
-            } else if (message.contains("필수")) {
-                code = "VALIDATION_ERROR";
-            } else if (message.contains("최대") || message.contains("길이") || message.contains("크기")) {
-                code = "VALIDATION_ERROR";
-            }
-        }
-        
-        return ResponseEntity.status(status)
-                .body(ErrorResponse.builder()
-                        .code(code)
-                        .message(message != null ? message : "잘못된 요청입니다.")
-                        .build());
-    }
-    
     /**
      * 에러 응답 생성
      */

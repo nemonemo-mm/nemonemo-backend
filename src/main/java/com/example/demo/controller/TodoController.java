@@ -70,8 +70,6 @@ public class TodoController {
             }
             TodoResponseDto response = todoService.createTodo(userId, request);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("투두 생성 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -115,8 +113,6 @@ public class TodoController {
             }
             TodoResponseDto response = todoService.updateTodo(userId, todoId, request);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("투두 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -154,8 +150,6 @@ public class TodoController {
             }
             todoService.deleteTodo(userId, todoId);
             return ResponseEntity.ok().build();
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("투두 삭제 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -199,8 +193,6 @@ public class TodoController {
             }
             List<TodoResponseDto> responses = todoService.getTeamTodos(userId, teamId, start, end);
             return ResponseEntity.ok(responses);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 투두 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -234,8 +226,6 @@ public class TodoController {
             }
             List<TodoResponseDto> responses = todoService.getMyTodos(userId, start, end);
             return ResponseEntity.ok(responses);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("내 투두 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -246,10 +236,6 @@ public class TodoController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
-    private ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
-        ErrorResponse error = new ErrorResponse("VALIDATION_ERROR", e.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-    }
 
     private ResponseEntity<ErrorResponse> createErrorResponse(String message, HttpStatus status) {
         ErrorResponse error = new ErrorResponse("INTERNAL_SERVER_ERROR", message);

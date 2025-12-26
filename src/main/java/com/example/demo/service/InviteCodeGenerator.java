@@ -4,7 +4,7 @@ import com.example.demo.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Component
 @RequiredArgsConstructor
@@ -13,7 +13,6 @@ public class InviteCodeGenerator {
     private final TeamRepository teamRepository;
     private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int CODE_LENGTH = 8;
-    private final Random random = new Random();
     
     /**
      * 고유한 초대 코드를 생성합니다.
@@ -45,7 +44,7 @@ public class InviteCodeGenerator {
     private String generateInviteCode() {
         StringBuilder code = new StringBuilder(CODE_LENGTH);
         for (int i = 0; i < CODE_LENGTH; i++) {
-            code.append(CHARACTERS.charAt(random.nextInt(CHARACTERS.length())));
+            code.append(CHARACTERS.charAt(ThreadLocalRandom.current().nextInt(CHARACTERS.length())));
         }
         return code.toString();
     }

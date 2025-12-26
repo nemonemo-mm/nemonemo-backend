@@ -53,8 +53,6 @@ public class NotificationController {
 
             PersonalNotificationSettingResponse response = personalNotificationSettingService.getPersonalNotificationSetting(userId);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("개인 알림 설정 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -78,8 +76,6 @@ public class NotificationController {
 
             PersonalNotificationSettingResponse response = personalNotificationSettingService.updatePersonalNotificationSetting(userId, request);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("개인 알림 설정 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -107,8 +103,6 @@ public class NotificationController {
 
             TeamNotificationSettingResponse response = teamNotificationSettingService.getTeamNotificationSetting(userId, teamId);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 알림 설정 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -135,8 +129,6 @@ public class NotificationController {
 
             TeamNotificationSettingResponse response = teamNotificationSettingService.updateTeamNotificationSetting(userId, teamId, request);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 알림 설정 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -163,8 +155,6 @@ public class NotificationController {
 
             deviceTokenService.registerDeviceToken(userId, request);
             return ResponseEntity.ok().build();
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("디바이스 토큰 등록 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -179,10 +169,6 @@ public class NotificationController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
-    private ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
-        ErrorResponse error = new ErrorResponse("VALIDATION_ERROR", e.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-    }
 
     private ResponseEntity<ErrorResponse> createErrorResponse(String message, HttpStatus status) {
         ErrorResponse error = new ErrorResponse("INTERNAL_SERVER_ERROR", message);
