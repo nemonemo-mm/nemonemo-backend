@@ -59,16 +59,22 @@ public class AuthController {
     @PostMapping("/social/login")
     public ResponseEntity<?> socialLogin(@Valid @RequestBody SocialLoginRequest request) {
 
-        if (request.getProvider() != AuthProvider.GOOGLE) {
+        // 지원하는 provider 확인
+        if (request.getProvider() != AuthProvider.GOOGLE && request.getProvider() != AuthProvider.APPLE) {
             return ResponseEntity.badRequest()
                     .body(ErrorResponse.builder()
                             .code("INVALID_REQUEST")
-                            .message("현재는 GOOGLE provider만 지원합니다.")
+                            .message("현재는 GOOGLE과 APPLE provider만 지원합니다.")
                             .build());
         }
 
         try {
-            AuthTokensResponse tokens = socialAuthService.loginWithGoogle(request);
+            AuthTokensResponse tokens;
+            if (request.getProvider() == AuthProvider.GOOGLE) {
+                tokens = socialAuthService.loginWithGoogle(request);
+            } else { // APPLE
+                tokens = socialAuthService.loginWithApple(request);
+            }
             return ResponseEntity.ok(tokens);
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
