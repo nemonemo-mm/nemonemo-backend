@@ -61,8 +61,6 @@ public class UserController {
 
             UserProfileResponse response = userService.getUserProfile(userId);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("프로필 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -110,8 +108,6 @@ public class UserController {
 
             UserProfileResponse response = userService.updateUserProfile(userId, request);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("프로필 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -121,21 +117,6 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(ErrorResponse.builder()
                         .code("UNAUTHORIZED")
-                        .message(message)
-                        .build());
-    }
-
-    private ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
-        String message = e.getMessage();
-        String code = "BAD_REQUEST";
-        
-        if (message.contains("NOT_FOUND")) {
-            code = "NOT_FOUND";
-        }
-        
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ErrorResponse.builder()
-                        .code(code)
                         .message(message)
                         .build());
     }

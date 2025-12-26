@@ -71,8 +71,6 @@ public class NoticeController {
             
             NoticeResponse response = noticeService.createNotice(userId, teamId, request);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("공지 생성 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -112,8 +110,6 @@ public class NoticeController {
             }
             List<NoticeResponse> responses = noticeService.getTeamNotices(userId, teamId);
             return ResponseEntity.ok(responses);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 공지 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -154,8 +150,6 @@ public class NoticeController {
             }
             NoticeResponse response = noticeService.getNotice(userId, teamId, noticeId);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("공지 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -201,8 +195,6 @@ public class NoticeController {
             }
             NoticeResponse response = noticeService.updateNotice(userId, teamId, noticeId, request);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("공지 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -242,8 +234,6 @@ public class NoticeController {
             }
             noticeService.deleteNotice(userId, teamId, noticeId);
             return ResponseEntity.ok().build();
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("공지 삭제 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -254,31 +244,6 @@ public class NoticeController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
-    private ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
-        String message = e.getMessage();
-        
-        // 에러 코드가 포함된 경우 (예: "FORBIDDEN: ...", "NOTICE_NOT_FOUND: ...")
-        if (message != null && message.contains(":")) {
-            String errorCode = message.split(":")[0].trim();
-            String cleanMessage = message.split(":", 2)[1].trim();
-            
-            HttpStatus status;
-            if ("FORBIDDEN".equals(errorCode)) {
-                status = HttpStatus.FORBIDDEN;
-            } else if ("TEAM_NOT_FOUND".equals(errorCode) || "NOTICE_NOT_FOUND".equals(errorCode)) {
-                status = HttpStatus.NOT_FOUND;
-            } else {
-                status = HttpStatus.BAD_REQUEST;
-            }
-            
-            return ResponseEntity.status(status)
-                    .body(new ErrorResponse(errorCode, cleanMessage));
-        }
-        
-        // 에러 코드가 없는 경우
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponse("VALIDATION_ERROR", message != null ? message : "유효하지 않은 요청입니다."));
-    }
 
     private ResponseEntity<ErrorResponse> createErrorResponse(String message, HttpStatus status) {
         ErrorResponse error = new ErrorResponse("INTERNAL_SERVER_ERROR", message);

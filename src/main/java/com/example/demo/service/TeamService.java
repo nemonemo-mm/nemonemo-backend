@@ -19,11 +19,16 @@ import com.example.demo.dto.team.TeamMemberListItemResponse;
 import com.example.demo.dto.team.TeamMemberResponse;
 import com.example.demo.dto.team.TeamMemberUpdateRequest;
 import com.example.demo.dto.team.TeamUpdateRequest;
+import com.example.demo.dto.websocket.TeamMemberWebSocketMessage;
+import com.example.demo.repository.NotificationSettingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,6 +44,10 @@ public class TeamService {
     private final InviteCodeGenerator inviteCodeGenerator;
     private final TeamPermissionService teamPermissionService;
     private final FirebaseStorageService firebaseStorageService;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final FcmNotificationService fcmNotificationService;
+    private final DeviceTokenService deviceTokenService;
+    private final NotificationSettingRepository notificationSettingRepository;
     
     /**
      * 팀 생성
@@ -297,8 +306,17 @@ public class TeamService {
         
         member = teamMemberRepository.save(member);
         
-        return teamMemberRepository.findResponseById(member.getId())
+        // 팀원 정보 조회
+        TeamMemberResponse memberResponse = teamMemberRepository.findResponseById(member.getId())
                 .orElseThrow(() -> new IllegalStateException("팀원 저장 후 조회 실패"));
+        
+        // 팀 참여 WebSocket 브로드캐스트
+        broadcastTeamMemberUpdate(team.getId(), "JOINED", memberResponse);
+        
+        // 팀 참여 FCM 알림 전송 (참여한 사용자 제외)
+        sendTeamMemberNotification(team, user.getName(), userId, true);
+        
+        return memberResponse;
     }
     
     /**
@@ -316,9 +334,23 @@ public class TeamService {
         // 멤버 ID와 사용자 ID 저장 (삭제 전에)
         Long memberId = member.getId();
         Long memberUserId = member.getUser().getId();
+        String memberName = member.getUser().getName();
+        Team team = member.getTeam();
+        
+        // 멤버 정보 조회 (삭제 전에)
+        TeamMemberResponse memberResponse = teamMemberRepository.findResponseById(memberId)
+                .orElse(null);
         
         // 멤버 삭제
         teamMemberRepository.delete(member);
+        
+        // 멤버 퇴장 WebSocket 브로드캐스트
+        if (memberResponse != null) {
+            broadcastTeamMemberUpdate(teamId, "LEFT", memberResponse);
+        }
+        
+        // 멤버 퇴장 FCM 알림 전송 (퇴장한 사용자 제외)
+        sendTeamMemberNotification(team, memberName, memberUserId, false);
         
         return TeamLeaveResponse.builder()
                 .teamId(teamId)
@@ -450,14 +482,89 @@ public class TeamService {
             throw new IllegalArgumentException("FORBIDDEN: 팀장은 삭제할 수 없습니다.");
         }
         
+        // 삭제 전에 멤버 정보 조회
+        Long memberUserId = member.getUser().getId();
+        String memberName = member.getUser().getName();
+        TeamMemberResponse memberResponse = teamMemberRepository.findResponseById(memberId)
+                .orElse(null);
+        
         // 팀원 삭제
         teamMemberRepository.delete(member);
+        
+        // 팀원 삭제 WebSocket 브로드캐스트
+        if (memberResponse != null) {
+            broadcastTeamMemberUpdate(teamId, "LEFT", memberResponse);
+        }
+        
+        // 팀원 삭제 FCM 알림 전송 (삭제된 사용자 제외)
+        sendTeamMemberNotification(team, memberName, memberUserId, false);
         
         return TeamMemberDeleteResponse.builder()
                 .teamId(teamId)
                 .memberId(memberId)
-                .userId(member.getUser().getId())
+                .userId(memberUserId)
                 .build();
+    }
+    
+    /**
+     * 팀 멤버 변경 WebSocket 브로드캐스트
+     * @param teamId 팀 ID
+     * @param action 액션 타입 (JOINED, LEFT)
+     * @param member 멤버 정보
+     */
+    private void broadcastTeamMemberUpdate(Long teamId, String action, TeamMemberResponse member) {
+        String destination = "/topic/team/" + teamId + "/members";
+        TeamMemberWebSocketMessage message = TeamMemberWebSocketMessage.builder()
+                .action(action)
+                .member(member)
+                .teamId(teamId)
+                .timestamp(LocalDateTime.now())
+                .build();
+        messagingTemplate.convertAndSend(destination, message);
+    }
+    
+    /**
+     * 팀 멤버 입장/퇴장 FCM 알림 전송
+     * @param team 팀
+     * @param memberName 멤버 이름
+     * @param excludeUserId 알림을 보내지 않을 사용자 ID (입장/퇴장한 사용자)
+     * @param isJoin 입장 여부 (true: 입장, false: 퇴장)
+     */
+    private void sendTeamMemberNotification(Team team, String memberName, Long excludeUserId, boolean isJoin) {
+        Long teamId = team.getId();
+        String teamName = team.getName();
+        
+        // 팀의 모든 멤버 조회
+        List<TeamMember> teamMembers = teamMemberRepository.findByTeamId(teamId);
+        if (teamMembers == null || teamMembers.isEmpty()) {
+            return;
+        }
+        
+        // 알림을 받을 사용자 목록 수집
+        List<String> deviceTokens = new ArrayList<>();
+        for (TeamMember teamMember : teamMembers) {
+            Long userId = teamMember.getUser().getId();
+            
+            // 입장/퇴장한 사용자 제외
+            if (userId.equals(excludeUserId)) {
+                continue;
+            }
+            
+            // 알림 설정 확인
+            boolean shouldNotify = notificationSettingRepository.findByUserIdAndTeamId(userId, teamId)
+                    .map(setting -> Boolean.TRUE.equals(setting.getEnableTeamAlarm()) &&
+                            Boolean.TRUE.equals(setting.getEnableTeamMemberNotification()))
+                    .orElse(true); // 설정이 없으면 기본값으로 알림 전송
+            
+            if (shouldNotify) {
+                deviceTokenService.getDeviceTokenByUserId(userId)
+                        .ifPresent(deviceTokens::add);
+            }
+        }
+        
+        if (!deviceTokens.isEmpty()) {
+            fcmNotificationService.sendTeamMemberNotification(deviceTokens, memberName, teamName, isJoin);
+        }
     }
     
 }

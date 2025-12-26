@@ -87,8 +87,6 @@ public class PositionController {
             
             List<PositionResponse> positions = positionService.getPositionList(userId, id);
             return ResponseEntity.ok(positions);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("포지션 목록 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -129,8 +127,6 @@ public class PositionController {
             
             PositionResponse response = positionService.createPosition(userId, id, request);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("포지션 생성 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -171,8 +167,6 @@ public class PositionController {
             
             PositionResponse response = positionService.updatePosition(userId, id, positionId, request);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("포지션 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -205,68 +199,9 @@ public class PositionController {
             
             PositionDeleteResponse response = positionService.deletePosition(userId, id, positionId);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("포지션 삭제 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }
-    
-    /**
-     * Authorization 헤더에서 사용자 ID를 추출합니다.
-     */
-    
-    /**
-     * IllegalArgumentException 처리 (권한, 리소스 없음 등을 구분)
-     */
-    private ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
-        String message = e.getMessage();
-        
-        // 에러 코드가 포함된 경우 (예: "FORBIDDEN: ...", "NOT_FOUND: ...")
-        if (message != null && message.contains(":")) {
-            String errorCode = message.split(":")[0].trim();
-            String cleanMessage = message.split(":", 2)[1].trim();
-            
-            HttpStatus status;
-            if ("FORBIDDEN".equals(errorCode)) {
-                status = HttpStatus.FORBIDDEN;
-            } else if ("TEAM_NOT_FOUND".equals(errorCode) || "TEAM_MEMBER_NOT_FOUND".equals(errorCode) 
-                    || "POSITION_NOT_FOUND".equals(errorCode) || "NOT_FOUND".equals(errorCode)) {
-                status = HttpStatus.NOT_FOUND;
-            } else {
-                status = HttpStatus.BAD_REQUEST;
-            }
-            
-            return ResponseEntity.status(status)
-                    .body(ErrorResponse.builder()
-                            .code(errorCode)
-                            .message(cleanMessage)
-                            .build());
-        }
-        
-        // 에러 코드가 없는 경우 메시지로 판단
-        String code = "INVALID_REQUEST";
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-        
-        if (message != null) {
-            if (message.contains("권한") || message.contains("FORBIDDEN") || message.contains("멤버만")) {
-                code = "FORBIDDEN";
-                status = HttpStatus.FORBIDDEN;
-            } else if (message.contains("찾을 수 없습니다") || message.contains("NOT_FOUND")) {
-                code = "NOT_FOUND";
-                status = HttpStatus.NOT_FOUND;
-            } else if (message.contains("필수")) {
-                code = "VALIDATION_ERROR";
-            } else if (message.contains("최대") || message.contains("길이")) {
-                code = "VALIDATION_ERROR";
-            }
-        }
-        
-        return ResponseEntity.status(status)
-                .body(ErrorResponse.builder()
-                        .code(code)
-                        .message(message != null ? message : "잘못된 요청입니다.")
-                        .build());
     }
     
     /**

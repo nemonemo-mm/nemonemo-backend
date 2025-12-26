@@ -7,8 +7,6 @@ import com.example.demo.dto.notice.NoticeCreateRequest;
 import com.example.demo.dto.notice.NoticeResponse;
 import com.example.demo.dto.notice.NoticeUpdateRequest;
 import com.example.demo.repository.NoticeRepository;
-import com.example.demo.repository.TeamMemberRepository;
-import com.example.demo.repository.TeamRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,20 +21,14 @@ import java.util.List;
 public class NoticeService {
 
     private final NoticeRepository noticeRepository;
-    private final TeamRepository teamRepository;
-    private final TeamMemberRepository teamMemberRepository;
     private final UserRepository userRepository;
     private final NoticeNotificationHelper noticeNotificationHelper;
+    private final TeamPermissionService teamPermissionService;
 
     @Transactional
     public NoticeResponse createNotice(Long userId, Long teamId, NoticeCreateRequest request) {
-        // 팀 조회
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalArgumentException("TEAM_NOT_FOUND: 팀을 찾을 수 없습니다."));
-
-        // 팀원 확인
-        teamMemberRepository.findByTeamIdAndUserId(team.getId(), userId)
-                .orElseThrow(() -> new IllegalArgumentException("FORBIDDEN: 팀원이 아닌 사용자는 공지를 생성할 수 없습니다."));
+        // 팀 조회 및 팀원 확인
+        Team team = teamPermissionService.getTeamWithMemberCheck(userId, teamId);
 
         // 작성자 조회
         User author = userRepository.findById(userId)
@@ -65,13 +57,8 @@ public class NoticeService {
 
     @Transactional(readOnly = true)
     public List<NoticeResponse> getTeamNotices(Long userId, Long teamId) {
-        // 팀 조회
-        teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalArgumentException("TEAM_NOT_FOUND: 팀을 찾을 수 없습니다."));
-
-        // 팀원 확인
-        teamMemberRepository.findByTeamIdAndUserId(teamId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("FORBIDDEN: 팀원이 아닌 사용자는 공지를 조회할 수 없습니다."));
+        // 팀 조회 및 팀원 확인
+        teamPermissionService.verifyTeamMember(userId, teamId);
 
         // 공지 목록 조회
         return noticeRepository.findByTeamId(teamId);
@@ -79,13 +66,8 @@ public class NoticeService {
 
     @Transactional(readOnly = true)
     public NoticeResponse getNotice(Long userId, Long teamId, Long noticeId) {
-        // 팀 존재 확인
-        teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalArgumentException("TEAM_NOT_FOUND: 팀을 찾을 수 없습니다."));
-
-        // 팀원 확인
-        teamMemberRepository.findByTeamIdAndUserId(teamId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("FORBIDDEN: 팀원이 아닌 사용자는 공지를 조회할 수 없습니다."));
+        // 팀 조회 및 팀원 확인
+        teamPermissionService.verifyTeamMember(userId, teamId);
 
         // 공지 조회 및 팀 소속 확인
         Notice notice = noticeRepository.findById(noticeId)
@@ -101,13 +83,8 @@ public class NoticeService {
 
     @Transactional
     public NoticeResponse updateNotice(Long userId, Long teamId, Long noticeId, NoticeUpdateRequest request) {
-        // 팀 존재 확인
-        teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalArgumentException("TEAM_NOT_FOUND: 팀을 찾을 수 없습니다."));
-
-        // 팀원 확인
-        teamMemberRepository.findByTeamIdAndUserId(teamId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("FORBIDDEN: 팀원이 아닌 사용자는 공지를 수정할 수 없습니다."));
+        // 팀 조회 및 팀원 확인
+        teamPermissionService.verifyTeamMember(userId, teamId);
 
         // 공지 조회 및 팀 소속 확인
         Notice notice = noticeRepository.findById(noticeId)
@@ -132,13 +109,8 @@ public class NoticeService {
 
     @Transactional
     public void deleteNotice(Long userId, Long teamId, Long noticeId) {
-        // 팀 존재 확인
-        teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalArgumentException("TEAM_NOT_FOUND: 팀을 찾을 수 없습니다."));
-
-        // 팀원 확인
-        teamMemberRepository.findByTeamIdAndUserId(teamId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("FORBIDDEN: 팀원이 아닌 사용자는 공지를 삭제할 수 없습니다."));
+        // 팀 조회 및 팀원 확인
+        teamPermissionService.verifyTeamMember(userId, teamId);
 
         // 공지 조회 및 팀 소속 확인
         Notice notice = noticeRepository.findById(noticeId)

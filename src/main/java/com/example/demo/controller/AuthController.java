@@ -76,8 +76,6 @@ public class AuthController {
                 tokens = socialAuthService.loginWithApple(request);
             }
             return ResponseEntity.ok(tokens);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (com.google.firebase.auth.FirebaseAuthException e) {
             // Firebase 인증 오류
             String errorCodeStr = e.getErrorCode() != null ? e.getErrorCode().toString() : "";
@@ -163,8 +161,6 @@ public class AuthController {
             String refreshToken = authorizationHeader.substring(7); // "Bearer " 제거
             AuthTokensResponse tokens = socialAuthService.refreshAccessToken(refreshToken);
             return ResponseEntity.ok(tokens);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             // 예상치 못한 오류
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -200,8 +196,6 @@ public class AuthController {
 
             socialAuthService.logout(userId, refreshToken);
             return ResponseEntity.ok().build();
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ErrorResponse.builder()
@@ -231,8 +225,6 @@ public class AuthController {
 
             socialAuthService.deleteUser(userId);
             return ResponseEntity.ok().build();
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ErrorResponse.builder()
@@ -248,62 +240,5 @@ public class AuthController {
                 .message(message)
                 .build();
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
-    }
-    
-    /**
-     * IllegalArgumentException 처리 (권한, 리소스 없음, 인증 에러 등을 구분)
-     */
-    private ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
-        String message = e.getMessage();
-        
-        // 에러 코드가 포함된 경우 (예: "FORBIDDEN: ...", "AUTH_INVALID_TOKEN: ...")
-        if (message != null && message.contains(":")) {
-            String errorCode = message.split(":")[0].trim();
-            String cleanMessage = message.split(":", 2)[1].trim();
-            
-            HttpStatus status;
-            // AUTH 관련 에러는 401
-            if ("AUTH_INVALID_TOKEN".equals(errorCode) || "INVALID_REFRESH_TOKEN".equals(errorCode) 
-                    || "AUTH_TOKEN_EXPIRED".equals(errorCode)) {
-                status = HttpStatus.UNAUTHORIZED;
-            } else if ("FORBIDDEN".equals(errorCode)) {
-                status = HttpStatus.FORBIDDEN;
-            } else if ("TEAM_NOT_FOUND".equals(errorCode) || "TEAM_MEMBER_NOT_FOUND".equals(errorCode) 
-                    || "POSITION_NOT_FOUND".equals(errorCode) || "NOT_FOUND".equals(errorCode)) {
-                status = HttpStatus.NOT_FOUND;
-            } else {
-                // AUTH_MISSING_NAME 등은 400
-                status = HttpStatus.BAD_REQUEST;
-            }
-            
-            return ResponseEntity.status(status)
-                    .body(ErrorResponse.builder()
-                            .code(errorCode)
-                            .message(cleanMessage)
-                            .build());
-        }
-        
-        // 에러 코드가 없는 경우 메시지로 판단
-        String code = "INVALID_REQUEST";
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-        
-        if (message != null) {
-            if (message.contains("권한") || message.contains("FORBIDDEN") || message.contains("멤버만")) {
-                code = "FORBIDDEN";
-                status = HttpStatus.FORBIDDEN;
-            } else if (message.contains("찾을 수 없습니다") || message.contains("NOT_FOUND")) {
-                code = "NOT_FOUND";
-                status = HttpStatus.NOT_FOUND;
-            } else if (message.contains("토큰") || message.contains("인증")) {
-                code = "AUTH_INVALID_TOKEN";
-                status = HttpStatus.UNAUTHORIZED;
-            }
-        }
-        
-        return ResponseEntity.status(status)
-                .body(ErrorResponse.builder()
-                        .code(code)
-                        .message(message != null ? message : "잘못된 요청입니다.")
-                        .build());
     }
 }

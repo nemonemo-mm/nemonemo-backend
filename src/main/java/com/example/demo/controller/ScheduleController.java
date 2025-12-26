@@ -71,8 +71,6 @@ public class ScheduleController {
             }
             ScheduleResponseDto response = scheduleService.createSchedule(userId, request);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("스케줄 생성 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -118,8 +116,6 @@ public class ScheduleController {
             }
             ScheduleResponseDto response = scheduleService.updateSchedule(userId, scheduleId, request, scope);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("스케줄 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -159,8 +155,6 @@ public class ScheduleController {
             }
             scheduleService.deleteSchedule(userId, scheduleId, scope);
             return ResponseEntity.ok().build();
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("스케줄 삭제 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -206,8 +200,6 @@ public class ScheduleController {
             }
             List<ScheduleResponseDto> responses = scheduleService.getTeamSchedules(userId, teamId, start, end, positionIds);
             return ResponseEntity.ok(responses);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 일정 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -245,8 +237,6 @@ public class ScheduleController {
             }
             List<ScheduleResponseDto> responses = scheduleService.getMySchedules(userId, start, end, teamId, positionIds);
             return ResponseEntity.ok(responses);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("내 일정 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -257,10 +247,6 @@ public class ScheduleController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
-    private ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
-        ErrorResponse error = new ErrorResponse("VALIDATION_ERROR", e.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-    }
 
     private ResponseEntity<ErrorResponse> createErrorResponse(String message, HttpStatus status) {
         ErrorResponse error = new ErrorResponse("INTERNAL_SERVER_ERROR", message);

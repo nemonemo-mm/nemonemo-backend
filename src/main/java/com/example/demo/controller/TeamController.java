@@ -70,8 +70,6 @@ public class TeamController {
             
             TeamDetailResponseDto response = teamService.createTeam(userId, request);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 생성 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -114,8 +112,6 @@ public class TeamController {
             
             TeamDetailResponseDto response = teamService.updateTeam(userId, id, request);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -153,8 +149,6 @@ public class TeamController {
             
             TeamDetailResponseDto response = teamService.getTeamDetail(userId, id);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -246,8 +240,6 @@ public class TeamController {
             
             TeamDeleteResponse response = teamService.deleteTeam(userId, id);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 삭제 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -289,8 +281,6 @@ public class TeamController {
             
             TeamMemberResponse response = teamService.joinTeam(userId, request);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 참여 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -328,8 +318,6 @@ public class TeamController {
             
             TeamLeaveResponse response = teamService.leaveTeam(userId, id);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 탈퇴 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -386,8 +374,6 @@ public class TeamController {
             
             List<TeamMemberListItemResponse> members = teamService.getTeamMemberList(userId, id);
             return ResponseEntity.ok(members);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀원 목록 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -426,8 +412,6 @@ public class TeamController {
             
             TeamMemberResponse response = teamService.getTeamMemberDetail(userId, id, memberId);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀원 상세 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -473,8 +457,6 @@ public class TeamController {
             
             TeamMemberResponse response = teamService.updateTeamMember(userId, id, memberId, request);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀원 정보 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -513,65 +495,9 @@ public class TeamController {
             
             TeamMemberDeleteResponse response = teamService.deleteTeamMember(userId, id, memberId);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀원 삭제 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }
-    
-    
-    /**
-     * IllegalArgumentException 처리 (권한, 리소스 없음 등을 구분)
-     */
-    private ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
-        String message = e.getMessage();
-        
-        // 에러 코드가 포함된 경우 (예: "FORBIDDEN: ...", "NOT_FOUND: ...")
-        if (message != null && message.contains(":")) {
-            String errorCode = message.split(":")[0].trim();
-            String cleanMessage = message.split(":", 2)[1].trim();
-            
-            HttpStatus status;
-            if ("FORBIDDEN".equals(errorCode)) {
-                status = HttpStatus.FORBIDDEN;
-            } else if ("TEAM_NOT_FOUND".equals(errorCode) || "TEAM_MEMBER_NOT_FOUND".equals(errorCode) 
-                    || "POSITION_NOT_FOUND".equals(errorCode) || "NOT_FOUND".equals(errorCode)) {
-                status = HttpStatus.NOT_FOUND;
-            } else {
-                status = HttpStatus.BAD_REQUEST;
-            }
-            
-            return ResponseEntity.status(status)
-                    .body(ErrorResponse.builder()
-                            .code(errorCode)
-                            .message(cleanMessage)
-                            .build());
-        }
-        
-        // 에러 코드가 없는 경우 메시지로 판단
-        String code = "INVALID_REQUEST";
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-        
-        if (message != null) {
-            if (message.contains("권한") || message.contains("FORBIDDEN") || message.contains("멤버만")) {
-                code = "FORBIDDEN";
-                status = HttpStatus.FORBIDDEN;
-            } else if (message.contains("찾을 수 없습니다") || message.contains("NOT_FOUND")) {
-                code = "NOT_FOUND";
-                status = HttpStatus.NOT_FOUND;
-            } else if (message.contains("필수")) {
-                code = "VALIDATION_ERROR";
-            } else if (message.contains("최대") || message.contains("길이")) {
-                code = "VALIDATION_ERROR";
-            }
-        }
-        
-        return ResponseEntity.status(status)
-                .body(ErrorResponse.builder()
-                        .code(code)
-                        .message(message != null ? message : "잘못된 요청입니다.")
-                        .build());
     }
     
     /**
