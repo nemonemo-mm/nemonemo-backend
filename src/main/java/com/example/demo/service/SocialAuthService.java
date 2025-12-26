@@ -186,6 +186,160 @@ public class SocialAuthService {
                 .build();
     }
 
+    @Transactional
+    public AuthTokensResponse loginWithApple(SocialLoginRequest request) throws FirebaseAuthException {
+        String firebaseIdToken = request.getFirebaseIdToken();
+        if (firebaseIdToken == null || firebaseIdToken.trim().isEmpty()) {
+            throw new IllegalArgumentException("AUTH_INVALID_TOKEN: Firebase ID 토큰이 없습니다.");
+        }
+
+        // Firebase ID Token 검증
+        FirebaseToken decodedToken = firebaseVerifier.verify(firebaseIdToken);
+        if (decodedToken == null) {
+            throw new IllegalArgumentException("AUTH_INVALID_TOKEN: 유효하지 않은 Firebase ID 토큰입니다.");
+        }
+
+        // Firebase UID 추출 (providerId로 사용)
+        String firebaseUid = decodedToken.getUid();
+        
+        // 이메일 추출 (Apple 로그인은 이메일이 선택적일 수 있음)
+        String email = decodedToken.getEmail();
+        if (email == null || email.trim().isEmpty()) {
+            log.warn("Firebase ID Token에 이메일이 없습니다. firebaseUid: {}", firebaseUid);
+            // Apple 로그인은 이메일 공유를 거부할 수 있으므로 경고만 출력
+        }
+
+        // 클라이언트 타입 로깅 (요청에서 제공된 경우)
+        if (request.getClientType() != null) {
+            log.info("Firebase Apple 로그인 요청 - 클라이언트 타입: {}", request.getClientType());
+        } else {
+            log.info("Firebase Apple 로그인 요청 - 클라이언트 타입: 미지정");
+        }
+
+        // 기존 유저 존재 여부 확인 (Firebase UID로 조회)
+        Optional<User> existingUserOpt = userRepository.findByProviderAndProviderId(AuthProvider.APPLE, firebaseUid);
+        boolean isNewUser = existingUserOpt.isEmpty();
+
+        User user;
+        if (isNewUser) {
+            // 새 사용자: name 필수 검증 후 회원가입
+            // Firebase Token의 클레임에서 이름 추출 시도
+            Map<String, Object> claims = decodedToken.getClaims();
+            String name = request.getUserName();
+            if (name == null || name.trim().isEmpty()) {
+                // 클레임에서 name 추출 시도
+                Object nameClaim = claims.get("name");
+                if (nameClaim != null) {
+                    name = nameClaim.toString();
+                }
+            }
+            
+            // Firebase 클레임에서 picture 추출 (Apple은 일반적으로 picture가 없음)
+            String picture = null;
+            Object pictureClaim = claims.get("picture");
+            if (pictureClaim != null) {
+                picture = pictureClaim.toString();
+            }
+
+            // 이름 필수 검증 (새 사용자만)
+            if (name == null || name.trim().isEmpty()) {
+                throw new IllegalArgumentException("AUTH_MISSING_NAME: 사용자 이름이 필요합니다.");
+            }
+            
+            // 이름 길이 검증
+            String trimmedName = name.trim();
+            if (trimmedName.length() > 10) {
+                throw new IllegalArgumentException("사용자 이름은 최대 10자까지 입력 가능합니다.");
+            }
+
+            user = User.builder()
+                    .email(email)
+                    .name(trimmedName)
+                    .provider(AuthProvider.APPLE)
+                    .providerId(firebaseUid)  // Firebase UID 사용
+                    .imageUrl(picture)
+                    .build();
+            user = userRepository.save(user);
+            log.info("신규 Apple 사용자 회원가입 완료: userId={}, email={}, firebaseUid={}", user.getId(), email, firebaseUid);
+        } else {
+            // 기존 사용자: name 검증 없이 바로 로그인
+            user = existingUserOpt.get();
+            
+            // 선택적으로 name 업데이트 (request에 제공된 경우)
+            String name = request.getUserName();
+            boolean updated = false;
+            
+            if (name != null && !name.trim().isEmpty() && !name.equals(user.getName())) {
+                String trimmedName = name.trim();
+                // 이름 길이 검증
+                if (trimmedName.length() > 10) {
+                    throw new IllegalArgumentException("사용자 이름은 최대 10자까지 입력 가능합니다.");
+                }
+                user.setName(trimmedName);
+                updated = true;
+            }
+            
+            // 이메일이 있고 기존 이메일과 다른 경우 업데이트 (Apple은 이메일을 나중에 공유할 수 있음)
+            if (email != null && !email.trim().isEmpty() && !email.equals(user.getEmail())) {
+                user.setEmail(email);
+                updated = true;
+            }
+            
+            if (updated) {
+                user = userRepository.save(user);
+                log.info("Apple 사용자 정보 업데이트 완료: userId={}", user.getId());
+            }
+        }
+
+        // 새 refresh token 발급 및 저장
+        String refreshTokenValue = jwtTokenProvider.createRefreshToken(user.getId());
+        // Refresh Token 만료 시간은 JWT 토큰의 만료 시간과 동일하게 설정
+        long refreshTokenValiditySeconds = jwtTokenProvider.getRefreshTokenValidityMillis() / 1000;
+        LocalDateTime refreshExpiry = LocalDateTime.now().plusSeconds(refreshTokenValiditySeconds);
+
+        RefreshToken refreshToken = RefreshToken.builder()
+                .user(user)
+                .token(refreshTokenValue)
+                .expiresAt(refreshExpiry)
+                .build();
+        refreshTokenRepository.save(refreshToken);
+
+        String accessToken = jwtTokenProvider.createAccessToken(user.getId());
+
+        // 디바이스 토큰 등록 (제공된 경우)
+        if (request.getDeviceToken() != null && !request.getDeviceToken().trim().isEmpty()) {
+            try {
+                com.example.demo.dto.notification.DeviceTokenRequest deviceTokenRequest = 
+                    new com.example.demo.dto.notification.DeviceTokenRequest();
+                deviceTokenRequest.setDeviceToken(request.getDeviceToken());
+                deviceTokenRequest.setDeviceType(request.getDeviceType());
+                deviceTokenService.registerDeviceToken(user.getId(), deviceTokenRequest);
+                log.info("로그인 시 디바이스 토큰 등록 완료: userId={}", user.getId());
+            } catch (Exception e) {
+                // 디바이스 토큰 등록 실패해도 로그인은 성공 처리
+                log.warn("로그인 시 디바이스 토큰 등록 실패: userId={}, error={}", user.getId(), e.getMessage());
+            }
+        }
+
+        UserResponse userResponse = UserResponse.builder()
+                .userId(user.getId())
+                .email(user.getEmail())
+                .userName(user.getName())
+                .provider(user.getProvider())
+                .providerId(user.getProviderId())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .build();
+
+        return AuthTokensResponse.builder()
+                .userId(user.getId())
+                .accessToken(accessToken)
+                .refreshToken(refreshTokenValue)
+                .isNewUser(isNewUser)
+                .user(userResponse)
+                .build();
+    }
+
     /**
      * Refresh Token을 사용하여 새로운 Access Token과 Refresh Token을 발급합니다.
      * Refresh Token 로테이션 정책:
