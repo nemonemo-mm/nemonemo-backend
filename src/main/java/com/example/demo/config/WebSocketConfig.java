@@ -35,8 +35,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry config) {
         // 구독 경로: /topic, /queue
         config.enableSimpleBroker("/topic", "/queue");
-        // 메시지 발행 경로: /app
-        config.setApplicationDestinationPrefixes("/app");
+        // 메시지 발행 경로: /app/v1 (REST API와 일관성 유지)
+        config.setApplicationDestinationPrefixes("/app/v1");
     }
 
     /**

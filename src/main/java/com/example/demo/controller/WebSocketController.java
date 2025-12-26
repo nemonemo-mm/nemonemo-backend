@@ -69,7 +69,7 @@ public class WebSocketController {
                     : "모든 Origin 허용 (개발 환경)")
                 .topics(topics)
                 .messageBrokerPrefixes(new String[]{"/topic", "/queue"})
-                .applicationDestinationPrefix("/app")
+                .applicationDestinationPrefix("/app/v1")
                 .checkedAt(LocalDateTime.now())
                 .build();
         
@@ -109,7 +109,7 @@ public class WebSocketController {
         @Schema(description = "메시지 브로커 프리픽스", example = "[\"/topic\", \"/queue\"]")
         private String[] messageBrokerPrefixes;
         
-        @Schema(description = "애플리케이션 목적지 프리픽스", example = "/app")
+        @Schema(description = "애플리케이션 목적지 프리픽스", example = "/app/v1")
         private String applicationDestinationPrefix;
         
         @Schema(description = "확인 시각")
