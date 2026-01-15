@@ -30,9 +30,6 @@ public class SocialLoginRequest {
             example = "홍길동 | null")
     private String userName;
 
-    @Schema(description = "FCM 디바이스 토큰 (선택, 푸시 알림 수신 시 필요)", example = "fcm_device_token_here")
+    @Schema(description = "Expo Push Token (선택, 푸시 알림 수신 시 필요)", example = "ExponentPushToken[xxxxxxxxxxxxx]")
     private String deviceToken;
-
-    @Schema(description = "디바이스 타입 (선택)", example = "iOS", allowableValues = {"iOS", "Android"})
-    private String deviceType;
 }

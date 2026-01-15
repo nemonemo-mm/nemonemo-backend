@@ -165,7 +165,6 @@ public class SocialAuthService {
                 com.example.demo.dto.notification.DeviceTokenRequest deviceTokenRequest = 
                     new com.example.demo.dto.notification.DeviceTokenRequest();
                 deviceTokenRequest.setDeviceToken(request.getDeviceToken());
-                deviceTokenRequest.setDeviceType(request.getDeviceType());
                 deviceTokenService.registerDeviceToken(user.getId(), deviceTokenRequest);
                 log.info("로그인 시 디바이스 토큰 등록 완료: userId={}", user.getId());
             } catch (Exception e) {
@@ -326,7 +325,6 @@ public class SocialAuthService {
                 com.example.demo.dto.notification.DeviceTokenRequest deviceTokenRequest = 
                     new com.example.demo.dto.notification.DeviceTokenRequest();
                 deviceTokenRequest.setDeviceToken(request.getDeviceToken());
-                deviceTokenRequest.setDeviceType(request.getDeviceType());
                 deviceTokenService.registerDeviceToken(user.getId(), deviceTokenRequest);
                 log.info("로그인 시 디바이스 토큰 등록 완료: userId={}", user.getId());
             } catch (Exception e) {
