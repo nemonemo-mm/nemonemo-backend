@@ -93,9 +93,16 @@ public class SocialAuthService {
                 picture = pictureClaim.toString();
             }
 
-            // 이름 필수 검증 (새 사용자만)
+            // 이름이 없으면 회원가입하지 않고 신규 사용자 여부만 반환
             if (name == null || name.trim().isEmpty()) {
-                throw new IllegalArgumentException("AUTH_MISSING_NAME: 사용자 이름이 필요합니다.");
+                log.info("신규 사용자이지만 이름이 없어 프로필 입력 필요: firebaseUid={}", firebaseUid);
+                return AuthTokensResponse.builder()
+                        .userId(null)
+                        .accessToken(null)
+                        .refreshToken(null)
+                        .isNewUser(true)
+                        .user(null)  // user가 null이면 프로필 입력 필요
+                        .build();
             }
             
             // 이름 길이 검증
@@ -241,9 +248,16 @@ public class SocialAuthService {
                 picture = pictureClaim.toString();
             }
 
-            // 이름 필수 검증 (새 사용자만)
+            // 이름이 없으면 회원가입하지 않고 신규 사용자 여부만 반환
             if (name == null || name.trim().isEmpty()) {
-                throw new IllegalArgumentException("AUTH_MISSING_NAME: 사용자 이름이 필요합니다.");
+                log.info("신규 Apple 사용자이지만 이름이 없어 프로필 입력 필요: firebaseUid={}", firebaseUid);
+                return AuthTokensResponse.builder()
+                        .userId(null)
+                        .accessToken(null)
+                        .refreshToken(null)
+                        .isNewUser(true)
+                        .user(null)  // user가 null이면 프로필 입력 필요
+                        .build();
             }
             
             // 이름 길이 검증
