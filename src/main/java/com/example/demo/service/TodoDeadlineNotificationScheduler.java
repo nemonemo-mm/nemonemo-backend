@@ -25,7 +25,7 @@ public class TodoDeadlineNotificationScheduler {
     private final NotificationSettingRepository notificationSettingRepository;
     private final PersonalNotificationSettingRepository personalNotificationSettingRepository;
     private final DeviceTokenService deviceTokenService;
-    private final FcmNotificationService fcmNotificationService;
+    private final ExpoNotificationService expoNotificationService;
 
     // 중복 알림 방지를 위한 캐시: (todoId, userId, minutesBefore) -> 마지막 알림 시간
     private final Map<String, LocalDateTime> sentNotifications = new ConcurrentHashMap<>();
@@ -186,7 +186,7 @@ public class TodoDeadlineNotificationScheduler {
         deviceTokenService.getDeviceTokenByUserId(userId)
                 .ifPresent(deviceToken -> {
                     List<String> deviceTokens = Collections.singletonList(deviceToken);
-                    fcmNotificationService.sendTodoDeadlineNotification(deviceTokens, todoTitle, teamName, minutesBefore);
+                    expoNotificationService.sendTodoDeadlineNotification(deviceTokens, todoTitle, teamName, minutesBefore);
                 });
     }
 

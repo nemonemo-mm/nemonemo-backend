@@ -29,7 +29,7 @@ public class TodoService {
     private final TodoAttendeeRepository todoAttendeeRepository;
     private final TodoPositionRepository todoPositionRepository;
     private final UserRepository userRepository;
-    private final FcmNotificationService fcmNotificationService;
+    private final ExpoNotificationService expoNotificationService;
     private final DeviceTokenService deviceTokenService;
     private final NotificationSettingRepository notificationSettingRepository;
 
@@ -306,7 +306,7 @@ public class TodoService {
         }
 
         if (!deviceTokens.isEmpty()) {
-            fcmNotificationService.sendTodoChangeNotification(deviceTokens, todoTitle, teamName);
+            expoNotificationService.sendTodoChangeNotification(deviceTokens, todoTitle, teamName);
         }
     }
 }

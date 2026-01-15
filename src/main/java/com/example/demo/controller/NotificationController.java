@@ -136,7 +136,7 @@ public class NotificationController {
 
     // ========== 디바이스 토큰 관리 ==========
 
-    @Operation(summary = "디바이스 토큰 등록", description = "FCM 디바이스 토큰을 등록합니다.")
+    @Operation(summary = "디바이스 토큰 등록", description = "Expo Push Token을 등록합니다.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "등록 성공"),
         @ApiResponse(responseCode = "400", description = "잘못된 요청",

@@ -32,12 +32,9 @@ public class DeviceTokenService {
         Optional<DeviceToken> existingTokenOpt = deviceTokenRepository.findByUserId(userId);
         
         if (existingTokenOpt.isPresent()) {
-            // 기존 토큰이 있으면 덮어쓰기 (토큰 값과 정보 업데이트)
+            // 기존 토큰이 있으면 덮어쓰기 (토큰 값 업데이트)
             DeviceToken existingToken = existingTokenOpt.get();
             existingToken.setDeviceToken(request.getDeviceToken());
-            if (request.getDeviceType() != null) {
-                existingToken.setDeviceType(request.getDeviceType());
-            }
             deviceTokenRepository.save(existingToken);
             log.info("디바이스 토큰 업데이트: token={}, userId={}", request.getDeviceToken(), userId);
         } else {
@@ -45,7 +42,6 @@ public class DeviceTokenService {
             DeviceToken deviceToken = DeviceToken.builder()
                     .user(user)
                     .deviceToken(request.getDeviceToken())
-                    .deviceType(request.getDeviceType())
                     .build();
             deviceTokenRepository.save(deviceToken);
             log.info("새 디바이스 토큰 등록: token={}, userId={}", request.getDeviceToken(), userId);

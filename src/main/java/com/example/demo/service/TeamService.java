@@ -42,7 +42,7 @@ public class TeamService {
     private final InviteCodeGenerator inviteCodeGenerator;
     private final TeamPermissionService teamPermissionService;
     private final FirebaseStorageService firebaseStorageService;
-    private final FcmNotificationService fcmNotificationService;
+    private final ExpoNotificationService expoNotificationService;
     private final DeviceTokenService deviceTokenService;
     private final NotificationSettingRepository notificationSettingRepository;
     
@@ -542,7 +542,7 @@ public class TeamService {
         }
         
         if (!deviceTokens.isEmpty()) {
-            fcmNotificationService.sendTeamMemberNotification(deviceTokens, memberName, teamName, isJoin);
+            expoNotificationService.sendTeamMemberNotification(deviceTokens, memberName, teamName, isJoin);
         }
     }
     
