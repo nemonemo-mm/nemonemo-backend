@@ -1,6 +1,7 @@
 package com.example.demo.dto.auth;
 
 import com.example.demo.dto.user.UserResponse;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,6 +23,7 @@ public class AuthTokensResponse {
     @Schema(description = "리프레시 토큰 (JWT)", example = "eyJhbGciOiJIUzI1NiJ9...")
     private String refreshToken;
 
+    @JsonProperty("newUser")
     @Schema(description = "신규 사용자 여부", example = "true")
     private boolean isNewUser;
 
