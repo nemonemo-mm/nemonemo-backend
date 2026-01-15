@@ -34,9 +34,9 @@ public class AuthController {
     private final SocialAuthService socialAuthService;
     private final JwtAuthenticationHelper jwtHelper;
 
-    @Operation(summary = "소셜 로그인", description = "Firebase Authentication SDK에서 발급받은 ID Token을 사용하여 소셜 로그인을 수행합니다. " +
-            "기존 사용자는 자동으로 로그인되며, 신규 사용자는 회원가입 후 로그인됩니다. " +
-            "신규 회원가입 시에는 name 필드가 필수입니다.")
+    @Operation(summary = "소셜 로그인", description = "Firebase Authentication SDK에서 발급받은 ID Token을 사용하여 소셜 로그인을 수행합니다.\n\n" +
+            "userName 필드 없이 호출: 신규/기존 사용자 여부만 확인 (newUser 필드로 판단, user는 null)\n" +
+            "userName 필드 포함하여 호출: 회원가입 또는 로그인 완료")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "로그인 성공", 
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthTokensResponse.class))),

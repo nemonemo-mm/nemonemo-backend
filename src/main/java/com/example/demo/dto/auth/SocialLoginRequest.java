@@ -26,7 +26,8 @@ public class SocialLoginRequest {
             allowableValues = {"IOS", "ANDROID", "WEB"})
     private ClientType clientType;
 
-    @Schema(description = "사용자 이름 (신규 회원가입 시 필수, 기존 사용자 로그인 시 선택사항)", example = "홍길동 | null")
+    @Schema(description = "사용자 이름. null 또는 생략 시 신규/기존 사용자 여부만 확인, 값 제공 시 회원가입 또는 로그인 완료", 
+            example = "홍길동 | null")
     private String userName;
 
     @Schema(description = "FCM 디바이스 토큰 (선택, 푸시 알림 수신 시 필요)", example = "fcm_device_token_here")
