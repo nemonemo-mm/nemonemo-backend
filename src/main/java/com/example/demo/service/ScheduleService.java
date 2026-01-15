@@ -30,7 +30,7 @@ public class ScheduleService {
     private final ScheduleAttendeeRepository scheduleAttendeeRepository;
     private final SchedulePositionRepository schedulePositionRepository;
     private final UserRepository userRepository;
-    private final FcmNotificationService fcmNotificationService;
+    private final ExpoNotificationService expoNotificationService;
     private final DeviceTokenService deviceTokenService;
     private final NotificationSettingRepository notificationSettingRepository;
 
@@ -436,7 +436,7 @@ public class ScheduleService {
         }
 
         if (!deviceTokens.isEmpty()) {
-            fcmNotificationService.sendScheduleChangeNotification(deviceTokens, scheduleTitle, teamName);
+            expoNotificationService.sendScheduleChangeNotification(deviceTokens, scheduleTitle, teamName);
         }
     }
 

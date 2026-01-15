@@ -10,10 +10,7 @@ import lombok.Setter;
 @Setter
 public class DeviceTokenRequest {
     @NotBlank(message = "디바이스 토큰은 필수입니다")
-    @Schema(description = "FCM 디바이스 토큰", example = "fcm_token_here")
+    @Schema(description = "Expo Push Token (ExponentPushToken[...] 형식)", example = "ExponentPushToken[xxxxxxxxxxxxx]")
     private String deviceToken;
-
-    @Schema(description = "디바이스 타입", example = "iOS")
-    private String deviceType;
 }
 

@@ -21,7 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NoticeNotificationHelper {
 
-    private final FcmNotificationService fcmNotificationService;
+    private final ExpoNotificationService expoNotificationService;
     private final DeviceTokenService deviceTokenService;
     private final TeamMemberRepository teamMemberRepository;
     private final PersonalNotificationSettingRepository personalNotificationSettingRepository;
@@ -72,7 +72,7 @@ public class NoticeNotificationHelper {
         }
 
         if (!deviceTokens.isEmpty()) {
-            fcmNotificationService.sendNoticeNotification(deviceTokens, noticeTitle, teamName);
+            expoNotificationService.sendNoticeNotification(deviceTokens, noticeTitle, teamName);
             log.info("공지 알림 전송 완료: teamId={}, noticeTitle={}, recipientCount={}", 
                     teamId, noticeTitle, deviceTokens.size());
         }
