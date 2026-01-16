@@ -74,37 +74,33 @@ public class SocialAuthService {
 
         User user;
         if (isNewUser) {
-            // 새 사용자: name 필수 검증 후 회원가입
-            // Firebase Token의 클레임에서 이름 추출 시도
-            Map<String, Object> claims = decodedToken.getClaims();
+            // 새 사용자: 회원가입 프로세스 완료 여부 확인
+            // userName이 명시적으로 제공된 경우에만 회원가입 완료로 간주
+            // Firebase Token에서 name을 자동으로 가져오지 않음 (회원가입 프로세스 완료 후에만 저장)
             String name = request.getUserName();
-            if (name == null || name.trim().isEmpty()) {
-                // 클레임에서 name 추출 시도
-                Object nameClaim = claims.get("name");
-                if (nameClaim != null) {
-                    name = nameClaim.toString();
-                }
-            }
             
-            // Firebase 클레임에서 picture 추출
+            // Firebase 클레임에서 picture 추출 (회원가입 완료 시 사용)
             String picture = null;
+            Map<String, Object> claims = decodedToken.getClaims();
             Object pictureClaim = claims.get("picture");
             if (pictureClaim != null) {
                 picture = pictureClaim.toString();
             }
 
-            // 이름이 없으면 회원가입하지 않고 신규 사용자 여부만 반환
+            // userName이 없으면 회원가입 프로세스가 완료되지 않은 것으로 간주
+            // Firebase Token에 name이 있어도 자동으로 가져오지 않음 (회원가입 프로세스 완료 후에만 저장)
             if (name == null || name.trim().isEmpty()) {
-                log.info("신규 사용자이지만 이름이 없어 프로필 입력 필요: firebaseUid={}", firebaseUid);
+                log.info("신규 사용자이지만 회원가입 프로세스 미완료: firebaseUid={}", firebaseUid);
                 return AuthTokensResponse.builder()
                         .userId(null)
                         .accessToken(null)
                         .refreshToken(null)
-                        .isNewUser(true)
-                        .user(null)  // user가 null이면 프로필 입력 필요
+                        .isNewUser(true)  // 신규 사용자이지만 아직 회원가입 미완료
+                        .user(null)  // user가 null이면 회원가입 프로세스 필요
                         .build();
             }
             
+            // userName이 제공된 경우: 회원가입 프로세스 완료로 간주하고 DB에 저장
             // 이름 길이 검증
             String trimmedName = name.trim();
             if (trimmedName.length() > 10) {
@@ -136,6 +132,17 @@ public class SocialAuthService {
                 }
                 user.setName(trimmedName);
                 updated = true;
+            }
+            
+            // 프로필 사진 업데이트 (Firebase에서 가져온 picture가 있고 기존과 다른 경우)
+            Map<String, Object> claims = decodedToken.getClaims();
+            Object pictureClaim = claims.get("picture");
+            if (pictureClaim != null) {
+                String picture = pictureClaim.toString();
+                if (picture != null && !picture.equals(user.getImageUrl())) {
+                    user.setImageUrl(picture);
+                    updated = true;
+                }
             }
             
             if (updated) {
