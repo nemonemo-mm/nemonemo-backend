@@ -5,6 +5,7 @@ import com.example.demo.dto.common.ErrorResponse;
 import com.example.demo.dto.team.TeamCreateRequest;
 import com.example.demo.dto.team.TeamDeleteResponse;
 import com.example.demo.dto.team.TeamDetailResponseDto;
+import com.example.demo.dto.team.TeamInvitePreviewResponse;
 import com.example.demo.dto.team.TeamJoinRequest;
 import com.example.demo.dto.team.TeamLeaveResponse;
 import com.example.demo.dto.team.TeamMemberDeleteResponse;
@@ -242,6 +243,40 @@ public class TeamController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return createErrorResponse("팀 삭제 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    @Operation(summary = "인바이트 코드로 팀 정보 조회", description = "인바이트 코드를 사용하여 팀 정보와 포지션 목록을 조회합니다. 가입 전 확인용입니다.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "팀 정보 조회 성공",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamInvitePreviewResponse.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (유효하지 않은 초대 코드) - 에러 코드: INVALID_INVITE_CODE",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INVALID_INVITE_CODE\",\"message\":\"유효하지 않은 초대 코드입니다.\"}"))),
+        @ApiResponse(responseCode = "500", description = "서버 오류 - 에러 코드: INTERNAL_SERVER_ERROR",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"서버 오류가 발생했습니다.\"}")))
+    })
+    @GetMapping("/invite/{inviteCode}")
+    public ResponseEntity<?> getTeamByInviteCode(
+            @Parameter(description = "초대 코드", required = true) @PathVariable String inviteCode) {
+        try {
+            TeamInvitePreviewResponse response = teamService.getTeamByInviteCode(inviteCode);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            String message = e.getMessage();
+            if (message != null && message.contains("INVALID_INVITE_CODE")) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ErrorResponse.builder()
+                                .code("INVALID_INVITE_CODE")
+                                .message("유효하지 않은 초대 코드입니다.")
+                                .build());
+            }
+            return createErrorResponse(message != null ? message : "팀 정보 조회 중 오류가 발생했습니다.", HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return createErrorResponse("팀 정보 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
     

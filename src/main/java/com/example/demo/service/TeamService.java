@@ -9,10 +9,12 @@ import com.example.demo.repository.PositionRepository;
 import com.example.demo.repository.TeamMemberRepository;
 import com.example.demo.repository.TeamRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.dto.team.PositionResponse;
 import com.example.demo.dto.team.TeamCreateRequest;
 import com.example.demo.dto.team.TeamDeleteResponse;
 import com.example.demo.dto.team.TeamDetailResponse;
 import com.example.demo.dto.team.TeamDetailResponseDto;
+import com.example.demo.dto.team.TeamInvitePreviewResponse;
 import com.example.demo.dto.team.TeamJoinRequest;
 import com.example.demo.dto.team.TeamLeaveResponse;
 import com.example.demo.dto.team.TeamMemberDeleteResponse;
@@ -261,6 +263,29 @@ public class TeamService {
         
         return TeamDeleteResponse.builder()
                 .teamId(teamId)
+                .build();
+    }
+    
+    /**
+     * 인바이트 코드로 팀 정보 조회 (가입 전 미리보기)
+     */
+    @Transactional(readOnly = true)
+    public TeamInvitePreviewResponse getTeamByInviteCode(String inviteCode) {
+        // 초대 코드로 팀 조회
+        Team team = teamRepository.findByInviteCode(inviteCode)
+                .orElseThrow(() -> new IllegalArgumentException("INVALID_INVITE_CODE: 유효하지 않은 초대 코드입니다."));
+        
+        // 포지션 목록 조회
+        List<PositionResponse> positions = positionRepository.findResponsesByTeamId(team.getId());
+        
+        // 팀 정보 + 포지션 목록 반환
+        return TeamInvitePreviewResponse.builder()
+                .teamId(team.getId())
+                .teamName(team.getName())
+                .ownerName(team.getOwner().getName())
+                .description(team.getDescription())
+                .teamImageUrl(team.getImageUrl())
+                .positions(positions)
                 .build();
     }
     
