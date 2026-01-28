@@ -21,6 +21,9 @@ public class TeamCreateRequest {
     @Size(max = 20, message = "팀 소개는 최대 20자까지 입력 가능합니다.")
     private String description;
 
+    @Schema(description = "팀 이미지 URL (선택)", example = "https://image.com/team-image.jpg")
+    private String imageUrl;
+
     @Schema(description = "팀 생성 시 함께 생성할 포지션 목록 (선택, 최대 6개, 기본 포지션 MEMBER는 자동 생성됨)", 
             example = "[{\"positionName\": \"Design\", \"colorHex\": \"#FFAA00\"}, {\"positionName\": \"Developer\", \"colorHex\": \"#00AAFF\"}]")
     @Valid

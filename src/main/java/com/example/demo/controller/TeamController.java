@@ -5,11 +5,11 @@ import com.example.demo.dto.common.ErrorResponse;
 import com.example.demo.dto.team.TeamCreateRequest;
 import com.example.demo.dto.team.TeamDeleteResponse;
 import com.example.demo.dto.team.TeamDetailResponseDto;
-import com.example.demo.dto.team.TeamInvitePreviewResponse;
 import com.example.demo.dto.team.TeamJoinRequest;
+import com.example.demo.dto.team.TeamListItemResponse;
 import com.example.demo.dto.team.TeamLeaveResponse;
 import com.example.demo.dto.team.TeamMemberDeleteResponse;
-import com.example.demo.dto.team.TeamMemberListItemResponse;
+import com.example.demo.dto.team.TeamMemberListResponse;
 import com.example.demo.dto.team.TeamMemberResponse;
 import com.example.demo.dto.team.TeamMemberUpdateRequest;
 import com.example.demo.dto.team.TeamUpdateRequest;
@@ -71,6 +71,8 @@ public class TeamController {
             
             TeamDetailResponseDto response = teamService.createTeam(userId, request);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 생성 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -113,6 +115,8 @@ public class TeamController {
             
             TeamDetailResponseDto response = teamService.updateTeam(userId, id, request);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -150,38 +154,28 @@ public class TeamController {
             
             TeamDetailResponseDto response = teamService.getTeamDetail(userId, id);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
     
-    @Operation(summary = "팀 목록 조회", description = "사용자가 속한 팀 목록을 조회합니다.")
+    @Operation(summary = "팀 목록 조회", description = "사용자가 속한 팀 목록을 조회합니다. (사이드바용)")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "팀 목록 조회 성공",
             content = @Content(mediaType = "application/json",
-                array = @ArraySchema(schema = @Schema(implementation = TeamDetailResponseDto.class)),
+                array = @ArraySchema(schema = @Schema(implementation = TeamListItemResponse.class)),
                 examples = @ExampleObject(value = "[\n" +
                     "  {\n" +
-                    "    \"id\": 1,\n" +
-                    "    \"name\": \"NemoNemo 팀\",\n" +
-                    "    \"ownerId\": 1,\n" +
-                    "    \"ownerName\": \"홍길동\",\n" +
-                    "    \"isOwner\": true,\n" +
-                    "    \"description\": \"우리팀 소개입니다\",\n" +
-                    "    \"teamImageUrl\": \"https://firebasestorage.googleapis.com/v0/b/your-project.appspot.com/o/teams%2F...\",\n" +
-                    "    \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n" +
-                    "    \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n" +
+                    "    \"teamId\": 1,\n" +
+                    "    \"teamName\": \"NemoNemo 팀\",\n" +
+                    "    \"description\": \"Design\"\n" +
                     "  },\n" +
                     "  {\n" +
-                    "    \"id\": 2,\n" +
-                    "    \"name\": \"캡스톤 팀 B\",\n" +
-                    "    \"ownerId\": 2,\n" +
-                    "    \"ownerName\": \"김철수\",\n" +
-                    "    \"isOwner\": false,\n" +
-                    "    \"description\": \"캡스톤 프로젝트 팀입니다\",\n" +
-                    "    \"teamImageUrl\": null,\n" +
-                    "    \"createdAt\": \"2024-01-16T14:20:00.000Z\",\n" +
-                    "    \"updatedAt\": \"2024-01-16T14:20:00.000Z\"\n" +
+                    "    \"teamId\": 2,\n" +
+                    "    \"teamName\": \"캡스톤 팀 B\",\n" +
+                    "    \"description\": \"Developer\"\n" +
                     "  }\n" +
                     "]"))),
         @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",
@@ -202,7 +196,7 @@ public class TeamController {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
             
-            List<TeamDetailResponseDto> teams = teamService.getTeamList(userId);
+            List<TeamListItemResponse> teams = teamService.getTeamList(userId);
             return ResponseEntity.ok(teams);
         } catch (Exception e) {
             return createErrorResponse("팀 목록 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -241,42 +235,10 @@ public class TeamController {
             
             TeamDeleteResponse response = teamService.deleteTeam(userId, id);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 삭제 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    @Operation(summary = "인바이트 코드로 팀 정보 조회", description = "인바이트 코드를 사용하여 팀 정보와 포지션 목록을 조회합니다. 가입 전 확인용입니다.")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "팀 정보 조회 성공",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamInvitePreviewResponse.class))),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청 (유효하지 않은 초대 코드) - 에러 코드: INVALID_INVITE_CODE",
-            content = @Content(mediaType = "application/json", 
-                schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(value = "{\"code\":\"INVALID_INVITE_CODE\",\"message\":\"유효하지 않은 초대 코드입니다.\"}"))),
-        @ApiResponse(responseCode = "500", description = "서버 오류 - 에러 코드: INTERNAL_SERVER_ERROR",
-            content = @Content(mediaType = "application/json", 
-                schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"서버 오류가 발생했습니다.\"}")))
-    })
-    @GetMapping("/invite/{inviteCode}")
-    public ResponseEntity<?> getTeamByInviteCode(
-            @Parameter(description = "초대 코드", required = true) @PathVariable String inviteCode) {
-        try {
-            TeamInvitePreviewResponse response = teamService.getTeamByInviteCode(inviteCode);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            String message = e.getMessage();
-            if (message != null && message.contains("INVALID_INVITE_CODE")) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(ErrorResponse.builder()
-                                .code("INVALID_INVITE_CODE")
-                                .message("유효하지 않은 초대 코드입니다.")
-                                .build());
-            }
-            return createErrorResponse(message != null ? message : "팀 정보 조회 중 오류가 발생했습니다.", HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            return createErrorResponse("팀 정보 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -316,6 +278,8 @@ public class TeamController {
             
             TeamMemberResponse response = teamService.joinTeam(userId, request);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 참여 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -353,6 +317,8 @@ public class TeamController {
             
             TeamLeaveResponse response = teamService.leaveTeam(userId, id);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀 탈퇴 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -362,25 +328,35 @@ public class TeamController {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "팀원 목록 조회 성공",
             content = @Content(mediaType = "application/json",
-                array = @ArraySchema(schema = @Schema(implementation = TeamMemberListItemResponse.class)),
-                examples = @ExampleObject(value = "[\n" +
-                    "  {\n" +
-                    "    \"memberId\": 1,\n" +
+                schema = @Schema(implementation = TeamMemberListResponse.class),
+                examples = @ExampleObject(value = "{\n" +
+                    "  \"teamName\": \"NemoNemo 팀\",\n" +
+                    "  \"ownerInfo\": {\n" +
                     "    \"userId\": 1,\n" +
-                    "    \"displayName\": \"홍길동\",\n" +
-                    "    \"positionId\": 1,\n" +
-                    "    \"positionName\": \"Design\",\n" +
-                    "    \"userImageUrl\": \"https://firebasestorage.googleapis.com/v0/b/your-project.appspot.com/o/users%2F...\"\n" +
+                    "    \"ownerName\": \"홍길동\",\n" +
+                    "    \"ownerImageUrl\": \"https://firebasestorage.googleapis.com/v0/b/your-project.appspot.com/o/users%2F...\"\n" +
                     "  },\n" +
-                    "  {\n" +
-                    "    \"memberId\": 2,\n" +
-                    "    \"userId\": 2,\n" +
-                    "    \"displayName\": \"김철수\",\n" +
-                    "    \"positionId\": 2,\n" +
-                    "    \"positionName\": \"Developer\",\n" +
-                    "    \"userImageUrl\": \"https://firebasestorage.googleapis.com/v0/b/your-project.appspot.com/o/users%2F...\"\n" +
-                    "  }\n" +
-                    "]"))),
+                    "  \"members\": [\n" +
+                    "    {\n" +
+                    "      \"memberId\": 1,\n" +
+                    "      \"userId\": 1,\n" +
+                    "      \"displayName\": \"홍길동\",\n" +
+                    "      \"positionId\": 1,\n" +
+                    "      \"positionName\": \"Design\",\n" +
+                    "      \"userImageUrl\": \"https://firebasestorage.googleapis.com/v0/b/your-project.appspot.com/o/users%2F...\",\n" +
+                    "      \"isOwner\": true\n" +
+                    "    },\n" +
+                    "    {\n" +
+                    "      \"memberId\": 2,\n" +
+                    "      \"userId\": 2,\n" +
+                    "      \"displayName\": \"김철수\",\n" +
+                    "      \"positionId\": 2,\n" +
+                    "      \"positionName\": \"Developer\",\n" +
+                    "      \"userImageUrl\": \"https://firebasestorage.googleapis.com/v0/b/your-project.appspot.com/o/users%2F...\",\n" +
+                    "      \"isOwner\": false\n" +
+                    "    }\n" +
+                    "  ]\n" +
+                    "}"))),
         @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),
@@ -407,8 +383,10 @@ public class TeamController {
                 return createUnauthorizedResponse("인증이 필요합니다.");
             }
             
-            List<TeamMemberListItemResponse> members = teamService.getTeamMemberList(userId, id);
-            return ResponseEntity.ok(members);
+            TeamMemberListResponse response = teamService.getTeamMemberList(userId, id);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀원 목록 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -447,6 +425,8 @@ public class TeamController {
             
             TeamMemberResponse response = teamService.getTeamMemberDetail(userId, id, memberId);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀원 상세 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -492,6 +472,8 @@ public class TeamController {
             
             TeamMemberResponse response = teamService.updateTeamMember(userId, id, memberId, request);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀원 정보 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -530,9 +512,65 @@ public class TeamController {
             
             TeamMemberDeleteResponse response = teamService.deleteTeamMember(userId, id, memberId);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
             return createErrorResponse("팀원 삭제 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+    
+    
+    /**
+     * IllegalArgumentException 처리 (권한, 리소스 없음 등을 구분)
+     */
+    private ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
+        String message = e.getMessage();
+        
+        // 에러 코드가 포함된 경우 (예: "FORBIDDEN: ...", "NOT_FOUND: ...")
+        if (message != null && message.contains(":")) {
+            String errorCode = message.split(":")[0].trim();
+            String cleanMessage = message.split(":", 2)[1].trim();
+            
+            HttpStatus status;
+            if ("FORBIDDEN".equals(errorCode)) {
+                status = HttpStatus.FORBIDDEN;
+            } else if ("TEAM_NOT_FOUND".equals(errorCode) || "TEAM_MEMBER_NOT_FOUND".equals(errorCode) 
+                    || "POSITION_NOT_FOUND".equals(errorCode) || "NOT_FOUND".equals(errorCode)) {
+                status = HttpStatus.NOT_FOUND;
+            } else {
+                status = HttpStatus.BAD_REQUEST;
+            }
+            
+            return ResponseEntity.status(status)
+                    .body(ErrorResponse.builder()
+                            .code(errorCode)
+                            .message(cleanMessage)
+                            .build());
+        }
+        
+        // 에러 코드가 없는 경우 메시지로 판단
+        String code = "INVALID_REQUEST";
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        
+        if (message != null) {
+            if (message.contains("권한") || message.contains("FORBIDDEN") || message.contains("멤버만")) {
+                code = "FORBIDDEN";
+                status = HttpStatus.FORBIDDEN;
+            } else if (message.contains("찾을 수 없습니다") || message.contains("NOT_FOUND")) {
+                code = "NOT_FOUND";
+                status = HttpStatus.NOT_FOUND;
+            } else if (message.contains("필수")) {
+                code = "VALIDATION_ERROR";
+            } else if (message.contains("최대") || message.contains("길이")) {
+                code = "VALIDATION_ERROR";
+            }
+        }
+        
+        return ResponseEntity.status(status)
+                .body(ErrorResponse.builder()
+                        .code(code)
+                        .message(message != null ? message : "잘못된 요청입니다.")
+                        .build());
     }
     
     /**

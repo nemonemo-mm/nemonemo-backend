@@ -21,6 +21,9 @@ public interface TeamMemberListItemResponse {
 
     @Schema(description = "사용자 프로필 이미지 URL", example = "https://example.com/profile.jpg")
     String getUserImageUrl();
+
+    @Schema(description = "팀장 여부", example = "false")
+    Boolean getIsOwner();
 }
 
 

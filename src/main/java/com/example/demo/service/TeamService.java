@@ -14,15 +14,18 @@ import com.example.demo.dto.team.TeamCreateRequest;
 import com.example.demo.dto.team.TeamDeleteResponse;
 import com.example.demo.dto.team.TeamDetailResponse;
 import com.example.demo.dto.team.TeamDetailResponseDto;
+import com.example.demo.dto.team.TeamListItemResponse;
 import com.example.demo.dto.team.TeamInvitePreviewResponse;
 import com.example.demo.dto.team.TeamJoinRequest;
 import com.example.demo.dto.team.TeamLeaveResponse;
 import com.example.demo.dto.team.TeamMemberDeleteResponse;
 import com.example.demo.dto.team.TeamMemberListItemResponse;
+import com.example.demo.dto.team.TeamMemberListResponse;
 import com.example.demo.dto.team.TeamMemberResponse;
 import com.example.demo.dto.team.TeamMemberUpdateRequest;
 import com.example.demo.dto.team.TeamUpdateRequest;
 import com.example.demo.repository.NotificationSettingRepository;
+import com.example.demo.repository.NoticeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -47,6 +50,7 @@ public class TeamService {
     private final ExpoNotificationService expoNotificationService;
     private final DeviceTokenService deviceTokenService;
     private final NotificationSettingRepository notificationSettingRepository;
+    private final NoticeRepository noticeRepository;
     
     /**
      * 팀 생성
@@ -73,7 +77,7 @@ public class TeamService {
                 .name(request.getTeamName().trim())
                 .inviteCode(inviteCode)
                 .owner(owner)
-                .imageUrl(null)
+                .imageUrl(request.getImageUrl())
                 .description(request.getDescription())
                 .build();
         
@@ -217,14 +221,11 @@ public class TeamService {
     }
     
     /**
-     * 팀 목록 조회 (사용자가 속한 팀들)
+     * 팀 목록 조회 (사용자가 속한 팀들) - 사이드바용
      */
     @Transactional(readOnly = true)
-    public List<TeamDetailResponseDto> getTeamList(Long userId) {
-        List<TeamDetailResponse> responses = teamRepository.findByUserId(userId);
-        return responses.stream()
-                .map(response -> enrichTeamDetailResponse(response, userId))
-                .collect(Collectors.toList());
+    public List<TeamListItemResponse> getTeamList(Long userId) {
+        return teamRepository.findListItemResponsesByUserId(userId);
     }
     
     private TeamDetailResponseDto enrichTeamDetailResponse(TeamDetailResponse response, Long userId) {
@@ -275,8 +276,11 @@ public class TeamService {
         Team team = teamRepository.findByInviteCode(inviteCode)
                 .orElseThrow(() -> new IllegalArgumentException("INVALID_INVITE_CODE: 유효하지 않은 초대 코드입니다."));
         
-        // 포지션 목록 조회
-        List<PositionResponse> positions = positionRepository.findResponsesByTeamId(team.getId());
+        // 포지션 목록 조회 (MEMBER 제외, isDefault가 false인 것만)
+        List<PositionResponse> positions = positionRepository.findResponsesByTeamId(team.getId())
+                .stream()
+                .filter(p -> !Boolean.TRUE.equals(p.getIsDefault())) // MEMBER(isDefault=true) 제외
+                .collect(Collectors.toList());
         
         // 팀 정보 + 포지션 목록 반환
         return TeamInvitePreviewResponse.builder()
@@ -393,6 +397,13 @@ public class TeamService {
     private TeamDetailResponseDto toDetailResponse(Team team, Long currentUserId) {
         boolean isOwner = team.getOwner().getId().equals(currentUserId);
         
+        // 최신 공지사항 조회 (없을 경우 null)
+        com.example.demo.dto.notice.NoticeResponse notice = noticeRepository
+                .findLatestNoticesByTeamId(team.getId())
+                .stream()
+                .findFirst()
+                .orElse(null);
+        
         return TeamDetailResponseDto.builder()
                 .teamId(team.getId())
                 .teamName(team.getName())
@@ -404,6 +415,7 @@ public class TeamService {
                 .teamImageUrl(team.getImageUrl())
                 .createdAt(team.getCreatedAt())
                 .updatedAt(team.getUpdatedAt())
+                .notice(notice)
                 .build();
     }
     
@@ -411,7 +423,7 @@ public class TeamService {
      * 팀원 목록 조회
      */
     @Transactional(readOnly = true)
-    public List<TeamMemberListItemResponse> getTeamMemberList(Long userId, Long teamId) {
+    public TeamMemberListResponse getTeamMemberList(Long userId, Long teamId) {
         // 팀 조회
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new IllegalArgumentException("팀을 찾을 수 없습니다."));
@@ -423,7 +435,22 @@ public class TeamService {
         }
         
         // 팀원 목록 조회 (인터페이스 프로젝션 사용)
-        return teamMemberRepository.findListItemResponsesByTeamId(teamId);
+        List<TeamMemberListItemResponse> members = teamMemberRepository.findListItemResponsesByTeamId(teamId);
+        
+        // 팀장 정보 생성
+        User owner = team.getOwner();
+        TeamMemberListResponse.OwnerInfo ownerInfo = TeamMemberListResponse.OwnerInfo.builder()
+                .userId(owner.getId())
+                .ownerName(owner.getName())
+                .ownerImageUrl(owner.getImageUrl())
+                .build();
+        
+        // 응답 생성
+        return TeamMemberListResponse.builder()
+                .teamName(team.getName())
+                .ownerInfo(ownerInfo)
+                .members(members)
+                .build();
     }
     
     /**

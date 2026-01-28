@@ -45,7 +45,8 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
                 tm.user.name as displayName,
                 tm.position.id as positionId,
                 tm.position.name as positionName,
-                tm.user.imageUrl as userImageUrl
+                tm.user.imageUrl as userImageUrl,
+                case when tm.team.owner.id = tm.user.id then true else false end as isOwner
             from TeamMember tm
             where tm.team.id = :teamId
             order by tm.joinedAt

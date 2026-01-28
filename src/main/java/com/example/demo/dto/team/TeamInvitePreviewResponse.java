@@ -17,10 +17,10 @@ public class TeamInvitePreviewResponse {
     @Schema(description = "팀 ID", example = "1")
     private Long teamId;
 
-    @Schema(description = "팀 이름", example = "Nemonemo")
+    @Schema(description = "팀 이름", example = "NemoNemo 팀")
     private String teamName;
 
-    @Schema(description = "팀장 이름", example = "진소원")
+    @Schema(description = "팀장 이름", example = "홍길동")
     private String ownerName;
 
     @Schema(description = "팀 소개", example = "우리팀 소개입니다")
@@ -29,7 +29,7 @@ public class TeamInvitePreviewResponse {
     @Schema(description = "팀 이미지 URL", example = "https://firebasestorage.googleapis.com/v0/b/your-project.appspot.com/o/teams%2F...")
     private String teamImageUrl;
 
-    @Schema(description = "포지션 목록", example = "[{\"positionId\": 1, \"positionName\": \"BE\", \"colorHex\": \"#FF0000\"}, {\"positionId\": 2, \"positionName\": \"UX\", \"colorHex\": \"#00FF00\"}]")
+    @Schema(description = "포지션 목록")
     private List<PositionResponse> positions;
 }
 

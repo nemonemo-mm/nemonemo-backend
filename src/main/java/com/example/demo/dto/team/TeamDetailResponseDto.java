@@ -1,5 +1,6 @@
 package com.example.demo.dto.team;
 
+import com.example.demo.dto.notice.NoticeResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -45,7 +46,13 @@ public class TeamDetailResponseDto {
 
     @Schema(description = "수정일시", example = "2024-01-15T10:30:00.000Z")
     private LocalDateTime updatedAt;
+
+    @Schema(description = "최신 공지사항 (없을 경우 null)", example = "{\"id\": 1, \"title\": \"프로젝트 일정 변경 안내\", \"content\": \"다음 주 월요일부터 프로젝트 일정이 변경됩니다.\", ...}")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private NoticeResponse notice;
 }
+
+
 
 
 

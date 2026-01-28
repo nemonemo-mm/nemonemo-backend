@@ -2,6 +2,7 @@ package com.example.demo.repository;
 
 import com.example.demo.domain.entity.Team;
 import com.example.demo.dto.team.TeamDetailResponse;
+import com.example.demo.dto.team.TeamListItemResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -42,4 +43,16 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
             where tm.user.id = :userId
             """)
     List<TeamDetailResponse> findByUserId(@Param("userId") Long userId);
+    
+    @Query("""
+            select 
+                t.id as teamId,
+                t.name as teamName,
+                coalesce(tm.position.name, '') as description
+            from Team t
+            join TeamMember tm on tm.team.id = t.id
+            where tm.user.id = :userId
+            order by t.createdAt
+            """)
+    List<TeamListItemResponse> findListItemResponsesByUserId(@Param("userId") Long userId);
 }
