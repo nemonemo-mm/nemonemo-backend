@@ -93,9 +93,34 @@ public class ScheduleService {
         scheduleAttendeeRepository.saveAll(attendees);
 
         // 포지션 설정
-        if (request.getPositionIds() != null && !request.getPositionIds().isEmpty()) {
-            List<Position> positions = positionRepository.findAllById(request.getPositionIds());
-            List<SchedulePosition> schedulePositions = new ArrayList<>();
+        List<Long> positionIds = request.getPositionIds();
+        List<SchedulePosition> schedulePositions = new ArrayList<>();
+
+        if (positionIds == null || positionIds.isEmpty()) {
+            // 포지션이 비어있으면 생성자의 포지션을 기본으로 사용
+            Position creatorPosition = creatorMember.getPosition();
+            if (creatorPosition != null) {
+                SchedulePosition sp = SchedulePosition.builder()
+                        .id(new SchedulePositionId(schedule.getId(), creatorPosition.getId()))
+                        .schedule(schedule)
+                        .position(creatorPosition)
+                        .orderIndex(0)
+                        .build();
+                schedulePositions.add(sp);
+            } else {
+                // 생성자가 포지션이 없으면 팀의 기본 포지션(MEMBER) 사용
+                Position defaultPosition = positionRepository.findByTeamIdAndIsDefault(team.getId(), true)
+                        .orElseThrow(() -> new IllegalStateException("팀의 기본 포지션을 찾을 수 없습니다."));
+                SchedulePosition sp = SchedulePosition.builder()
+                        .id(new SchedulePositionId(schedule.getId(), defaultPosition.getId()))
+                        .schedule(schedule)
+                        .position(defaultPosition)
+                        .orderIndex(0)
+                        .build();
+                schedulePositions.add(sp);
+            }
+        } else {
+            List<Position> positions = positionRepository.findAllById(positionIds);
             for (int i = 0; i < positions.size(); i++) {
                 Position position = positions.get(i);
                 SchedulePosition sp = SchedulePosition.builder()
@@ -106,6 +131,9 @@ public class ScheduleService {
                         .build();
                 schedulePositions.add(sp);
             }
+        }
+
+        if (!schedulePositions.isEmpty()) {
             schedulePositionRepository.saveAll(schedulePositions);
         }
 

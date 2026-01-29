@@ -17,6 +17,8 @@ public interface PositionRepository extends JpaRepository<Position, Long> {
     
     Optional<Position> findByTeamIdAndName(Long teamId, String name);
     
+    Optional<Position> findByTeamIdAndIsDefault(Long teamId, Boolean isDefault);
+    
     @Query("""
             select 
                 p.id as positionId,
