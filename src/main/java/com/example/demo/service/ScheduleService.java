@@ -51,6 +51,15 @@ public class ScheduleService {
 
         String normalizedRepeatType = normalizeRepeatType(request.getRepeatType());
         
+        // repeatWeekDays를 repeatDays로 변환
+        Integer[] repeatDays = convertWeekDaysToNumbers(request.getRepeatWeekDays(), normalizedRepeatType, request.getStartAt());
+        // repeatUseDate가 true이고 MONTHLY/YEARLY면 시작일의 날짜를 repeatMonthDay로 설정
+        Integer repeatMonthDay = null;
+        if (Boolean.TRUE.equals(request.getRepeatUseDate()) && 
+            (normalizedRepeatType.equals(RepeatType.MONTHLY.name()) || normalizedRepeatType.equals(RepeatType.YEARLY.name()))) {
+            repeatMonthDay = request.getStartAt().getDayOfMonth();
+        }
+        
         Schedule schedule = Schedule.builder()
                 .team(team)
                 .title(request.getTitle())
@@ -62,8 +71,8 @@ public class ScheduleService {
                 .url(request.getUrl())
                 .repeatType(normalizedRepeatType)
                 .repeatInterval(request.getRepeatInterval() == null ? 1 : request.getRepeatInterval())
-                .repeatDays(getRepeatDaysOrDefault(request.getRepeatDays(), normalizedRepeatType, request.getStartAt()))
-                .repeatMonthDay(getRepeatMonthDayOrDefault(request.getRepeatMonthDay(), normalizedRepeatType, request.getStartAt()))
+                .repeatDays(repeatDays)
+                .repeatMonthDay(repeatMonthDay)
                 .repeatEndDate(toRepeatEndDate(request.getRepeatEndDate()))
                 .createdBy(creator)
                 .build();
@@ -217,12 +226,24 @@ public class ScheduleService {
         if (request.getPlace() != null) schedule.setPlace(request.getPlace());
         if (request.getUrl() != null) schedule.setUrl(request.getUrl());
 
-        if (request.getRepeatType() != null) schedule.setRepeatType(normalizeRepeatType(request.getRepeatType()));
-        if (request.getRepeatInterval() != null) schedule.setRepeatInterval(request.getRepeatInterval());
-        if (request.getRepeatDays() != null) {
-            schedule.setRepeatDays(request.getRepeatDays().toArray(new Integer[0]));
+        if (request.getRepeatType() != null) {
+            String normalizedRepeatType = normalizeRepeatType(request.getRepeatType());
+            schedule.setRepeatType(normalizedRepeatType);
+            
+            // repeatWeekDays를 repeatDays로 변환
+            if (request.getRepeatWeekDays() != null) {
+                Integer[] repeatDays = convertWeekDaysToNumbers(request.getRepeatWeekDays(), normalizedRepeatType, schedule.getStartAt());
+                schedule.setRepeatDays(repeatDays);
+            }
+            
+            // repeatUseDate가 true이고 MONTHLY/YEARLY면 시작일의 날짜를 repeatMonthDay로 설정
+            if (Boolean.TRUE.equals(request.getRepeatUseDate()) && 
+                (normalizedRepeatType.equals(RepeatType.MONTHLY.name()) || normalizedRepeatType.equals(RepeatType.YEARLY.name()))) {
+                Integer repeatMonthDay = schedule.getStartAt() != null ? schedule.getStartAt().getDayOfMonth() : null;
+                schedule.setRepeatMonthDay(repeatMonthDay);
+            }
         }
-        if (request.getRepeatMonthDay() != null) schedule.setRepeatMonthDay(request.getRepeatMonthDay());
+        if (request.getRepeatInterval() != null) schedule.setRepeatInterval(request.getRepeatInterval());
         if (request.getRepeatEndDate() != null) schedule.setRepeatEndDate(toRepeatEndDate(request.getRepeatEndDate()));
 
         // 참석자 및 포지션 갱신은 단순화를 위해 전체 교체
@@ -279,30 +300,51 @@ public class ScheduleService {
         return RepeatType.valueOf(repeatType).name();
     }
 
-    private Integer[] getRepeatDaysOrDefault(List<Integer> repeatDays, String repeatType, LocalDateTime startAt) {
-        if (repeatDays != null && !repeatDays.isEmpty()) {
-            return repeatDays.toArray(new Integer[0]);
+
+    /**
+     * 한글 요일 문자열 리스트를 숫자 배열로 변환
+     * "월", "화", "수", "목", "금", "토", "일" -> [1, 2, 3, 4, 5, 6, 0]
+     */
+    private Integer[] convertWeekDaysToNumbers(List<String> weekDays, String repeatType, LocalDateTime startAt) {
+        if (weekDays == null || weekDays.isEmpty()) {
+            // 매주 반복인데 요일이 지정되지 않은 경우, 시작일의 요일을 기본값으로 사용
+            if (repeatType != null && repeatType.equals(RepeatType.WEEKLY.name())) {
+                int dayOfWeekValue = startAt.getDayOfWeek().getValue(); // 1=월요일, 7=일요일
+                int zeroBasedDay = dayOfWeekValue == 7 ? 0 : dayOfWeekValue; // 0=일요일, 1=월요일, ...
+                return new Integer[]{zeroBasedDay};
+            }
+            return null;
         }
-        // 매주 반복인데 요일이 지정되지 않은 경우, 시작일의 요일을 기본값으로 사용
-        if (repeatType != null && repeatType.equals(RepeatType.WEEKLY.name())) {
-            // DayOfWeek: MONDAY=1, TUESDAY=2, ..., SUNDAY=7
-            // 요구사항: 0=일요일, 1=월요일, ...
-            int dayOfWeekValue = startAt.getDayOfWeek().getValue(); // 1=월요일, 7=일요일
-            int zeroBasedDay = dayOfWeekValue == 7 ? 0 : dayOfWeekValue; // 0=일요일, 1=월요일, ...
-            return new Integer[]{zeroBasedDay};
-        }
-        return null;
+
+        java.util.Map<String, Integer> weekDayMap = new java.util.HashMap<>();
+        weekDayMap.put("일", 0);
+        weekDayMap.put("월", 1);
+        weekDayMap.put("화", 2);
+        weekDayMap.put("수", 3);
+        weekDayMap.put("목", 4);
+        weekDayMap.put("금", 5);
+        weekDayMap.put("토", 6);
+
+        return weekDays.stream()
+                .map(weekDayMap::get)
+                .filter(java.util.Objects::nonNull)
+                .toArray(Integer[]::new);
     }
 
-    private Integer getRepeatMonthDayOrDefault(Integer repeatMonthDay, String repeatType, LocalDateTime startAt) {
-        if (repeatMonthDay != null) {
-            return repeatMonthDay;
+    /**
+     * 숫자 배열을 한글 요일 문자열 리스트로 변환
+     * [1, 2, 3] -> ["월", "화", "수"]
+     */
+    private List<String> convertNumbersToWeekDays(Integer[] numbers) {
+        if (numbers == null || numbers.length == 0) {
+            return null;
         }
-        // 매월 반복인데 날짜가 지정되지 않은 경우, 시작일의 날짜를 기본값으로 사용
-        if (repeatType != null && repeatType.equals(RepeatType.MONTHLY.name())) {
-            return startAt.getDayOfMonth();
-        }
-        return null;
+
+        String[] weekDays = {"일", "월", "화", "수", "목", "금", "토"};
+        return java.util.Arrays.stream(numbers)
+                .filter(n -> n >= 0 && n < 7)
+                .map(n -> weekDays[n])
+                .collect(java.util.stream.Collectors.toList());
     }
 
     private List<ScheduleResponseDto> enrichScheduleResponses(List<ScheduleResponse> responses) {
@@ -324,18 +366,28 @@ public class ScheduleService {
                     Object[] repeatFields = scheduleRepository.findRepeatFieldsByScheduleId(response.getId());
                     String repeatType = null;
                     Integer repeatInterval = null;
-                    List<Integer> repeatDays = null;
                     Integer repeatMonthDay = null;
                     LocalDate repeatEndDate = null;
+                    Boolean repeatUseDate = null;
+                    List<String> repeatWeekDays = null;
                     String repeatSummary = "반복 없음";
                     if (repeatFields != null && repeatFields.length == 5) {
                         repeatType = (String) repeatFields[0];
                         repeatInterval = (Integer) repeatFields[1];
                         Integer[] repeatDaysArray = (Integer[]) repeatFields[2];
-                        repeatDays = repeatDaysArray == null ? null : List.of(repeatDaysArray);
                         repeatMonthDay = (Integer) repeatFields[3];
                         LocalDateTime repeatEndDateDateTime = (LocalDateTime) repeatFields[4];
                         repeatEndDate = repeatEndDateDateTime == null ? null : repeatEndDateDateTime.toLocalDate();
+                        
+                        // repeatDays를 repeatWeekDays로 변환
+                        if (repeatDaysArray != null && repeatDaysArray.length > 0) {
+                            repeatWeekDays = convertNumbersToWeekDays(repeatDaysArray);
+                        }
+                        
+                        // repeatMonthDay가 있으면 repeatUseDate = true
+                        if (repeatMonthDay != null) {
+                            repeatUseDate = true;
+                        }
                         
                         ScheduleRepeatRule rule = ScheduleRepeatRule.fromEntityFields(
                                 repeatType,
@@ -366,9 +418,9 @@ public class ScheduleService {
                             .representativeColorHex(representativeColorHex)
                             .repeatType(repeatType)
                             .repeatInterval(repeatInterval)
-                            .repeatDays(repeatDays)
-                            .repeatMonthDay(repeatMonthDay)
                             .repeatEndDate(repeatEndDate)
+                            .repeatUseDate(repeatUseDate)
+                            .repeatWeekDays(repeatWeekDays)
                             .repeatSummary(repeatSummary)
                             .attendeeMemberIds(attendeeMemberIds)
                             .build();
@@ -403,6 +455,15 @@ public class ScheduleService {
                 ? null
                 : schedule.getRepeatEndDate().toLocalDate();
 
+        // repeatDays를 repeatWeekDays로 변환
+        List<String> repeatWeekDays = null;
+        if (schedule.getRepeatDays() != null && schedule.getRepeatDays().length > 0) {
+            repeatWeekDays = convertNumbersToWeekDays(schedule.getRepeatDays());
+        }
+
+        // repeatMonthDay가 있으면 repeatUseDate = true
+        Boolean repeatUseDate = schedule.getRepeatMonthDay() != null ? true : null;
+
         // 참석자 팀멤버 ID 목록
         List<Long> attendeeMemberIds = scheduleAttendeeRepository.findMemberIdsByScheduleId(schedule.getId());
 
@@ -425,9 +486,9 @@ public class ScheduleService {
                 .representativeColorHex(representativeColorHex)
                 .repeatType(schedule.getRepeatType())
                 .repeatInterval(schedule.getRepeatInterval())
-                .repeatDays(schedule.getRepeatDays() == null ? null : List.of(schedule.getRepeatDays()))
-                .repeatMonthDay(schedule.getRepeatMonthDay())
                 .repeatEndDate(repeatEndDate)
+                .repeatUseDate(repeatUseDate)
+                .repeatWeekDays(repeatWeekDays)
                 .repeatSummary(rule.toSummary())
                 .attendeeMemberIds(attendeeMemberIds)
                 .build();

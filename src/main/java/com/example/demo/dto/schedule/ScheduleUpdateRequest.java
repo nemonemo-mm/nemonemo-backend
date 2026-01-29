@@ -38,9 +38,9 @@ public class ScheduleUpdateRequest {
     // 반복 관련 필드
     private String repeatType;
     private Integer repeatInterval;
-    private List<Integer> repeatDays;
-    private Integer repeatMonthDay;
     private LocalDate repeatEndDate;
+    private Boolean repeatUseDate;
+    private List<String> repeatWeekDays;
 
     // 포지션 및 참석자
     private List<Long> positionIds;

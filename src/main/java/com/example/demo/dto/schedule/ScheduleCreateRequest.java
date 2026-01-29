@@ -50,14 +50,14 @@ public class ScheduleCreateRequest {
     @Schema(description = "반복 간격 (예: 2일 간격, 2주 간격)", example = "1")
     private Integer repeatInterval;
 
-    @Schema(description = "반복 요일 배열 (주간 반복 시, 0=일요일, 1=월요일, ...)", example = "[1,3]")
-    private List<Integer> repeatDays;
-
-    @Schema(description = "월간 반복 - 날짜 (매월 n일)", example = "15")
-    private Integer repeatMonthDay;
-
     @Schema(description = "반복 종료일 (미설정 시 무기한)", example = "2026-01-17")
     private LocalDate repeatEndDate;
+
+    @Schema(description = "월간/연간 반복 시 날짜 사용 여부", example = "true")
+    private Boolean repeatUseDate;
+
+    @Schema(description = "반복 요일 배열 (주간 반복 시, \"월\", \"화\", \"수\", \"목\", \"금\", \"토\", \"일\")", example = "[\"월\", \"수\", \"금\"]")
+    private List<String> repeatWeekDays;
 
     // 포지션 및 참석자
     @Schema(description = "연결할 포지션 ID 목록 (첫 번째가 대표 포지션)", example = "[1,2]")
