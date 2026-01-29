@@ -45,14 +45,19 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     List<TeamDetailResponse> findByUserId(@Param("userId") Long userId);
     
     @Query("""
-            select 
+            select distinct
                 t.id as teamId,
                 t.name as teamName,
-                coalesce(tm.position.name, '') as description
+                p.name as description
             from Team t
-            join TeamMember tm on tm.team.id = t.id
-            where tm.user.id = :userId
-            order by t.createdAt
+            left join TeamMember tm
+                on tm.team.id = t.id
+                and tm.user.id = :userId
+            left join tm.position p
+                on p.id = tm.position.id
+            where t.owner.id = :userId
+               or tm.user.id = :userId
+            order by t.id
             """)
     List<TeamListItemResponse> findListItemResponsesByUserId(@Param("userId") Long userId);
 }
