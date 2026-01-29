@@ -86,6 +86,9 @@ public class GlobalExceptionHandler {
                     || "AUTH_TOKEN_EXPIRED".equals(errorCode)) {
                 code = errorCode;
                 status = HttpStatus.UNAUTHORIZED;
+            } else if ("DEFAULT_POSITION_CANNOT_DELETE".equals(errorCode)) {
+                code = "INVALID_REQUEST";
+                status = HttpStatus.BAD_REQUEST;
             } else {
                 code = errorCode;
                 status = HttpStatus.BAD_REQUEST;

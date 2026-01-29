@@ -199,6 +199,9 @@ public class PositionController {
             
             PositionDeleteResponse response = positionService.deletePosition(userId, id, positionId);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            // IllegalArgumentException과 IllegalStateException은 GlobalExceptionHandler에서 처리하도록 다시 던짐
+            throw e;
         } catch (Exception e) {
             return createErrorResponse("포지션 삭제 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }

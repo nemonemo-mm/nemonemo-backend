@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.domain.entity.Position;
 import com.example.demo.repository.PositionRepository;
+import com.example.demo.repository.TeamMemberRepository;
 import com.example.demo.dto.team.PositionCreateRequest;
 import com.example.demo.dto.team.PositionDeleteResponse;
 import com.example.demo.dto.team.PositionResponse;
@@ -19,15 +20,35 @@ import java.util.List;
 public class PositionService {
     
     private final PositionRepository positionRepository;
+    private final TeamMemberRepository teamMemberRepository;
     private final TeamPermissionService teamPermissionService;
     
     /**
      * 포지션 목록 조회
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<PositionResponse> getPositionList(Long userId, Long teamId) {
         // 권한 확인 및 팀 조회 (팀원 모두 조회 가능)
-        teamPermissionService.verifyTeamMember(userId, teamId);
+        com.example.demo.domain.entity.Team team = teamPermissionService.getTeamWithMemberCheck(userId, teamId);
+        
+        // 기본 포지션(MEMBER)이 없으면 생성 (데이터 무결성 보장)
+        Position defaultPosition = positionRepository.findByTeamIdAndIsDefault(teamId, true)
+                .orElse(null);
+        
+        if (defaultPosition == null) {
+            // 기본 포지션이 없으면 생성
+            defaultPosition = Position.builder()
+                    .team(team)
+                    .name("MEMBER")
+                    .colorHex("#9BBF9B")
+                    .isDefault(true)
+                    .build();
+            positionRepository.save(defaultPosition);
+        } else if (defaultPosition.getColorHex() == null || defaultPosition.getColorHex().isEmpty()) {
+            // 기존 기본 포지션에 색상이 없으면 설정
+            defaultPosition.setColorHex("#9BBF9B");
+            positionRepository.save(defaultPosition);
+        }
         
         // 포지션 목록 조회 (인터페이스 프로젝션 사용)
         return positionRepository.findResponsesByTeamId(teamId);
@@ -150,6 +171,15 @@ public class PositionService {
         if (position.getIsDefault()) {
             throw new IllegalArgumentException("DEFAULT_POSITION_CANNOT_DELETE: 기본 포지션은 삭제할 수 없습니다.");
         }
+        
+        // 해당 포지션을 사용하는 팀 멤버들의 포지션을 기본 포지션(MEMBER)로 변경
+        Position defaultPosition = positionRepository.findByTeamIdAndIsDefault(teamId, true)
+                .orElseThrow(() -> new IllegalStateException("기본 포지션(MEMBER)을 찾을 수 없습니다."));
+        
+        // team_member 테이블에서 해당 포지션을 사용하는 멤버들의 포지션을 기본 포지션으로 업데이트
+        teamMemberRepository.findByTeamId(teamId).stream()
+                .filter(member -> member.getPosition() != null && member.getPosition().getId().equals(positionId))
+                .forEach(member -> member.setPosition(defaultPosition));
         
         // 포지션 삭제
         positionRepository.delete(position);

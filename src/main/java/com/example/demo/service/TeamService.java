@@ -87,6 +87,7 @@ public class TeamService {
         Position defaultPosition = Position.builder()
                 .team(team)
                 .name("MEMBER")
+                .colorHex("#9BBF9B")
                 .isDefault(true)
                 .build();
         defaultPosition = positionRepository.save(defaultPosition);
