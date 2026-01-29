@@ -198,6 +198,13 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     List<Long> findPositionIdsByScheduleId(@Param("scheduleId") Long scheduleId);
 
     @Query("""
+            select a.member.id
+            from ScheduleAttendee a
+            where a.schedule.id = :scheduleId
+            """)
+    List<Long> findAttendeeMemberIdsByScheduleId(@Param("scheduleId") Long scheduleId);
+
+    @Query("""
             select s.repeatType, s.repeatInterval, s.repeatDays, s.repeatMonthDay, s.repeatEndDate
             from Schedule s
             where s.id = :scheduleId

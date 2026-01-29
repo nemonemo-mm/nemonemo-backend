@@ -182,9 +182,14 @@ public class TodoService {
     private List<TodoResponseDto> enrichTodoResponses(List<TodoResponse> responses) {
         return responses.stream()
                 .map(response -> {
-                    // positionIds 가져오기
+                    // positionIds 및 대표 포지션 컬러 가져오기
                     List<Long> positionIds = todoRepository.findPositionIdsByTodoId(response.getId());
-                    Long representativePositionId = positionIds.isEmpty() ? null : positionIds.get(0);
+                    String representativeColorHex = null;
+                    if (!positionIds.isEmpty()) {
+                        representativeColorHex = positionRepository.findById(positionIds.get(0))
+                                .map(Position::getColorHex)
+                                .orElse(null);
+                    }
                     
                     // assignees 가져오기
                     List<Object[]> assigneeInfoList = todoRepository.findAssigneeInfoByTodoId(response.getId());
@@ -214,7 +219,7 @@ public class TodoService {
                             .assigneeMemberUserName(primaryAssigneeName)
                             .assignees(assignees)
                             .positionIds(positionIds)
-                            .representativePositionId(representativePositionId)
+                            .representativeColorHex(representativeColorHex)
                             .createdAt(response.getCreatedAt())
                             .updatedAt(response.getUpdatedAt())
                             .build();
@@ -245,7 +250,9 @@ public class TodoService {
         Long primaryAssigneeId = assignees.isEmpty() ? null : assignees.get(0).getMemberId();
         String primaryAssigneeName = assignees.isEmpty() ? null : assignees.get(0).getUserName();
 
-        Long representativePositionId = positionIds.isEmpty() ? null : positionIds.get(0);
+        String representativeColorHex = sortedPositions.isEmpty()
+                ? null
+                : sortedPositions.get(0).getPosition().getColorHex();
 
         return TodoResponseDto.builder()
                 .id(todo.getId())
@@ -263,7 +270,7 @@ public class TodoService {
                 .assigneeMemberUserName(primaryAssigneeName)
                 .assignees(assignees)
                 .positionIds(positionIds)
-                .representativePositionId(representativePositionId)
+                .representativeColorHex(representativeColorHex)
                 .createdAt(todo.getCreatedAt())
                 .updatedAt(todo.getUpdatedAt())
                 .build();

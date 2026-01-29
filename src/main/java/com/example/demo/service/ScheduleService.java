@@ -308,26 +308,41 @@ public class ScheduleService {
     private List<ScheduleResponseDto> enrichScheduleResponses(List<ScheduleResponse> responses) {
         return responses.stream()
                 .map(response -> {
-                    // positionIds 가져오기
+                    // positionIds 및 대표 포지션 컬러 가져오기
                     List<Long> positionIds = scheduleRepository.findPositionIdsByScheduleId(response.getId());
-                    Long representativePositionId = positionIds.isEmpty() ? null : positionIds.get(0);
+                    String representativeColorHex = null;
+                    if (!positionIds.isEmpty()) {
+                        representativeColorHex = positionRepository.findById(positionIds.get(0))
+                                .map(Position::getColorHex)
+                                .orElse(null);
+                    }
+
+                    // 참석자 팀멤버 ID 목록 가져오기
+                    List<Long> attendeeMemberIds = scheduleAttendeeRepository.findMemberIdsByScheduleId(response.getId());
                     
-                    // repeatSummary 계산
+                    // 반복 설정 원본 필드 + 요약 정보 계산
                     Object[] repeatFields = scheduleRepository.findRepeatFieldsByScheduleId(response.getId());
+                    String repeatType = null;
+                    Integer repeatInterval = null;
+                    List<Integer> repeatDays = null;
+                    Integer repeatMonthDay = null;
+                    LocalDate repeatEndDate = null;
                     String repeatSummary = "반복 없음";
                     if (repeatFields != null && repeatFields.length == 5) {
-                        String repeatType = (String) repeatFields[0];
-                        Integer repeatInterval = (Integer) repeatFields[1];
-                        Integer[] repeatDays = (Integer[]) repeatFields[2];
-                        Integer repeatMonthDay = (Integer) repeatFields[3];
-                        LocalDateTime repeatEndDate = (LocalDateTime) repeatFields[4];
+                        repeatType = (String) repeatFields[0];
+                        repeatInterval = (Integer) repeatFields[1];
+                        Integer[] repeatDaysArray = (Integer[]) repeatFields[2];
+                        repeatDays = repeatDaysArray == null ? null : List.of(repeatDaysArray);
+                        repeatMonthDay = (Integer) repeatFields[3];
+                        LocalDateTime repeatEndDateDateTime = (LocalDateTime) repeatFields[4];
+                        repeatEndDate = repeatEndDateDateTime == null ? null : repeatEndDateDateTime.toLocalDate();
                         
                         ScheduleRepeatRule rule = ScheduleRepeatRule.fromEntityFields(
                                 repeatType,
                                 repeatInterval,
-                                repeatDays,
+                                repeatDaysArray,
                                 repeatMonthDay,
-                                repeatEndDate
+                                repeatEndDateDateTime
                         );
                         repeatSummary = rule.toSummary();
                     }
@@ -348,9 +363,14 @@ public class ScheduleService {
                             .createdAt(response.getCreatedAt())
                             .updatedAt(response.getUpdatedAt())
                             .positionIds(positionIds)
-                            .representativePositionId(representativePositionId)
+                            .representativeColorHex(representativeColorHex)
+                            .repeatType(repeatType)
+                            .repeatInterval(repeatInterval)
+                            .repeatDays(repeatDays)
+                            .repeatMonthDay(repeatMonthDay)
+                            .repeatEndDate(repeatEndDate)
                             .repeatSummary(repeatSummary)
-                            .parentScheduleId(response.getParentScheduleId())
+                            .attendeeMemberIds(attendeeMemberIds)
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -375,7 +395,16 @@ public class ScheduleService {
                 .map(sp -> sp.getPosition().getId())
                 .toList();
 
-        Long representativePositionId = positionIds.isEmpty() ? null : positionIds.get(0);
+        String representativeColorHex = sortedPositions.isEmpty()
+                ? null
+                : sortedPositions.get(0).getPosition().getColorHex();
+
+        LocalDate repeatEndDate = schedule.getRepeatEndDate() == null
+                ? null
+                : schedule.getRepeatEndDate().toLocalDate();
+
+        // 참석자 팀멤버 ID 목록
+        List<Long> attendeeMemberIds = scheduleAttendeeRepository.findMemberIdsByScheduleId(schedule.getId());
 
         return ScheduleResponseDto.builder()
                 .id(schedule.getId())
@@ -393,9 +422,14 @@ public class ScheduleService {
                 .createdAt(schedule.getCreatedAt())
                 .updatedAt(schedule.getUpdatedAt())
                 .positionIds(positionIds)
-                .representativePositionId(representativePositionId)
+                .representativeColorHex(representativeColorHex)
+                .repeatType(schedule.getRepeatType())
+                .repeatInterval(schedule.getRepeatInterval())
+                .repeatDays(schedule.getRepeatDays() == null ? null : List.of(schedule.getRepeatDays()))
+                .repeatMonthDay(schedule.getRepeatMonthDay())
+                .repeatEndDate(repeatEndDate)
                 .repeatSummary(rule.toSummary())
-                .parentScheduleId(schedule.getParentSchedule() == null ? null : schedule.getParentSchedule().getId())
+                .attendeeMemberIds(attendeeMemberIds)
                 .build();
     }
 

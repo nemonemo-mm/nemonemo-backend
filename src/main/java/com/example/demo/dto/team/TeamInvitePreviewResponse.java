@@ -33,3 +33,9 @@ public class TeamInvitePreviewResponse {
     private List<PositionResponse> positions;
 }
 
+
+
+
+
+
+

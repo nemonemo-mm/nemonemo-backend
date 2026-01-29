@@ -61,8 +61,8 @@ public class TodoResponseDto {
     @Schema(description = "포지션 ID 목록", example = "[1,2]")
     private List<Long> positionIds;
 
-    @Schema(description = "대표 포지션 ID", example = "1")
-    private Long representativePositionId;
+    @Schema(description = "대표 포지션 컬러 HEX 값", example = "#FF0000")
+    private String representativeColorHex;
 
     @Schema(description = "생성일시", example = "2024-01-15T10:30:00.000Z")
     private LocalDateTime createdAt;
