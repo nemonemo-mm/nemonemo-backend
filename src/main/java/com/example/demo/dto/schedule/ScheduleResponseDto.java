@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Schema(description = "일정 정보")
 @Getter
@@ -60,6 +61,9 @@ public class ScheduleResponseDto {
 
     @Schema(description = "포지션 ID 목록 (첫 번째가 대표 포지션)", example = "[1,2]")
     private List<Long> positionIds;
+
+    @Schema(description = "포지션 ID와 색상 매핑 (포지션 ID를 키로, 색상 HEX 값을 값으로)", example = "{\"1\": \"#9BBF9B\", \"2\": \"#FF0000\"}")
+    private Map<Long, String> positionColors;
 
     @Schema(description = "대표 포지션 컬러 HEX 값", example = "#FF0000")
     private String representativeColorHex;

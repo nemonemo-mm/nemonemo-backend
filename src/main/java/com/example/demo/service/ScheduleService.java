@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -380,9 +381,21 @@ public class ScheduleService {
                 .map(response -> {
                     // positionIds 및 대표 포지션 컬러 가져오기
                     List<Long> positionIds = scheduleRepository.findPositionIdsByScheduleId(response.getId());
+                    
+                    // 포지션 ID와 색상 매핑 생성
+                    Map<Long, String> positionColors = null;
                     String representativeColorHex = null;
                     if (!positionIds.isEmpty()) {
-                        representativeColorHex = positionRepository.findById(positionIds.get(0))
+                        List<Position> positions = positionRepository.findAllById(positionIds);
+                        positionColors = positions.stream()
+                                .collect(Collectors.toMap(
+                                        Position::getId,
+                                        Position::getColorHex,
+                                        (existing, replacement) -> existing
+                                ));
+                        representativeColorHex = positions.stream()
+                                .filter(p -> p.getId().equals(positionIds.get(0)))
+                                .findFirst()
                                 .map(Position::getColorHex)
                                 .orElse(null);
                     }
@@ -443,6 +456,7 @@ public class ScheduleService {
                             .createdAt(response.getCreatedAt())
                             .updatedAt(response.getUpdatedAt())
                             .positionIds(positionIds)
+                            .positionColors(positionColors)
                             .representativeColorHex(representativeColorHex)
                             .repeatType(repeatType)
                             .repeatInterval(repeatInterval)
@@ -474,6 +488,13 @@ public class ScheduleService {
         List<Long> positionIds = sortedPositions.stream()
                 .map(sp -> sp.getPosition().getId())
                 .toList();
+
+        Map<Long, String> positionColors = sortedPositions.stream()
+                .collect(Collectors.toMap(
+                        sp -> sp.getPosition().getId(),
+                        sp -> sp.getPosition().getColorHex(),
+                        (existing, replacement) -> existing
+                ));
 
         String representativeColorHex = sortedPositions.isEmpty()
                 ? null
@@ -511,6 +532,7 @@ public class ScheduleService {
                 .createdAt(schedule.getCreatedAt())
                 .updatedAt(schedule.getUpdatedAt())
                 .positionIds(positionIds)
+                .positionColors(positionColors)
                 .representativeColorHex(representativeColorHex)
                 .repeatType(schedule.getRepeatType())
                 .repeatInterval(schedule.getRepeatInterval())
