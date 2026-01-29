@@ -12,7 +12,7 @@ import java.util.Optional;
 public interface PositionRepository extends JpaRepository<Position, Long> {
     List<Position> findByTeamId(Long teamId);
     
-    @Query("SELECT COUNT(p) FROM Position p WHERE p.team.id = :teamId")
+    @Query("SELECT COUNT(p) FROM Position p WHERE p.team.id = :teamId AND p.isDefault = false AND p.name != 'MEMBER'")
     long countByTeamId(@Param("teamId") Long teamId);
     
     Optional<Position> findByTeamIdAndName(Long teamId, String name);
@@ -30,7 +30,9 @@ public interface PositionRepository extends JpaRepository<Position, Long> {
                 p.updatedAt as updatedAt
             from Position p
             where p.team.id = :teamId
-            order by p.isDefault desc, p.createdAt
+              and p.isDefault = false
+              and p.name != 'MEMBER'
+            order by p.createdAt
             """)
     List<PositionResponse> findResponsesByTeamId(@Param("teamId") Long teamId);
     

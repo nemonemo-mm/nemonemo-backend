@@ -43,13 +43,15 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
                 tm.id as memberId,
                 tm.user.id as userId,
                 tm.user.name as displayName,
-                tm.position.id as positionId,
-                tm.position.name as positionName,
+                coalesce(p.id, -1) as positionId,
+                coalesce(p.name, 'MEMBER') as positionName,
+                coalesce(p.colorHex, '#9BBF9B') as positionColor,
                 tm.user.imageUrl as userImageUrl,
                 case when tm.team.owner.id = tm.user.id then true else false end as isOwner
             from TeamMember tm
+            left join tm.position p
             where tm.team.id = :teamId
-            order by tm.joinedAt
+            order by case when tm.team.owner.id = tm.user.id then 0 else 1 end, tm.joinedAt
             """)
     List<TeamMemberListItemResponse> findListItemResponsesByTeamId(@Param("teamId") Long teamId);
 }

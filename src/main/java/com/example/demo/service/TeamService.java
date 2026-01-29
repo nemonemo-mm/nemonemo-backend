@@ -83,21 +83,11 @@ public class TeamService {
         
         team = teamRepository.save(team);
         
-        // 기본 포지션(MEMBER) 생성
-        Position defaultPosition = Position.builder()
-                .team(team)
-                .name("MEMBER")
-                .colorHex("#9BBF9B")
-                .isDefault(true)
-                .build();
-        defaultPosition = positionRepository.save(defaultPosition);
-        
         // 요청에 포함된 포지션들 생성
         if (request.getPositions() != null && !request.getPositions().isEmpty()) {
-            // 포지션 개수 체크 (기본 MEMBER 포함 최대 7개)
-            int totalPositionCount = 1 + request.getPositions().size(); // MEMBER + 요청된 포지션들
-            if (totalPositionCount > 7) {
-                throw new IllegalArgumentException("포지션은 최대 6개까지 추가할 수 있습니다. (기본값 MEMBER 포함 시 7개)");
+            // 포지션 개수 체크 (최대 6개)
+            if (request.getPositions().size() > 6) {
+                throw new IllegalArgumentException("포지션은 최대 6개까지 추가할 수 있습니다.");
             }
             
             // 포지션 이름 중복 체크
@@ -105,11 +95,6 @@ public class TeamService {
                     .map(p -> p.getPositionName() != null ? p.getPositionName().trim() : null)
                     .filter(name -> name != null && !name.isEmpty())
                     .toList();
-            
-            // MEMBER와 중복 체크
-            if (positionNames.stream().anyMatch(name -> "MEMBER".equalsIgnoreCase(name))) {
-                throw new IllegalArgumentException("MEMBER는 기본 포지션이므로 추가할 수 없습니다.");
-            }
             
             // 포지션 이름 중복 체크
             long distinctCount = positionNames.stream().distinct().count();
@@ -126,7 +111,7 @@ public class TeamService {
                 
                 positionName = positionName.trim();
                 
-                // 이미 존재하는지 확인 (MEMBER 제외하고는 아직 생성 안 했으므로 체크 불필요하지만 안전을 위해)
+                // 이미 존재하는지 확인
                 if (positionRepository.findByTeamIdAndName(team.getId(), positionName).isPresent()) {
                     throw new IllegalArgumentException("이미 존재하는 포지션 이름입니다: " + positionName);
                 }
@@ -141,8 +126,8 @@ public class TeamService {
             }
         }
         
-        // 팀장의 포지션 설정
-        Position ownerPosition = defaultPosition;
+        // 팀장의 포지션 설정 (포지션이 없으면 null로 설정 - 전체로 처리)
+        Position ownerPosition = null;
         if (request.getOwnerPositionName() != null && !request.getOwnerPositionName().trim().isEmpty()) {
             String ownerPositionName = request.getOwnerPositionName().trim();
             Position selectedPosition = positionRepository.findByTeamIdAndName(team.getId(), ownerPositionName)
@@ -156,7 +141,8 @@ public class TeamService {
                 .user(owner)
                 .position(ownerPosition)
                 .build();
-        teamMemberRepository.save(ownerMember);
+        ownerMember = teamMemberRepository.save(ownerMember);
+        teamMemberRepository.flush(); // 즉시 DB에 반영
         
         // 팀장의 팀 알림 설정 생성
         if (!notificationSettingRepository.findByUserIdAndTeamId(userId, team.getId()).isPresent()) {
@@ -317,7 +303,7 @@ public class TeamService {
             throw new IllegalArgumentException("ALREADY_MEMBER: 이미 해당 팀의 멤버입니다.");
         }
         
-        // 포지션 설정
+        // 포지션 설정 (포지션이 없으면 null로 설정 - 전체로 처리)
         Position position = null;
         if (request.getPositionId() != null) {
             position = positionRepository.findById(request.getPositionId())
@@ -327,11 +313,8 @@ public class TeamService {
             if (!position.getTeam().getId().equals(team.getId())) {
                 throw new IllegalArgumentException("해당 팀의 포지션이 아닙니다.");
             }
-        } else {
-            // 기본 포지션(MEMBER) 찾기
-            position = positionRepository.findByTeamIdAndName(team.getId(), "MEMBER")
-                    .orElseThrow(() -> new IllegalArgumentException("기본 포지션을 찾을 수 없습니다."));
         }
+        // positionId가 null이면 position도 null로 유지 (전체로 처리)
         
         // 팀 멤버 생성
         TeamMember member = TeamMember.builder()

@@ -29,26 +29,7 @@ public class PositionService {
     @Transactional
     public List<PositionResponse> getPositionList(Long userId, Long teamId) {
         // 권한 확인 및 팀 조회 (팀원 모두 조회 가능)
-        com.example.demo.domain.entity.Team team = teamPermissionService.getTeamWithMemberCheck(userId, teamId);
-        
-        // 기본 포지션(MEMBER)이 없으면 생성 (데이터 무결성 보장)
-        Position defaultPosition = positionRepository.findByTeamIdAndIsDefault(teamId, true)
-                .orElse(null);
-        
-        if (defaultPosition == null) {
-            // 기본 포지션이 없으면 생성
-            defaultPosition = Position.builder()
-                    .team(team)
-                    .name("MEMBER")
-                    .colorHex("#9BBF9B")
-                    .isDefault(true)
-                    .build();
-            positionRepository.save(defaultPosition);
-        } else if (defaultPosition.getColorHex() == null || defaultPosition.getColorHex().isEmpty()) {
-            // 기존 기본 포지션에 색상이 없으면 설정
-            defaultPosition.setColorHex("#9BBF9B");
-            positionRepository.save(defaultPosition);
-        }
+        teamPermissionService.getTeamWithMemberCheck(userId, teamId);
         
         // 포지션 목록 조회 (인터페이스 프로젝션 사용)
         return positionRepository.findResponsesByTeamId(teamId);
@@ -75,10 +56,10 @@ public class PositionService {
             throw new IllegalArgumentException("DUPLICATE_POSITION_NAME: 이미 존재하는 포지션 이름입니다.");
         }
         
-        // 포지션 개수 체크 (최대 6개 추가 가능, MEMBER 제외, 총 7개)
+        // 포지션 개수 체크 (최대 6개까지 추가 가능)
         long positionCount = positionRepository.countByTeamId(teamId);
-        if (positionCount >= 7) { // MEMBER 포함 7개가 최대
-            throw new IllegalArgumentException("포지션은 최대 6개까지 추가할 수 있습니다. (기본값 MEMBER 포함 시 7개)");
+        if (positionCount >= 6) {
+            throw new IllegalArgumentException("포지션은 최대 6개까지 추가할 수 있습니다.");
         }
         
         // 포지션 생성
@@ -110,11 +91,6 @@ public class PositionService {
         // 해당 팀의 포지션인지 확인
         if (!position.getTeam().getId().equals(teamId)) {
             throw new IllegalArgumentException("POSITION_NOT_FOUND: 포지션을 찾을 수 없습니다.");
-        }
-        
-        // 기본 포지션 이름 변경 불가 체크
-        if (request.getPositionName() != null && position.getIsDefault() && position.getName().equals("MEMBER")) {
-            throw new IllegalArgumentException("DEFAULT_POSITION_NAME_CANNOT_CHANGE: 기본 포지션의 이름은 변경할 수 없습니다.");
         }
         
         // 이름 수정
@@ -167,19 +143,10 @@ public class PositionService {
             throw new IllegalArgumentException("POSITION_NOT_FOUND: 포지션을 찾을 수 없습니다.");
         }
         
-        // 기본 포지션 삭제 불가
-        if (position.getIsDefault()) {
-            throw new IllegalArgumentException("DEFAULT_POSITION_CANNOT_DELETE: 기본 포지션은 삭제할 수 없습니다.");
-        }
-        
-        // 해당 포지션을 사용하는 팀 멤버들의 포지션을 기본 포지션(MEMBER)로 변경
-        Position defaultPosition = positionRepository.findByTeamIdAndIsDefault(teamId, true)
-                .orElseThrow(() -> new IllegalStateException("기본 포지션(MEMBER)을 찾을 수 없습니다."));
-        
-        // team_member 테이블에서 해당 포지션을 사용하는 멤버들의 포지션을 기본 포지션으로 업데이트
+        // 해당 포지션을 사용하는 팀 멤버들의 포지션을 null로 변경 (전체로 처리)
         teamMemberRepository.findByTeamId(teamId).stream()
                 .filter(member -> member.getPosition() != null && member.getPosition().getId().equals(positionId))
-                .forEach(member -> member.setPosition(defaultPosition));
+                .forEach(member -> member.setPosition(null));
         
         // 포지션 삭제
         positionRepository.delete(position);

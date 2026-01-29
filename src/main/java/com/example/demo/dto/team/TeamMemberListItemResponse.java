@@ -19,6 +19,9 @@ public interface TeamMemberListItemResponse {
     @Schema(description = "포지션 이름", example = "Design")
     String getPositionName();
 
+    @Schema(description = "포지션 색상 (HEX)", example = "#9BBF9B")
+    String getPositionColor();
+
     @Schema(description = "사용자 프로필 이미지 URL", example = "https://example.com/profile.jpg")
     String getUserImageUrl();
 

@@ -108,18 +108,8 @@ public class ScheduleService {
                         .orderIndex(0)
                         .build();
                 schedulePositions.add(sp);
-            } else {
-                // 생성자가 포지션이 없으면 팀의 기본 포지션(MEMBER) 사용
-                Position defaultPosition = positionRepository.findByTeamIdAndIsDefault(team.getId(), true)
-                        .orElseThrow(() -> new IllegalStateException("팀의 기본 포지션을 찾을 수 없습니다."));
-                SchedulePosition sp = SchedulePosition.builder()
-                        .id(new SchedulePositionId(schedule.getId(), defaultPosition.getId()))
-                        .schedule(schedule)
-                        .position(defaultPosition)
-                        .orderIndex(0)
-                        .build();
-                schedulePositions.add(sp);
             }
+            // 생성자가 포지션이 없으면 스케줄 포지션도 비워둠 (전체로 처리)
         } else {
             List<Position> positions = positionRepository.findAllById(positionIds);
             for (int i = 0; i < positions.size(); i++) {
