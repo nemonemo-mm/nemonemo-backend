@@ -34,7 +34,10 @@ public class NoticeNotificationHelper {
      */
     public void sendNoticeNotification(Notice notice, Long excludeUserId) {
         Long teamId = notice.getTeam().getId();
-        String noticeTitle = notice.getTitle();
+        // content의 앞부분을 제목으로 사용 (최대 50자)
+        String noticeTitle = notice.getContent() != null && notice.getContent().length() > 50 
+                ? notice.getContent().substring(0, 50) + "..."
+                : (notice.getContent() != null ? notice.getContent() : "새 공지사항");
         String teamName = notice.getTeam().getName();
 
         // 팀의 모든 멤버 조회

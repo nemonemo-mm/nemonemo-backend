@@ -49,13 +49,13 @@ public class TodoResponseDto {
     @Schema(description = "생성자 이름", example = "홍길동")
     private String createdByName;
 
-    @Schema(description = "담당자 팀멤버 ID", example = "2")
+    @Schema(description = "첫 번째 참석자 팀멤버 ID", example = "2")
     private Long assigneeMemberId;
 
-    @Schema(description = "담당자 사용자 이름", example = "홍길동")
+    @Schema(description = "첫 번째 참석자 사용자 이름", example = "홍길동")
     private String assigneeMemberUserName;
 
-    @Schema(description = "담당자 목록", example = "[{\"memberId\":2,\"userName\":\"홍길동\"}]")
+    @Schema(description = "참석자 목록", example = "[{\"memberId\":2,\"userName\":\"홍길동\"}]")
     private List<TodoAssigneeDto> assignees;
 
     @Schema(description = "포지션 ID 목록", example = "[1,2]")

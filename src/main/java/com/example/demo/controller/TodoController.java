@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.dto.common.ErrorResponse;
 import com.example.demo.dto.todo.TodoCreateRequest;
 import com.example.demo.dto.todo.TodoResponseDto;
+import com.example.demo.dto.todo.TodoStatusUpdateRequest;
 import com.example.demo.dto.todo.TodoUpdateRequest;
 import com.example.demo.security.jwt.JwtAuthenticationHelper;
 import com.example.demo.service.TodoService;
@@ -115,6 +116,57 @@ public class TodoController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return createErrorResponse("투두 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Operation(summary = "투두 완료 여부 수정", description = "투두의 완료 여부만 수정합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "수정 성공",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = TodoResponseDto.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패 등)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"상태는 필수입니다.\"}"))),
+            @ApiResponse(responseCode = "401", description = "인증 실패",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
+            @ApiResponse(responseCode = "403", description = "권한 없음 (팀원이 아님)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"FORBIDDEN\",\"message\":\"팀원이 아닌 사용자는 투두를 수정할 수 없습니다.\"}"))),
+            @ApiResponse(responseCode = "404", description = "투두를 찾을 수 없음",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"TODO_NOT_FOUND\",\"message\":\"투두를 찾을 수 없습니다.\"}"))),
+            @ApiResponse(responseCode = "500", description = "서버 오류",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"투두 완료 여부 수정 중 오류가 발생했습니다.\"}")))
+    })
+    @PatchMapping("/todos/{todoId}/status")
+    public ResponseEntity<?> updateTodoStatus(
+            @Parameter(description = "투두 ID", example = "1")
+            @PathVariable Long todoId,
+            @Valid @RequestBody TodoStatusUpdateRequest request
+    ) {
+        try {
+            Long userId = jwtHelper.getCurrentUserId();
+            if (userId == null) {
+                return createUnauthorizedResponse("인증이 필요합니다.");
+            }
+            TodoResponseDto response = todoService.updateTodoStatus(userId, todoId, request);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            String message = e.getMessage();
+            if (message != null && message.contains("투두를 찾을 수 없습니다")) {
+                return createErrorResponse("TODO_NOT_FOUND", message, HttpStatus.NOT_FOUND);
+            } else if (message != null && message.contains("팀원이 아닌")) {
+                return createErrorResponse("FORBIDDEN", message, HttpStatus.FORBIDDEN);
+            }
+            return createErrorResponse("투두 완료 여부 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (Exception e) {
+            return createErrorResponse("투두 완료 여부 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -239,6 +291,11 @@ public class TodoController {
 
     private ResponseEntity<ErrorResponse> createErrorResponse(String message, HttpStatus status) {
         ErrorResponse error = new ErrorResponse("INTERNAL_SERVER_ERROR", message);
+        return ResponseEntity.status(status).body(error);
+    }
+
+    private ResponseEntity<ErrorResponse> createErrorResponse(String code, String message, HttpStatus status) {
+        ErrorResponse error = new ErrorResponse(code, message);
         return ResponseEntity.status(status).body(error);
     }
 }

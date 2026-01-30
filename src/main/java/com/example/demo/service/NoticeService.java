@@ -10,10 +10,11 @@ import com.example.demo.repository.NoticeRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 
 @Slf4j
 @Service
@@ -37,7 +38,6 @@ public class NoticeService {
         // 공지 생성
         Notice notice = Notice.builder()
                 .team(team)
-                .title(request.getTitle())
                 .content(request.getContent())
                 .author(author)
                 .build();
@@ -56,29 +56,14 @@ public class NoticeService {
     }
 
     @Transactional(readOnly = true)
-    public List<NoticeResponse> getTeamNotices(Long userId, Long teamId) {
+    public NoticeResponse getLatestNotice(Long userId, Long teamId) {
         // 팀 조회 및 팀원 확인
         teamPermissionService.verifyTeamMember(userId, teamId);
 
-        // 공지 목록 조회
-        return noticeRepository.findByTeamId(teamId);
-    }
-
-    @Transactional(readOnly = true)
-    public NoticeResponse getNotice(Long userId, Long teamId, Long noticeId) {
-        // 팀 조회 및 팀원 확인
-        teamPermissionService.verifyTeamMember(userId, teamId);
-
-        // 공지 조회 및 팀 소속 확인
-        Notice notice = noticeRepository.findById(noticeId)
-                .orElseThrow(() -> new IllegalArgumentException("NOTICE_NOT_FOUND: 공지를 찾을 수 없습니다."));
-
-        if (!notice.getTeam().getId().equals(teamId)) {
-            throw new IllegalArgumentException("NOTICE_NOT_FOUND: 해당 팀의 공지가 아닙니다.");
-        }
-
-        return noticeRepository.findNoticeResponseById(noticeId)
-                .orElseThrow(() -> new IllegalArgumentException("NOTICE_NOT_FOUND: 공지를 찾을 수 없습니다."));
+        // 최신 공지 조회 (1개만)
+        Pageable pageable = PageRequest.of(0, 1);
+        var notices = noticeRepository.findLatestNoticeByTeamId(teamId, pageable);
+        return notices.isEmpty() ? null : notices.get(0);
     }
 
     @Transactional
@@ -100,7 +85,6 @@ public class NoticeService {
         }
 
         // 공지 수정
-        notice.setTitle(request.getTitle());
         notice.setContent(request.getContent());
         notice = noticeRepository.save(notice);
 
@@ -134,7 +118,6 @@ public class NoticeService {
                 .id(notice.getId())
                 .teamId(notice.getTeam().getId())
                 .teamName(notice.getTeam().getName())
-                .title(notice.getTitle())
                 .content(notice.getContent())
                 .authorId(notice.getAuthor().getId())
                 .authorName(notice.getAuthor().getName())

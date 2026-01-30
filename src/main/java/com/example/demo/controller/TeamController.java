@@ -5,6 +5,7 @@ import com.example.demo.dto.common.ErrorResponse;
 import com.example.demo.dto.team.TeamCreateRequest;
 import com.example.demo.dto.team.TeamDeleteResponse;
 import com.example.demo.dto.team.TeamDetailResponseDto;
+import com.example.demo.dto.team.TeamInvitePreviewResponse;
 import com.example.demo.dto.team.TeamJoinRequest;
 import com.example.demo.dto.team.TeamListItemResponse;
 import com.example.demo.dto.team.TeamLeaveResponse;
@@ -153,6 +154,41 @@ public class TeamController {
             }
             
             TeamDetailResponseDto response = teamService.getTeamDetail(userId, id);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return handleIllegalArgumentException(e);
+        } catch (Exception e) {
+            return createErrorResponse("팀 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    @Operation(summary = "인바이트 코드로 팀 조회", description = "인바이트 코드를 사용하여 팀 정보를 조회합니다. 가입 전 미리보기 용도입니다.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "팀 조회 성공",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamInvitePreviewResponse.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (유효하지 않은 초대 코드) - 에러 코드: INVALID_INVITE_CODE",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INVALID_INVITE_CODE\",\"message\":\"유효하지 않은 초대 코드입니다.\"}"))),
+        @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
+        @ApiResponse(responseCode = "500", description = "서버 오류 - 에러 코드: INTERNAL_SERVER_ERROR",
+            content = @Content(mediaType = "application/json", 
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"서버 오류가 발생했습니다.\"}")))
+    })
+    @GetMapping("/invite/{inviteCode}")
+    public ResponseEntity<?> getTeamByInviteCode(
+            @Parameter(description = "초대 코드", required = true) @PathVariable String inviteCode) {
+        try {
+            Long userId = jwtHelper.getCurrentUserId();
+            if (userId == null) {
+                return createUnauthorizedResponse("인증이 필요합니다.");
+            }
+            
+            TeamInvitePreviewResponse response = teamService.getTeamByInviteCode(inviteCode);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);

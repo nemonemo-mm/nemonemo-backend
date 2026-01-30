@@ -12,12 +12,13 @@ import lombok.NoArgsConstructor;
 @Builder
 public class TodoAssigneeDto {
 
-    @Schema(description = "담당자 팀멤버 ID", example = "2")
+    @Schema(description = "참석자 팀멤버 ID", example = "2")
     private Long memberId;
 
-    @Schema(description = "담당자 사용자 이름", example = "홍길동")
+    @Schema(description = "참석자 사용자 이름", example = "홍길동")
     private String userName;
 }
+
 
 
 

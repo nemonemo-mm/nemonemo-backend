@@ -25,9 +25,6 @@ public class Notice {
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
 
-    @Column(nullable = false, length = 200)
-    private String title;
-
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 

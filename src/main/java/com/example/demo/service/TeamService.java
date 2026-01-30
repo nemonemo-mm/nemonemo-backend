@@ -382,11 +382,11 @@ public class TeamService {
         boolean isOwner = team.getOwner().getId().equals(currentUserId);
         
         // 최신 공지사항 조회 (없을 경우 null)
-        com.example.demo.dto.notice.NoticeResponse notice = noticeRepository
-                .findLatestNoticesByTeamId(team.getId())
-                .stream()
-                .findFirst()
-                .orElse(null);
+        com.example.demo.dto.notice.NoticeResponse notice = null;
+        var notices = noticeRepository.findLatestNoticeByTeamId(team.getId(), org.springframework.data.domain.PageRequest.of(0, 1));
+        if (!notices.isEmpty()) {
+            notice = notices.get(0);
+        }
         
         return TeamDetailResponseDto.builder()
                 .teamId(team.getId())

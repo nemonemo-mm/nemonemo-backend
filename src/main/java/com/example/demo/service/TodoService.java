@@ -6,6 +6,7 @@ import com.example.demo.dto.todo.TodoAssigneeDto;
 import com.example.demo.dto.todo.TodoCreateRequest;
 import com.example.demo.dto.todo.TodoResponse;
 import com.example.demo.dto.todo.TodoResponseDto;
+import com.example.demo.dto.todo.TodoStatusUpdateRequest;
 import com.example.demo.dto.todo.TodoUpdateRequest;
 import com.example.demo.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -133,6 +134,27 @@ public class TodoService {
         }
 
         // 투두 수정 알림 전송 (수정자 제외)
+        sendTodoChangeNotification(todo, userId);
+
+        return toResponse(todo);
+    }
+
+    /**
+     * 투두 완료 여부만 수정
+     */
+    @Transactional
+    public TodoResponseDto updateTodoStatus(Long userId, Long todoId, TodoStatusUpdateRequest request) {
+        Todo todo = todoRepository.findById(todoId)
+                .orElseThrow(() -> new IllegalArgumentException("투두를 찾을 수 없습니다."));
+
+        if (!teamMemberRepository.existsByTeamIdAndUserId(todo.getTeam().getId(), userId)) {
+            throw new IllegalArgumentException("팀원이 아닌 사용자는 투두를 수정할 수 없습니다.");
+        }
+
+        todo.setStatus(request.getStatus());
+        todo = todoRepository.save(todo);
+
+        // 투두 상태 변경 알림 전송 (수정자 제외)
         sendTodoChangeNotification(todo, userId);
 
         return toResponse(todo);

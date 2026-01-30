@@ -23,9 +23,6 @@ public class NoticeResponse {
     @Schema(description = "팀 이름", example = "NemoNemo 팀")
     private String teamName;
 
-    @Schema(description = "제목", example = "프로젝트 일정 변경 안내")
-    private String title;
-
     @Schema(description = "내용", example = "다음 주 월요일부터 프로젝트 일정이 변경됩니다.")
     private String content;
 
