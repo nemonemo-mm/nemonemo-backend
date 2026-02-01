@@ -133,6 +133,21 @@ public class TodoService {
             }
         }
 
+        // 지연 로딩된 연관 관계 초기화 (LazyInitializationException 방지)
+        todo.getTeam().getName(); // team 초기화
+        todo.getCreatedBy().getName(); // createdBy 초기화
+        if (todo.getAssignees() != null) {
+            todo.getAssignees().forEach(a -> {
+                a.getMember().getUser().getName(); // assignee -> member -> user 초기화
+            });
+        }
+        if (todo.getPositions() != null) {
+            todo.getPositions().forEach(tp -> {
+                tp.getPosition().getId(); // position 초기화
+                tp.getPosition().getColorHex(); // position 초기화
+            });
+        }
+
         // 투두 수정 알림 전송 (수정자 제외)
         sendTodoChangeNotification(todo, userId);
 
@@ -153,6 +168,21 @@ public class TodoService {
 
         todo.setStatus(request.getStatus());
         todo = todoRepository.save(todo);
+
+        // 지연 로딩된 연관 관계 초기화 (LazyInitializationException 방지)
+        todo.getTeam().getName(); // team 초기화
+        todo.getCreatedBy().getName(); // createdBy 초기화
+        if (todo.getAssignees() != null) {
+            todo.getAssignees().forEach(a -> {
+                a.getMember().getUser().getName(); // assignee -> member -> user 초기화
+            });
+        }
+        if (todo.getPositions() != null) {
+            todo.getPositions().forEach(tp -> {
+                tp.getPosition().getId(); // position 초기화
+                tp.getPosition().getColorHex(); // position 초기화
+            });
+        }
 
         // 투두 상태 변경 알림 전송 (수정자 제외)
         sendTodoChangeNotification(todo, userId);

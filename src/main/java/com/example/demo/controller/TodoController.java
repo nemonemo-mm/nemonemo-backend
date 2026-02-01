@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Tag(name = "투두", description = "팀 투두 생성/수정/삭제 및 조회 API")
 @RestController
 @RequestMapping("/api/v1")
@@ -114,7 +116,11 @@ public class TodoController {
             }
             TodoResponseDto response = todoService.updateTodo(userId, todoId, request);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
+            log.error("투두 수정 중 예상치 못한 오류 발생: todoId={}, userId={}, error={}", 
+                    todoId, jwtHelper.getCurrentUserId(), e.getMessage(), e);
             return createErrorResponse("투두 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -158,14 +164,10 @@ public class TodoController {
             TodoResponseDto response = todoService.updateTodoStatus(userId, todoId, request);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
-            String message = e.getMessage();
-            if (message != null && message.contains("투두를 찾을 수 없습니다")) {
-                return createErrorResponse("TODO_NOT_FOUND", message, HttpStatus.NOT_FOUND);
-            } else if (message != null && message.contains("팀원이 아닌")) {
-                return createErrorResponse("FORBIDDEN", message, HttpStatus.FORBIDDEN);
-            }
-            return createErrorResponse("투두 완료 여부 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
+            log.error("투두 완료 여부 수정 중 예상치 못한 오류 발생: todoId={}, userId={}, error={}", 
+                    todoId, jwtHelper.getCurrentUserId(), e.getMessage(), e);
             return createErrorResponse("투두 완료 여부 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -283,20 +285,76 @@ public class TodoController {
         }
     }
 
-    private ResponseEntity<ErrorResponse> createUnauthorizedResponse(String message) {
-        ErrorResponse error = new ErrorResponse("UNAUTHORIZED", message);
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    /**
+     * IllegalArgumentException 처리 (권한, 리소스 없음 등을 구분)
+     */
+    private ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
+        String message = e.getMessage();
+        log.debug("IllegalArgumentException 발생: {}", message);
+        
+        // 에러 코드가 포함된 경우 (예: "FORBIDDEN: ...", "TODO_NOT_FOUND: ...")
+        if (message != null && message.contains(":")) {
+            String errorCode = message.split(":")[0].trim();
+            String cleanMessage = message.split(":", 2)[1].trim();
+            
+            HttpStatus status;
+            if ("FORBIDDEN".equals(errorCode)) {
+                status = HttpStatus.FORBIDDEN;
+            } else if ("TODO_NOT_FOUND".equals(errorCode) || "TEAM_NOT_FOUND".equals(errorCode)) {
+                status = HttpStatus.NOT_FOUND;
+            } else {
+                status = HttpStatus.BAD_REQUEST;
+            }
+            
+            return ResponseEntity.status(status)
+                    .body(ErrorResponse.builder()
+                            .code(errorCode)
+                            .message(cleanMessage)
+                            .build());
+        }
+        
+        // 에러 코드가 없는 경우 메시지로 판단
+        String code = "INVALID_REQUEST";
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        
+        if (message != null) {
+            if (message.contains("권한") || message.contains("FORBIDDEN") || message.contains("팀원이 아닌")) {
+                code = "FORBIDDEN";
+                status = HttpStatus.FORBIDDEN;
+            } else if (message.contains("찾을 수 없습니다") || message.contains("NOT_FOUND")) {
+                code = "TODO_NOT_FOUND";
+                status = HttpStatus.NOT_FOUND;
+            }
+        }
+        
+        return ResponseEntity.status(status)
+                .body(ErrorResponse.builder()
+                        .code(code)
+                        .message(message != null ? message : "잘못된 요청입니다.")
+                        .build());
     }
-
-
+    
+    /**
+     * 에러 응답 생성
+     */
     private ResponseEntity<ErrorResponse> createErrorResponse(String message, HttpStatus status) {
-        ErrorResponse error = new ErrorResponse("INTERNAL_SERVER_ERROR", message);
-        return ResponseEntity.status(status).body(error);
+        String code = status == HttpStatus.INTERNAL_SERVER_ERROR ? "INTERNAL_SERVER_ERROR" : "INVALID_REQUEST";
+        return ResponseEntity.status(status)
+                .body(ErrorResponse.builder()
+                        .code(code)
+                        .message(message)
+                        .build());
     }
-
-    private ResponseEntity<ErrorResponse> createErrorResponse(String code, String message, HttpStatus status) {
-        ErrorResponse error = new ErrorResponse(code, message);
-        return ResponseEntity.status(status).body(error);
+    
+    /**
+     * 인증 실패 응답 생성
+     */
+    private ResponseEntity<ErrorResponse> createUnauthorizedResponse(String message) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ErrorResponse.builder()
+                        .code("UNAUTHORIZED")
+                        .message(message)
+                        .build());
     }
 }
 

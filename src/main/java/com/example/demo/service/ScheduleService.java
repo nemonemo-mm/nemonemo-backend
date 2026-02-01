@@ -154,6 +154,16 @@ public class ScheduleService {
             scheduleRepository.save(schedule);
         }
 
+        // 지연 로딩된 연관 관계 초기화 (LazyInitializationException 방지)
+        schedule.getTeam().getName(); // team 초기화
+        schedule.getCreatedBy().getName(); // createdBy 초기화
+        if (schedule.getPositions() != null) {
+            schedule.getPositions().forEach(sp -> {
+                sp.getPosition().getId(); // position 초기화
+                sp.getPosition().getColorHex(); // position 초기화
+            });
+        }
+
         // 스케줄 수정 알림 전송 (수정자 제외)
         sendScheduleChangeNotification(schedule, userId);
 
