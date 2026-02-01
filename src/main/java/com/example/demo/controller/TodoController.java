@@ -73,7 +73,11 @@ public class TodoController {
             }
             TodoResponseDto response = todoService.createTodo(userId, request);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
+            log.error("투두 생성 중 예상치 못한 오류 발생: teamId={}, userId={}, error={}", 
+                    request.getTeamId(), jwtHelper.getCurrentUserId(), e.getMessage(), e);
             return createErrorResponse("투두 생성 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

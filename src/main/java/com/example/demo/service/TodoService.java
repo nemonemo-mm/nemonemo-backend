@@ -36,11 +36,15 @@ public class TodoService {
 
     @Transactional
     public TodoResponseDto createTodo(Long userId, TodoCreateRequest request) {
+        if (request.getTeamId() == null || request.getTeamId() <= 0) {
+            throw new IllegalArgumentException("TEAM_NOT_FOUND: 유효하지 않은 팀 ID입니다.");
+        }
+        
         Team team = teamRepository.findById(request.getTeamId())
-                .orElseThrow(() -> new IllegalArgumentException("팀을 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("TEAM_NOT_FOUND: 팀을 찾을 수 없습니다."));
 
         TeamMember creatorMember = teamMemberRepository.findByTeamIdAndUserId(team.getId(), userId)
-                .orElseThrow(() -> new IllegalArgumentException("팀원이 아닌 사용자는 투두를 생성할 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("FORBIDDEN: 팀원이 아닌 사용자는 투두를 생성할 수 없습니다."));
 
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
@@ -64,28 +68,82 @@ public class TodoService {
         if (assigneeMemberIds == null || assigneeMemberIds.isEmpty()) {
             assignees.add(buildTodoAttendee(todo, creatorMember));
         } else {
-            List<TeamMember> members = teamMemberRepository.findAllById(assigneeMemberIds);
-            for (TeamMember member : members) {
-                assignees.add(buildTodoAttendee(todo, member));
+            // 0이나 null 값 필터링
+            List<Long> validMemberIds = assigneeMemberIds.stream()
+                    .filter(id -> id != null && id > 0)
+                    .distinct()
+                    .toList();
+            
+            if (validMemberIds.isEmpty()) {
+                // 유효한 ID가 없으면 생성자를 기본 담당자로 설정
+                assignees.add(buildTodoAttendee(todo, creatorMember));
+            } else {
+                List<TeamMember> members = teamMemberRepository.findAllById(validMemberIds);
+                
+                // 요청한 ID와 조회된 멤버 수가 다르면 일부 ID가 유효하지 않음
+                if (members.size() != validMemberIds.size()) {
+                    throw new IllegalArgumentException("INVALID_MEMBER_IDS: 일부 담당자 멤버 ID가 유효하지 않습니다.");
+                }
+                
+                // 모든 멤버가 해당 팀에 속하는지 확인
+                for (TeamMember member : members) {
+                    if (!member.getTeam().getId().equals(team.getId())) {
+                        throw new IllegalArgumentException("INVALID_MEMBER_IDS: 담당자 멤버가 해당 팀에 속하지 않습니다.");
+                    }
+                    assignees.add(buildTodoAttendee(todo, member));
+                }
             }
         }
         todoAttendeeRepository.saveAll(assignees);
 
         // 포지션 설정
         if (request.getPositionIds() != null && !request.getPositionIds().isEmpty()) {
-            List<Position> positions = positionRepository.findAllById(request.getPositionIds());
-            List<TodoPosition> todoPositions = new ArrayList<>();
-            for (int i = 0; i < positions.size(); i++) {
-                Position position = positions.get(i);
-                TodoPosition tp = TodoPosition.builder()
-                        .id(new TodoPositionId(todo.getId(), position.getId()))
-                        .todo(todo)
-                        .position(position)
-                        .orderIndex(i)
-                        .build();
-                todoPositions.add(tp);
+            // 0이나 null 값 필터링
+            List<Long> validPositionIds = request.getPositionIds().stream()
+                    .filter(id -> id != null && id > 0)
+                    .distinct()
+                    .toList();
+            
+            if (!validPositionIds.isEmpty()) {
+                List<Position> positions = positionRepository.findAllById(validPositionIds);
+                
+                // 요청한 ID와 조회된 포지션 수가 다르면 일부 ID가 유효하지 않음
+                if (positions.size() != validPositionIds.size()) {
+                    throw new IllegalArgumentException("INVALID_POSITION_IDS: 일부 포지션 ID가 유효하지 않습니다.");
+                }
+                
+                // 모든 포지션이 해당 팀에 속하는지 확인
+                List<TodoPosition> todoPositions = new ArrayList<>();
+                for (int i = 0; i < positions.size(); i++) {
+                    Position position = positions.get(i);
+                    if (!position.getTeam().getId().equals(team.getId())) {
+                        throw new IllegalArgumentException("INVALID_POSITION_IDS: 포지션이 해당 팀에 속하지 않습니다.");
+                    }
+                    TodoPosition tp = TodoPosition.builder()
+                            .id(new TodoPositionId(todo.getId(), position.getId()))
+                            .todo(todo)
+                            .position(position)
+                            .orderIndex(i)
+                            .build();
+                    todoPositions.add(tp);
+                }
+                todoPositionRepository.saveAll(todoPositions);
             }
-            todoPositionRepository.saveAll(todoPositions);
+        }
+
+        // 지연 로딩된 연관 관계 초기화 (LazyInitializationException 방지)
+        todo.getTeam().getName(); // team 초기화
+        todo.getCreatedBy().getName(); // createdBy 초기화
+        if (todo.getAssignees() != null) {
+            todo.getAssignees().forEach(a -> {
+                a.getMember().getUser().getName(); // assignee -> member -> user 초기화
+            });
+        }
+        if (todo.getPositions() != null) {
+            todo.getPositions().forEach(tp -> {
+                tp.getPosition().getId(); // position 초기화
+                tp.getPosition().getColorHex(); // position 초기화
+            });
         }
 
         // 투두 생성 알림 전송 (생성자 제외)
