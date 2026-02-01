@@ -326,7 +326,13 @@ public class ScheduleService {
         if (repeatType == null || repeatType.isBlank()) {
             return RepeatType.NONE.name();
         }
-        return RepeatType.valueOf(repeatType).name();
+        try {
+            return RepeatType.valueOf(repeatType.toUpperCase()).name();
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                String.format("INVALID_REPEAT_TYPE: 유효하지 않은 반복 유형입니다. 가능한 값: NONE, DAILY, WEEKLY, MONTHLY, YEARLY (입력값: %s)", repeatType)
+            );
+        }
     }
 
 

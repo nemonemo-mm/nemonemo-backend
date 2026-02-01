@@ -12,16 +12,19 @@ import java.util.List;
 public interface NoticeRepository extends JpaRepository<Notice, Long> {
 
     @Query("""
-            select 
-                n.id as id,
-                n.team.id as teamId,
-                n.team.name as teamName,
-                n.content as content,
-                n.author.id as authorId,
-                n.author.name as authorName,
-                n.createdAt as createdAt,
-                n.updatedAt as updatedAt
+            select new com.example.demo.dto.notice.NoticeResponse(
+                n.id,
+                n.team.id,
+                n.team.name,
+                n.content,
+                n.author.id,
+                n.author.name,
+                n.createdAt,
+                n.updatedAt
+            )
             from Notice n
+            join n.team
+            join n.author
             where n.team.id = :teamId
             order by n.createdAt desc
             """)
