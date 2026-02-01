@@ -153,6 +153,8 @@ public class NoticeController {
         } catch (IllegalArgumentException e) {
             return handleIllegalArgumentException(e);
         } catch (Exception e) {
+            log.error("공지 수정 중 예상치 못한 오류 발생: teamId={}, noticeId={}, userId={}, error={}", 
+                    teamId, noticeId, jwtHelper.getCurrentUserId(), e.getMessage(), e);
             return createErrorResponse("공지 수정 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

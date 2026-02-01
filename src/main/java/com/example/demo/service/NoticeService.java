@@ -44,6 +44,10 @@ public class NoticeService {
 
         notice = noticeRepository.save(notice);
 
+        // 지연 로딩된 연관 관계 초기화 (LazyInitializationException 방지)
+        notice.getTeam().getName(); // team 초기화
+        notice.getAuthor().getName(); // author 초기화
+
         // 공지 생성 알림 전송 (작성자 제외)
         try {
             noticeNotificationHelper.sendNoticeNotification(notice, userId);
@@ -87,6 +91,10 @@ public class NoticeService {
         // 공지 수정
         notice.setContent(request.getContent());
         notice = noticeRepository.save(notice);
+
+        // 지연 로딩된 연관 관계 초기화 (LazyInitializationException 방지)
+        notice.getTeam().getName(); // team 초기화
+        notice.getAuthor().getName(); // author 초기화
 
         return toResponse(notice);
     }
