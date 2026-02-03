@@ -169,25 +169,75 @@ public class TodoService {
         if (request.getUrl() != null) todo.setUrl(request.getUrl());
 
         if (request.getAssigneeMemberIds() != null) {
-            todo.getAssignees().clear();
-            List<TeamMember> members = teamMemberRepository.findAllById(request.getAssigneeMemberIds());
-            for (TeamMember member : members) {
-                todo.getAssignees().add(buildTodoAttendee(todo, member));
+            // 0이나 null 값 필터링
+            List<Long> validMemberIds = request.getAssigneeMemberIds().stream()
+                    .filter(id -> id != null && id > 0)
+                    .distinct()
+                    .toList();
+            
+            if (!validMemberIds.isEmpty()) {
+                List<TeamMember> members = teamMemberRepository.findAllById(validMemberIds);
+                
+                // 요청한 ID와 조회된 멤버 수가 다르면 일부 ID가 유효하지 않음
+                if (members.size() != validMemberIds.size()) {
+                    throw new IllegalArgumentException("INVALID_MEMBER_IDS: 일부 담당자 멤버 ID가 유효하지 않습니다.");
+                }
+                
+                // 모든 멤버가 해당 팀에 속하는지 확인
+                Long teamId = todo.getTeam().getId();
+                for (TeamMember member : members) {
+                    if (!member.getTeam().getId().equals(teamId)) {
+                        throw new IllegalArgumentException("INVALID_MEMBER_IDS: 담당자 멤버가 해당 팀에 속하지 않습니다.");
+                    }
+                }
+                
+                todo.getAssignees().clear();
+                for (TeamMember member : members) {
+                    todo.getAssignees().add(buildTodoAttendee(todo, member));
+                }
+            } else {
+                // 유효한 멤버 ID가 없으면 담당자 목록 비우기
+                todo.getAssignees().clear();
             }
         }
 
         if (request.getPositionIds() != null) {
-            todo.getPositions().clear();
-            List<Position> positions = positionRepository.findAllById(request.getPositionIds());
-            int index = 0;
-            for (Position position : positions) {
-                TodoPosition tp = TodoPosition.builder()
-                        .id(new TodoPositionId(todo.getId(), position.getId()))
-                        .todo(todo)
-                        .position(position)
-                        .orderIndex(index++)
-                        .build();
-                todo.getPositions().add(tp);
+            // 0이나 null 값 필터링
+            List<Long> validPositionIds = request.getPositionIds().stream()
+                    .filter(id -> id != null && id > 0)
+                    .distinct()
+                    .toList();
+            
+            if (!validPositionIds.isEmpty()) {
+                List<Position> positions = positionRepository.findAllById(validPositionIds);
+                
+                // 요청한 ID와 조회된 포지션 수가 다르면 일부 ID가 유효하지 않음
+                if (positions.size() != validPositionIds.size()) {
+                    throw new IllegalArgumentException("INVALID_POSITION_IDS: 일부 포지션 ID가 유효하지 않습니다.");
+                }
+                
+                // 모든 포지션이 해당 팀에 속하는지 확인
+                Long teamId = todo.getTeam().getId();
+                for (Position position : positions) {
+                    if (!position.getTeam().getId().equals(teamId)) {
+                        throw new IllegalArgumentException("INVALID_POSITION_IDS: 포지션이 해당 팀에 속하지 않습니다.");
+                    }
+                }
+                
+                todo.getPositions().clear();
+                int index = 0;
+                for (Position position : positions) {
+                    TodoPosition tp = TodoPosition.builder()
+                            .id(new TodoPositionId(todo.getId(), position.getId()))
+                            .todo(todo)
+                            .position(position)
+                            .orderIndex(index++)
+                            .build();
+                    todo.getPositions().add(tp);
+                }
+            } else {
+                // 유효한 포지션 ID가 없으면 포지션 목록 비우기
+                todo.getPositions().clear();
             }
         }
 
