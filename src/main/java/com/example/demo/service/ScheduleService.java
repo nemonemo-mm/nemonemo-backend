@@ -52,8 +52,12 @@ public class ScheduleService {
 
         String normalizedRepeatType = normalizeRepeatType(request.getRepeatType());
         
-        // repeatWeekDays를 repeatDays로 변환
-        Integer[] repeatDays = convertWeekDaysToNumbers(request.getRepeatWeekDays(), normalizedRepeatType, request.getStartAt());
+        // repeatWeekDays를 repeatDays로 변환 (NONE이 아닐 때만)
+        Integer[] repeatDays = null;
+        if (!normalizedRepeatType.equals(RepeatType.NONE.name())) {
+            repeatDays = convertWeekDaysToNumbers(request.getRepeatWeekDays(), normalizedRepeatType, request.getStartAt());
+        }
+        
         // repeatUseDate가 true이고 MONTHLY/YEARLY면 시작일의 날짜를 repeatMonthDay로 설정
         Integer repeatMonthDay = null;
         if (Boolean.TRUE.equals(request.getRepeatUseDate()) && 
@@ -81,49 +85,48 @@ public class ScheduleService {
 
         schedule = scheduleRepository.save(schedule);
 
-        // 참석자 설정 (없으면 생성자 기본 참석자)
+        // 참석자 설정 (필수)
         List<Long> attendeeMemberIds = request.getAttendeeMemberIds();
-        List<ScheduleAttendee> attendees = new ArrayList<>();
         if (attendeeMemberIds == null || attendeeMemberIds.isEmpty()) {
-            attendees.add(buildScheduleAttendee(schedule, creatorMember));
-        } else {
-            // 0이나 null 값 필터링
-            List<Long> validMemberIds = attendeeMemberIds.stream()
-                    .filter(id -> id != null && id > 0)
-                    .distinct()
-                    .toList();
-            
-            if (!validMemberIds.isEmpty()) {
-                List<TeamMember> members = teamMemberRepository.findAllById(validMemberIds);
-                
-                // 요청한 ID와 조회된 멤버 수가 다르면 일부 ID가 유효하지 않음
-                if (members.size() != validMemberIds.size()) {
-                    throw new IllegalArgumentException("INVALID_MEMBER_IDS: 일부 팀원 ID가 유효하지 않습니다.");
-                }
-                
-                // 모든 멤버가 해당 팀에 속하는지 확인
-                for (TeamMember member : members) {
-                    if (!member.getTeam().getId().equals(team.getId())) {
-                        throw new IllegalArgumentException("INVALID_MEMBER_IDS: 팀원이 해당 팀에 속하지 않습니다.");
-                    }
-                }
-                
-                for (TeamMember member : members) {
-                    attendees.add(buildScheduleAttendee(schedule, member));
-                }
-            } else {
-                // 유효한 멤버 ID가 없으면 생성자를 기본 참석자로 설정
-                attendees.add(buildScheduleAttendee(schedule, creatorMember));
+            throw new IllegalArgumentException("INVALID_MEMBER_IDS: 참석자 팀원 ID는 필수입니다.");
+        }
+        
+        // 0이나 null 값 필터링
+        List<Long> validMemberIds = attendeeMemberIds.stream()
+                .filter(id -> id != null && id > 0)
+                .distinct()
+                .toList();
+        
+        if (validMemberIds.isEmpty()) {
+            throw new IllegalArgumentException("INVALID_MEMBER_IDS: 유효한 참석자 팀원 ID가 없습니다.");
+        }
+        
+        List<TeamMember> members = teamMemberRepository.findAllById(validMemberIds);
+        
+        // 요청한 ID와 조회된 멤버 수가 다르면 일부 ID가 유효하지 않음
+        if (members.size() != validMemberIds.size()) {
+            throw new IllegalArgumentException("INVALID_MEMBER_IDS: 일부 팀원 ID가 유효하지 않습니다.");
+        }
+        
+        // 모든 멤버가 해당 팀에 속하는지 확인
+        for (TeamMember member : members) {
+            if (!member.getTeam().getId().equals(team.getId())) {
+                throw new IllegalArgumentException("INVALID_MEMBER_IDS: 팀원이 해당 팀에 속하지 않습니다.");
             }
+        }
+        
+        List<ScheduleAttendee> attendees = new ArrayList<>();
+        for (TeamMember member : members) {
+            attendees.add(buildScheduleAttendee(schedule, member));
         }
         scheduleAttendeeRepository.saveAll(attendees);
 
         // 포지션 설정
         List<Long> positionIds = request.getPositionIds();
         List<SchedulePosition> schedulePositions = new ArrayList<>();
-
+        
         if (positionIds == null || positionIds.isEmpty()) {
-            // 포지션이 비어있으면 생성자의 포지션을 기본으로 사용
+            // 포지션 ID가 없으면 작성자의 포지션 사용
             Position creatorPosition = creatorMember.getPosition();
             if (creatorPosition != null) {
                 SchedulePosition sp = SchedulePosition.builder()
@@ -134,7 +137,7 @@ public class ScheduleService {
                         .build();
                 schedulePositions.add(sp);
             }
-            // 생성자가 포지션이 없으면 스케줄 포지션도 비워둠 (전체로 처리)
+            // 작성자의 포지션도 없으면 포지션을 비워둠 (전체로 처리)
         } else {
             // 0이나 null 값 필터링
             List<Long> validPositionIds = positionIds.stream()
@@ -168,7 +171,7 @@ public class ScheduleService {
                     schedulePositions.add(sp);
                 }
             } else {
-                // 유효한 포지션 ID가 없으면 생성자의 포지션을 기본으로 사용
+                // 유효한 포지션 ID가 없으면 작성자의 포지션 사용
                 Position creatorPosition = creatorMember.getPosition();
                 if (creatorPosition != null) {
                     SchedulePosition sp = SchedulePosition.builder()
@@ -179,9 +182,10 @@ public class ScheduleService {
                             .build();
                     schedulePositions.add(sp);
                 }
+                // 작성자의 포지션도 없으면 포지션을 비워둠 (전체로 처리)
             }
         }
-
+        
         if (!schedulePositions.isEmpty()) {
             schedulePositionRepository.saveAll(schedulePositions);
         }

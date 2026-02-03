@@ -60,10 +60,10 @@ public class ScheduleCreateRequest {
     private List<String> repeatWeekDays;
 
     // 포지션 및 참석자
-    @Schema(description = "연결할 포지션 ID 목록 (첫 번째가 대표 포지션)", example = "[1,2]")
+    @Schema(description = "연결할 포지션 ID 목록 (첫 번째가 대표 포지션, 비어있으면 작성자의 포지션 사용)", example = "[1,2]")
     private List<Long> positionIds;
 
-    @Schema(description = "참석자 팀멤버 ID 목록 (비어있으면 생성자가 기본 참석자)", example = "[10,11]")
+    @Schema(description = "참석자 팀멤버 ID 목록 (필수)", example = "[10,11]", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<Long> attendeeMemberIds;
 
     @Schema(description = "스케줄 사전 알림 시간 (분 단위 배열, null이면 사용자 개인 설정 사용)", example = "[10, 30, 60]")

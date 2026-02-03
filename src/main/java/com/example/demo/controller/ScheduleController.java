@@ -73,7 +73,11 @@ public class ScheduleController {
             }
             ScheduleResponseDto response = scheduleService.createSchedule(userId, request);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return handleIllegalArgumentException(e);
         } catch (Exception e) {
+            log.error("스케줄 생성 중 예상치 못한 오류 발생: userId={}, error={}", 
+                    jwtHelper.getCurrentUserId(), e.getMessage(), e);
             return createErrorResponse("스케줄 생성 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
