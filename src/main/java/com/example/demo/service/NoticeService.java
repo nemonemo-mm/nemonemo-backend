@@ -83,11 +83,6 @@ public class NoticeService {
             throw new IllegalArgumentException("NOTICE_NOT_FOUND: 해당 팀의 공지가 아닙니다.");
         }
 
-        // 작성자 확인
-        if (!notice.getAuthor().getId().equals(userId)) {
-            throw new IllegalArgumentException("FORBIDDEN: 공지 작성자만 수정할 수 있습니다.");
-        }
-
         // 공지 수정
         notice.setContent(request.getContent());
         notice = noticeRepository.save(notice);
@@ -110,11 +105,6 @@ public class NoticeService {
 
         if (!notice.getTeam().getId().equals(teamId)) {
             throw new IllegalArgumentException("NOTICE_NOT_FOUND: 해당 팀의 공지가 아닙니다.");
-        }
-
-        // 작성자 확인
-        if (!notice.getAuthor().getId().equals(userId)) {
-            throw new IllegalArgumentException("FORBIDDEN: 공지 작성자만 삭제할 수 있습니다.");
         }
 
         // 공지 삭제

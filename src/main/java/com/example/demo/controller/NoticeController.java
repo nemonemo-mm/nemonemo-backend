@@ -115,7 +115,7 @@ public class NoticeController {
         }
     }
 
-    @Operation(summary = "공지 수정", description = "공지를 수정합니다. 작성자만 수정할 수 있습니다.")
+    @Operation(summary = "공지 수정", description = "공지를 수정합니다. 모든 팀원이 수정할 수 있습니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "공지 수정 성공",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = NoticeResponse.class),
@@ -133,7 +133,7 @@ public class NoticeController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "401", description = "인증 실패",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "403", description = "권한 없음 (작성자만 수정 가능)",
+            @ApiResponse(responseCode = "403", description = "권한 없음 (팀원만 수정 가능)",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "공지를 찾을 수 없음",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
@@ -159,14 +159,14 @@ public class NoticeController {
         }
     }
 
-    @Operation(summary = "공지 삭제", description = "공지를 삭제합니다. 작성자만 삭제할 수 있습니다.")
+    @Operation(summary = "공지 삭제", description = "공지를 삭제합니다. 모든 팀원이 삭제할 수 있습니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "공지 삭제 성공",
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = ""))),
             @ApiResponse(responseCode = "401", description = "인증 실패",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "403", description = "권한 없음 (작성자만 삭제 가능)",
+            @ApiResponse(responseCode = "403", description = "권한 없음 (팀원만 삭제 가능)",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "공지를 찾을 수 없음",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
