@@ -65,6 +65,9 @@ public class ScheduleCreateRequest {
 
     @Schema(description = "참석자 팀멤버 ID 목록 (비어있으면 생성자가 기본 참석자)", example = "[10,11]")
     private List<Long> attendeeMemberIds;
+
+    @Schema(description = "스케줄 사전 알림 시간 (분 단위 배열, null이면 사용자 개인 설정 사용)", example = "[10, 30, 60]")
+    private Integer[] notificationMinutes;
 }
 
 

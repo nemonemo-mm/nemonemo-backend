@@ -86,10 +86,14 @@ public class SchedulePreNotificationScheduler {
                 continue;
             }
 
-            // 알림 시간 목록 가져오기
-            Integer[] notificationMinutes = getNotificationMinutes(userId, teamId);
+            // 알림 시간 목록 가져오기 (스케줄별 설정 우선, 없으면 사용자 개인 설정)
+            Integer[] notificationMinutes = schedule.getNotificationMinutes();
             if (notificationMinutes == null || notificationMinutes.length == 0) {
-                continue;
+                // 스케줄별 설정이 없으면 사용자 개인 설정 사용
+                notificationMinutes = getNotificationMinutes(userId, teamId);
+                if (notificationMinutes == null || notificationMinutes.length == 0) {
+                    continue;
+                }
             }
 
             // 각 알림 시간에 대해 체크

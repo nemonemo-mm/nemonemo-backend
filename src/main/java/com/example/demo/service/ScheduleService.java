@@ -75,6 +75,7 @@ public class ScheduleService {
                 .repeatDays(repeatDays)
                 .repeatMonthDay(repeatMonthDay)
                 .repeatEndDate(toRepeatEndDate(request.getRepeatEndDate()))
+                .notificationMinutes(request.getNotificationMinutes())
                 .createdBy(creator)
                 .build();
 
@@ -331,6 +332,7 @@ public class ScheduleService {
         }
         if (request.getRepeatInterval() != null) schedule.setRepeatInterval(request.getRepeatInterval());
         if (request.getRepeatEndDate() != null) schedule.setRepeatEndDate(toRepeatEndDate(request.getRepeatEndDate()));
+        if (request.getNotificationMinutes() != null) schedule.setNotificationMinutes(request.getNotificationMinutes());
 
         // 참석자 및 포지션 갱신은 단순화를 위해 전체 교체
         if (request.getAttendeeMemberIds() != null) {
@@ -587,6 +589,7 @@ public class ScheduleService {
                             .repeatWeekDays(repeatWeekDays)
                             .repeatSummary(repeatSummary)
                             .attendeeMemberIds(attendeeMemberIds)
+                            .notificationMinutes(scheduleEntity != null ? scheduleEntity.getNotificationMinutes() : null)
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -663,6 +666,7 @@ public class ScheduleService {
                 .repeatWeekDays(repeatWeekDays)
                 .repeatSummary(rule.toSummary())
                 .attendeeMemberIds(attendeeMemberIds)
+                .notificationMinutes(schedule.getNotificationMinutes())
                 .build();
     }
 

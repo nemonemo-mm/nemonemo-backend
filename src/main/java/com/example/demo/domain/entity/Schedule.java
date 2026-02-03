@@ -65,6 +65,9 @@ public class Schedule {
     @Column(name = "repeat_end_date")
     private LocalDateTime repeatEndDate;  // 반복 종료일
 
+    @Column(name = "notification_minutes", columnDefinition = "INTEGER[]")
+    private Integer[] notificationMinutes;  // 스케줄 사전 알림 시간 (분 단위 배열, 예: [10, 30, 60])
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_schedule_id")
     private Schedule parentSchedule;  // 반복 일정의 부모 일정
