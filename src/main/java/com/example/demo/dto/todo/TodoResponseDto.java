@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -63,6 +64,22 @@ public class TodoResponseDto {
 
     @Schema(description = "대표 포지션 컬러 HEX 값", example = "#FF0000")
     private String representativeColorHex;
+
+    // 반복 관련 필드 (스케줄과 동일한 구조)
+    @Schema(description = "반복 유형 (NONE, DAILY, WEEKLY, MONTHLY, YEARLY)", example = "NONE")
+    private String repeatType;
+
+    @Schema(description = "반복 간격 (예: 2일 간격, 2주 간격)", example = "1")
+    private Integer repeatInterval;
+
+    @Schema(description = "반복 종료일 (미설정 시 무기한)", example = "2026-01-17")
+    private LocalDate repeatEndDate;
+
+    @Schema(description = "월간/연간 반복 시 날짜 사용 여부", example = "true")
+    private Boolean repeatUseDate;
+
+    @Schema(description = "반복 요일 배열 (주간 반복 시, \"월\", \"화\", \"수\", \"목\", \"금\", \"토\", \"일\")", example = "[\"월\", \"수\", \"금\"]")
+    private List<String> repeatWeekDays;
 
     @Schema(description = "생성일시", example = "2024-01-15T10:30:00.000Z")
     private LocalDateTime createdAt;

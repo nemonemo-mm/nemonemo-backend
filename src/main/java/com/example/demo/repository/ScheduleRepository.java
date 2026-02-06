@@ -29,7 +29,11 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
                 s.updatedAt as updatedAt,
                 s.parentSchedule.id as parentScheduleId
             from Schedule s
-            where s.team.id = :teamId and s.startAt < :end and s.endAt > :start
+            where s.team.id = :teamId
+              and (
+                    (s.repeatType = 'NONE' and s.startAt < :end and s.endAt > :start)
+                 or (s.repeatType <> 'NONE' and (s.repeatEndDate is null or s.repeatEndDate >= :start))
+              )
             """)
     List<ScheduleResponse> findByTeamAndRange(
             @Param("teamId") Long teamId,
@@ -57,7 +61,10 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             from Schedule s
             join s.attendees a
             where a.member.id in :memberIds
-              and s.startAt < :end and s.endAt > :start
+              and (
+                    (s.repeatType = 'NONE' and s.startAt < :end and s.endAt > :start)
+                 or (s.repeatType <> 'NONE' and (s.repeatEndDate is null or s.repeatEndDate >= :start))
+              )
             """)
     List<ScheduleResponse> findByAttendeesAndRange(
             @Param("memberIds") List<Long> memberIds,
@@ -86,7 +93,10 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             join s.positions p
             where s.team.id = :teamId
               and p.position.id in :positionIds
-              and s.startAt < :end and s.endAt > :start
+              and (
+                    (s.repeatType = 'NONE' and s.startAt < :end and s.endAt > :start)
+                 or (s.repeatType <> 'NONE' and (s.repeatEndDate is null or s.repeatEndDate >= :start))
+              )
             """)
     List<ScheduleResponse> findByTeamAndPositionsAndRange(
             @Param("teamId") Long teamId,
@@ -117,7 +127,10 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             join s.positions p
             where a.member.id in :memberIds
               and p.position.id in :positionIds
-              and s.startAt < :end and s.endAt > :start
+              and (
+                    (s.repeatType = 'NONE' and s.startAt < :end and s.endAt > :start)
+                 or (s.repeatType <> 'NONE' and (s.repeatEndDate is null or s.repeatEndDate >= :start))
+              )
             """)
     List<ScheduleResponse> findByAttendeesAndPositionsAndRange(
             @Param("memberIds") List<Long> memberIds,
@@ -147,7 +160,10 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             join s.attendees a
             where a.member.id in :memberIds
               and s.team.id = :teamId
-              and s.startAt < :end and s.endAt > :start
+              and (
+                    (s.repeatType = 'NONE' and s.startAt < :end and s.endAt > :start)
+                 or (s.repeatType <> 'NONE' and (s.repeatEndDate is null or s.repeatEndDate >= :start))
+              )
             """)
     List<ScheduleResponse> findByAttendeesAndTeamAndRange(
             @Param("memberIds") List<Long> memberIds,
@@ -179,7 +195,10 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             where a.member.id in :memberIds
               and s.team.id = :teamId
               and p.position.id in :positionIds
-              and s.startAt < :end and s.endAt > :start
+              and (
+                    (s.repeatType = 'NONE' and s.startAt < :end and s.endAt > :start)
+                 or (s.repeatType <> 'NONE' and (s.repeatEndDate is null or s.repeatEndDate >= :start))
+              )
             """)
     List<ScheduleResponse> findByAttendeesAndTeamAndPositionsAndRange(
             @Param("memberIds") List<Long> memberIds,

@@ -27,7 +27,11 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
                 t.createdAt as createdAt,
                 t.updatedAt as updatedAt
             from Todo t
-            where t.team.id = :teamId and t.endAt <= :end and t.endAt >= :start
+            where t.team.id = :teamId
+              and (
+                    (COALESCE(t.repeatType, 'NONE') = 'NONE' and t.endAt <= :end and t.endAt >= :start)
+                 or (COALESCE(t.repeatType, 'NONE') <> 'NONE' and (t.repeatEndDate is null or t.repeatEndDate >= :start))
+              )
             """)
     List<TodoResponse> findByTeamAndRange(
             @Param("teamId") Long teamId,
@@ -53,7 +57,10 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
             from Todo t
             join t.assignees a
             where a.member.id in :memberIds
-              and t.endAt <= :end and t.endAt >= :start
+              and (
+                    (COALESCE(t.repeatType, 'NONE') = 'NONE' and t.endAt <= :end and t.endAt >= :start)
+                 or (COALESCE(t.repeatType, 'NONE') <> 'NONE' and (t.repeatEndDate is null or t.repeatEndDate >= :start))
+              )
             """)
     List<TodoResponse> findByAssigneesAndRange(
             @Param("memberIds") List<Long> memberIds,
