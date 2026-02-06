@@ -154,11 +154,13 @@ public class TodoService {
 
     @Transactional
     public TodoResponseDto updateTodo(Long userId, Long todoId, TodoUpdateRequest request) {
+        // 투두 조회 (없으면 404)
         Todo todo = todoRepository.findById(todoId)
-                .orElseThrow(() -> new IllegalArgumentException("투두를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("TODO_NOT_FOUND: 투두를 찾을 수 없습니다."));
 
+        // 권한 확인 (팀원이 아니면 403)
         if (!teamMemberRepository.existsByTeamIdAndUserId(todo.getTeam().getId(), userId)) {
-            throw new IllegalArgumentException("팀원이 아닌 사용자는 투두를 수정할 수 없습니다.");
+            throw new IllegalArgumentException("FORBIDDEN: 팀원이 아닌 사용자는 투두를 수정할 수 없습니다.");
         }
 
         if (request.getTitle() != null) todo.setTitle(request.getTitle());
@@ -267,11 +269,13 @@ public class TodoService {
      */
     @Transactional
     public TodoResponseDto updateTodoStatus(Long userId, Long todoId, TodoStatusUpdateRequest request) {
+        // 투두 조회 (없으면 404)
         Todo todo = todoRepository.findById(todoId)
-                .orElseThrow(() -> new IllegalArgumentException("투두를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("TODO_NOT_FOUND: 투두를 찾을 수 없습니다."));
 
+        // 권한 확인 (팀원이 아니면 403)
         if (!teamMemberRepository.existsByTeamIdAndUserId(todo.getTeam().getId(), userId)) {
-            throw new IllegalArgumentException("팀원이 아닌 사용자는 투두를 수정할 수 없습니다.");
+            throw new IllegalArgumentException("FORBIDDEN: 팀원이 아닌 사용자는 투두를 수정할 수 없습니다.");
         }
 
         todo.setStatus(request.getStatus());
@@ -300,11 +304,13 @@ public class TodoService {
 
     @Transactional
     public void deleteTodo(Long userId, Long todoId) {
+        // 투두 조회 (없으면 404)
         Todo todo = todoRepository.findById(todoId)
-                .orElseThrow(() -> new IllegalArgumentException("투두를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("TODO_NOT_FOUND: 투두를 찾을 수 없습니다."));
 
+        // 권한 확인 (팀원이 아니면 403)
         if (!teamMemberRepository.existsByTeamIdAndUserId(todo.getTeam().getId(), userId)) {
-            throw new IllegalArgumentException("팀원이 아닌 사용자는 투두를 삭제할 수 없습니다.");
+            throw new IllegalArgumentException("FORBIDDEN: 팀원이 아닌 사용자는 투두를 삭제할 수 없습니다.");
         }
 
         todoRepository.delete(todo);

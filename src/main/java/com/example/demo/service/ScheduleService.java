@@ -198,12 +198,13 @@ public class ScheduleService {
 
     @Transactional
     public ScheduleResponseDto updateSchedule(Long userId, Long scheduleId, ScheduleUpdateRequest request, RepeatScope scope) {
+        // 스케줄 조회 (없으면 404)
         Schedule schedule = scheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("SCHEDULE_NOT_FOUND: 일정을 찾을 수 없습니다."));
 
-        // 팀 멤버 검증
+        // 팀 멤버 검증 (팀원이 아니면 403)
         if (!teamMemberRepository.existsByTeamIdAndUserId(schedule.getTeam().getId(), userId)) {
-            throw new IllegalArgumentException("팀원이 아닌 사용자는 일정을 수정할 수 없습니다.");
+            throw new IllegalArgumentException("FORBIDDEN: 팀원이 아닌 사용자는 일정을 수정할 수 없습니다.");
         }
 
         // 간단화를 위해 현재 버전에서는 ALL만 처리, 기타 scope는 추후 확장
@@ -235,10 +236,10 @@ public class ScheduleService {
     @Transactional
     public void deleteSchedule(Long userId, Long scheduleId, RepeatScope scope) {
         Schedule schedule = scheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("SCHEDULE_NOT_FOUND: 일정을 찾을 수 없습니다."));
 
         if (!teamMemberRepository.existsByTeamIdAndUserId(schedule.getTeam().getId(), userId)) {
-            throw new IllegalArgumentException("팀원이 아닌 사용자는 일정을 삭제할 수 없습니다.");
+            throw new IllegalArgumentException("FORBIDDEN: 팀원이 아닌 사용자는 일정을 삭제할 수 없습니다.");
         }
 
         // 단순 구현: scope에 상관없이 해당 스케줄만 삭제
@@ -254,7 +255,7 @@ public class ScheduleService {
             List<Long> positionIds
     ) {
         if (!teamMemberRepository.existsByTeamIdAndUserId(teamId, userId)) {
-            throw new IllegalArgumentException("팀원이 아닌 사용자는 팀 일정을 조회할 수 없습니다.");
+            throw new IllegalArgumentException("FORBIDDEN: 팀원이 아닌 사용자는 팀 일정을 조회할 수 없습니다.");
         }
         List<ScheduleResponse> responses;
         if (positionIds != null && !positionIds.isEmpty()) {
@@ -277,7 +278,7 @@ public class ScheduleService {
         if (teamId != null) {
             // 특정 팀으로 필터링: 해당 팀의 멤버만 조회
             TeamMember member = teamMemberRepository.findByTeamIdAndUserId(teamId, userId)
-                    .orElseThrow(() -> new IllegalArgumentException("해당 팀의 팀원이 아닙니다."));
+                    .orElseThrow(() -> new IllegalArgumentException("FORBIDDEN: 해당 팀의 팀원이 아닙니다."));
             members = List.of(member);
         } else {
             // 전체 팀: 사용자가 속한 모든 팀의 멤버 조회
