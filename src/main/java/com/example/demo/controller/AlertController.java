@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -66,6 +68,26 @@ public class AlertController {
         Long userId = jwtAuthenticationHelper.getCurrentUserId();
         List<AlertResponseDto> alerts = alertService.getTeamAlerts(userId, teamId);
         return ResponseEntity.ok(alerts);
+    }
+
+    @Operation(
+            summary = "알림 읽음 처리",
+            description = "단일 알림을 읽음 처리합니다.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "알림 읽음 처리 성공",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = AlertResponseDto.class)))
+            }
+    )
+    @PatchMapping("/{alertId}/read")
+    public ResponseEntity<AlertResponseDto> markAlertAsRead(
+            @PathVariable("alertId") Long alertId
+    ) {
+        Long userId = jwtAuthenticationHelper.getCurrentUserId();
+        AlertResponseDto response = alertService.markAsRead(userId, alertId);
+        return ResponseEntity.ok(response);
     }
 }
 

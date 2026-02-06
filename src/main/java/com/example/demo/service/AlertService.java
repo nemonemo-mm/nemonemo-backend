@@ -67,16 +67,37 @@ public class AlertService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 알림 읽음 처리
+     */
+    @Transactional
+    public AlertResponseDto markAsRead(Long userId, Long alertId) {
+        Alert alert = alertRepository.findById(alertId)
+                .orElseThrow(() -> new IllegalArgumentException("ALERT_NOT_FOUND: 알림을 찾을 수 없습니다."));
+
+        if (!alert.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("FORBIDDEN: 다른 사용자의 알림은 수정할 수 없습니다.");
+        }
+
+        if (!Boolean.TRUE.equals(alert.getIsRead())) {
+            alert.setIsRead(true);
+            alert.setReadAt(java.time.LocalDateTime.now());
+            alertRepository.save(alert);
+        }
+
+        return toResponse(alert);
+    }
+
     private AlertResponseDto toResponse(Alert alert) {
         return AlertResponseDto.builder()
                 .id(alert.getId())
                 .type(alert.getType())
                 .teamId(alert.getTeam() != null ? alert.getTeam().getId() : null)
                 .teamName(alert.getTeam() != null ? alert.getTeam().getName() : null)
-                .title(alert.getTitle())
-                .body(alert.getBody())
+                .content(alert.getBody())
                 .isRead(alert.getIsRead())
-                .createdAt(alert.getCreatedAt())
+                .time(alert.getCreatedAt())
+                .readAt(alert.getReadAt())
                 .build();
     }
 

@@ -25,20 +25,20 @@ public class AlertResponseDto {
     @Schema(description = "팀 ID (팀 관련 알림인 경우)", example = "1")
     private Long teamId;
 
-    @Schema(description = "팀 이름 (팀 관련 알림인 경우)", example = "NemoNemo 팀")
+    @Schema(description = "팀 이름 (팀 관련 알림인 경우)", example = "NemoNemo")
     private String teamName;
 
-    @Schema(description = "알림 제목", example = "새로운 스케줄")
-    private String title;
-
-    @Schema(description = "알림 본문", example = "홍길동님에게 새로운 스케줄이 등록되었습니다.")
-    private String body;
+    @Schema(description = "알림 내용", example = "홍길동님에게 새로운 스케줄이 등록되었습니다.")
+    private String content;
 
     @Schema(description = "읽음 여부", example = "false")
     private Boolean isRead;
 
     @Schema(description = "생성일시", example = "2024-01-15T10:30:00.000Z")
-    private LocalDateTime createdAt;
+    private LocalDateTime time;
+
+    @Schema(description = "읽은 시각 (읽지 않은 경우 null)", example = "2024-01-16T09:00:00.000Z")
+    private LocalDateTime readAt;
 }
 
 

@@ -48,6 +48,9 @@ public class Alert {
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "read_at")
+    private LocalDateTime readAt;
 }
 
 
