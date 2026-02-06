@@ -117,13 +117,13 @@ public class SocialAuthService {
             user = userRepository.save(user);
             log.info("신규 사용자 회원가입 완료: userId={}, email={}, firebaseUid={}", user.getId(), email, firebaseUid);
         } else {
-            // 기존 사용자: name 검증 없이 바로 로그인
+            // 기존 사용자: DB에 저장된 프로필 정보를 우선 사용 (구글 프로필로 덮어쓰지 않음)
             user = existingUserOpt.get();
-            
-            // 선택적으로 name 업데이트 (request에 제공된 경우)
+
+            // 선택적으로 name 업데이트 (request에 제공된 경우만, Google 프로필 이름은 사용하지 않음)
             String name = request.getUserName();
             boolean updated = false;
-            
+
             if (name != null && !name.trim().isEmpty() && !name.equals(user.getName())) {
                 String trimmedName = name.trim();
                 // 이름 길이 검증
@@ -133,18 +133,10 @@ public class SocialAuthService {
                 user.setName(trimmedName);
                 updated = true;
             }
-            
-            // 프로필 사진 업데이트 (Firebase에서 가져온 picture가 있고 기존과 다른 경우)
-            Map<String, Object> claims = decodedToken.getClaims();
-            Object pictureClaim = claims.get("picture");
-            if (pictureClaim != null) {
-                String picture = pictureClaim.toString();
-                if (picture != null && !picture.equals(user.getImageUrl())) {
-                    user.setImageUrl(picture);
-                    updated = true;
-                }
-            }
-            
+
+            // 기존에는 Firebase 토큰의 picture 클레임으로 imageUrl을 덮어썼지만,
+            // 사용자가 변경한 프로필 이미지를 유지하기 위해 더 이상 업데이트하지 않습니다.
+
             if (updated) {
                 user = userRepository.save(user);
                 log.info("사용자 정보 업데이트 완료: userId={}", user.getId());
