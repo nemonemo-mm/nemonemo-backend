@@ -1,5 +1,6 @@
 package com.example.demo.dto.image;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,6 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL) // null 필드는 응답에서 제외
 public class ImageUploadResponse {
     @Schema(description = "사용자 ID (프로필 이미지인 경우)", example = "1")
     private Long userId;
