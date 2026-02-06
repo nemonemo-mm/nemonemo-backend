@@ -6,13 +6,13 @@ import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.AlertType;
 import com.example.demo.dto.alert.AlertResponseDto;
 import com.example.demo.repository.AlertRepository;
+import com.example.demo.repository.TeamMemberRepository;
 import com.example.demo.repository.TeamRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.EnumSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,9 +23,10 @@ public class AlertService {
     private final AlertRepository alertRepository;
     private final UserRepository userRepository;
     private final TeamRepository teamRepository;
+    private final TeamMemberRepository teamMemberRepository;
 
     public enum AlertScope {
-        ALL, GROUP, PERSONAL
+        ALL, PERSONAL
     }
 
     /**
@@ -36,22 +37,30 @@ public class AlertService {
         List<Alert> alerts;
         if (scope == null || scope == AlertScope.ALL) {
             alerts = alertRepository.findTop50ByUserIdOrderByCreatedAtDesc(userId);
-        } else {
-            List<AlertType> types = switch (scope) {
-                case GROUP -> List.of(
-                        AlertType.SCHEDULE_POSITION_ADDED,
-                        AlertType.NOTICE_UPDATED,
-                        AlertType.TEAM_MEMBER_JOINED,
-                        AlertType.TEAM_DISSOLVED
-                );
-                case PERSONAL -> List.of(
-                        AlertType.SCHEDULE_ASSIGNEE_ADDED,
-                        AlertType.TODO_DUE_TODAY
-                );
-                default -> List.copyOf(EnumSet.allOf(AlertType.class));
-            };
+        } else { // PERSONAL
+            List<AlertType> types = List.of(
+                    AlertType.SCHEDULE_ASSIGNEE_ADDED,
+                    AlertType.TODO_DUE_TODAY
+            );
             alerts = alertRepository.findTop50ByUserIdAndTypeInOrderByCreatedAtDesc(userId, types);
         }
+
+        return alerts.stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 특정 팀에 대한 알림만 조회 (그 팀의 멤버만 조회 가능)
+     */
+    @Transactional(readOnly = true)
+    public List<AlertResponseDto> getTeamAlerts(Long userId, Long teamId) {
+        // 팀 멤버 검증
+        if (!teamMemberRepository.existsByTeamIdAndUserId(teamId, userId)) {
+            throw new IllegalArgumentException("FORBIDDEN: 팀원이 아닌 사용자는 팀 알림을 조회할 수 없습니다.");
+        }
+
+        List<Alert> alerts = alertRepository.findTop50ByUserIdAndTeamIdOrderByCreatedAtDesc(userId, teamId);
 
         return alerts.stream()
                 .map(this::toResponse)

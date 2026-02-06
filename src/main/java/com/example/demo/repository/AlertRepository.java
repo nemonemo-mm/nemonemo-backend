@@ -11,6 +11,8 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
     List<Alert> findTop50ByUserIdOrderByCreatedAtDesc(Long userId);
 
     List<Alert> findTop50ByUserIdAndTypeInOrderByCreatedAtDesc(Long userId, List<AlertType> types);
+
+    List<Alert> findTop50ByUserIdAndTeamIdOrderByCreatedAtDesc(Long userId, Long teamId);
 }
 
 
