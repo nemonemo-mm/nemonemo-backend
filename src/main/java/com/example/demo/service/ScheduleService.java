@@ -42,16 +42,28 @@ public class ScheduleService {
 
     @Transactional
     public ScheduleResponseDto createSchedule(Long userId, ScheduleCreateRequest request) {
+        // 기본 필드 검증 (null 등으로 인한 NPE를 사전에 방지)
+        validateCreateRequest(request);
+
         Team team = teamRepository.findById(request.getTeamId())
-                .orElseThrow(() -> new IllegalArgumentException("팀을 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("TEAM_NOT_FOUND: 팀을 찾을 수 없습니다."));
 
         TeamMember creatorMember = teamMemberRepository.findByTeamIdAndUserId(team.getId(), userId)
-                .orElseThrow(() -> new IllegalArgumentException("팀원이 아닌 사용자는 일정을 생성할 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("FORBIDDEN: 팀원이 아닌 사용자는 일정을 생성할 수 없습니다."));
 
         User creator = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND: 사용자를 찾을 수 없습니다."));
 
         String normalizedRepeatType = normalizeRepeatType(request.getRepeatType());
+
+        // 반복 설정 유효성 검증 (NONE 조합, interval 등)
+        validateRepeatConfig(
+                normalizedRepeatType,
+                request.getRepeatInterval(),
+                request.getRepeatEndDate(),
+                request.getRepeatUseDate(),
+                request.getRepeatWeekDays()
+        );
         
         // repeatWeekDays를 repeatDays로 변환 (NONE이 아닐 때만)
         Integer[] repeatDays = null;
@@ -489,6 +501,50 @@ public class ScheduleService {
         if (repeatEndDate == null) return null;
         return repeatEndDate.atTime(23, 59, 59);
         }
+
+    /**
+     * 스케줄 생성 요청 기본 필드 검증
+     */
+    private void validateCreateRequest(ScheduleCreateRequest request) {
+        if (request.getTeamId() == null || request.getTeamId() <= 0) {
+            throw new IllegalArgumentException("TEAM_NOT_FOUND: 유효한 팀 ID가 아닙니다.");
+        }
+
+        if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+            throw new IllegalArgumentException("VALIDATION_ERROR: 제목은 필수입니다.");
+        }
+
+        if (request.getStartAt() == null || request.getEndAt() == null) {
+            throw new IllegalArgumentException("VALIDATION_ERROR: 시작 일시와 종료 일시는 필수입니다.");
+        }
+
+        if (!request.getEndAt().isAfter(request.getStartAt())) {
+            throw new IllegalArgumentException("VALIDATION_ERROR: 종료 일시는 시작 일시보다 이후여야 합니다.");
+        }
+    }
+
+    /**
+     * 반복 설정 유효성 검증
+     */
+    private void validateRepeatConfig(String normalizedRepeatType,
+                                      Integer repeatInterval,
+                                      LocalDate repeatEndDate,
+                                      Boolean repeatUseDate,
+                                      List<String> repeatWeekDays) {
+        // NONE인데 다른 반복 필드들이 들어오면 에러
+        if (RepeatType.NONE.name().equals(normalizedRepeatType)) {
+            if (repeatInterval != null || repeatEndDate != null ||
+                    (repeatUseDate != null && repeatUseDate) ||
+                    (repeatWeekDays != null && !repeatWeekDays.isEmpty())) {
+                throw new IllegalArgumentException("INVALID_REPEAT_CONFIG: repeatType이 NONE일 때는 반복 관련 필드를 보낼 수 없습니다.");
+            }
+        }
+
+        // interval이 0 이하이면 에러
+        if (repeatInterval != null && repeatInterval <= 0) {
+            throw new IllegalArgumentException("INVALID_REPEAT_CONFIG: repeatInterval은 1 이상이어야 합니다.");
+        }
+    }
 
     private String normalizeRepeatType(String repeatType) {
         if (repeatType == null || repeatType.isBlank()) {
