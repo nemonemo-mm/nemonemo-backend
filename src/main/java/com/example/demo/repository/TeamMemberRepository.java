@@ -17,6 +17,9 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
     
     List<TeamMember> findByUserId(Long userId);
     
+    // 특정 팀에서 주어진 포지션들에 속한 팀원들 조회
+    List<TeamMember> findByTeamIdAndPositionIdIn(Long teamId, List<Long> positionIds);
+    
     boolean existsByTeamIdAndUserId(Long teamId, Long userId);
     
     @Query("""

@@ -2,11 +2,13 @@ package com.example.demo.service;
 
 import com.example.demo.domain.entity.Notice;
 import com.example.demo.domain.entity.Team;
+import com.example.demo.domain.entity.TeamMember;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.notice.NoticeCreateRequest;
 import com.example.demo.dto.notice.NoticeResponse;
 import com.example.demo.dto.notice.NoticeUpdateRequest;
 import com.example.demo.repository.NoticeRepository;
+import com.example.demo.repository.TeamMemberRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,8 @@ public class NoticeService {
     private final UserRepository userRepository;
     private final NoticeNotificationHelper noticeNotificationHelper;
     private final TeamPermissionService teamPermissionService;
+    private final TeamMemberRepository teamMemberRepository;
+    private final AlertService alertService;
 
     @Transactional
     public NoticeResponse createNotice(Long userId, Long teamId, NoticeCreateRequest request) {
@@ -90,6 +94,21 @@ public class NoticeService {
         // 지연 로딩된 연관 관계 초기화 (LazyInitializationException 방지)
         notice.getTeam().getName(); // team 초기화
         notice.getAuthor().getName(); // author 초기화
+
+        // 알림함용 Alert 생성 (팀원 전체, 수정자 제외)
+        try {
+            Long noticeTeamId = notice.getTeam().getId();
+            String teamName = notice.getTeam().getName();
+            for (TeamMember member : teamMemberRepository.findByTeamId(noticeTeamId)) {
+                Long targetUserId = member.getUser().getId();
+                if (targetUserId.equals(userId)) {
+                    continue; // 수정자 제외
+                }
+                alertService.createNoticeUpdatedAlert(targetUserId, noticeTeamId, teamName);
+            }
+        } catch (Exception e) {
+            log.warn("공지 Alert 생성 실패: noticeId={}, error={}", notice.getId(), e.getMessage());
+        }
 
         return toResponse(notice);
     }

@@ -26,6 +26,7 @@ public class TodoDeadlineNotificationScheduler {
     private final PersonalNotificationSettingRepository personalNotificationSettingRepository;
     private final DeviceTokenService deviceTokenService;
     private final ExpoNotificationService expoNotificationService;
+    private final AlertService alertService;
 
     // 중복 알림 방지를 위한 캐시: (todoId, userId, minutesBefore) -> 마지막 알림 시간
     private final Map<String, LocalDateTime> sentNotifications = new ConcurrentHashMap<>();
@@ -104,8 +105,16 @@ public class TodoDeadlineNotificationScheduler {
                         continue; // 이미 알림을 보냄
                     }
 
-                    // 알림 전송
+                    // 알림 전송 (푸시)
                     sendNotificationToUser(userId, todoTitle, teamName, minutesBefore);
+
+                    // 알림함용 Alert 생성
+                    try {
+                        alertService.createTodoDueTodayAlert(userId, teamId, teamName, user.getName());
+                    } catch (Exception e) {
+                        log.warn("투두 마감 Alert 생성 실패: todoId={}, userId={}, error={}",
+                                todo.getId(), userId, e.getMessage());
+                    }
 
                     // 알림 기록 저장
                     sentNotifications.put(notificationKey, now);

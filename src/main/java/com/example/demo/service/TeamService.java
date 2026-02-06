@@ -51,6 +51,7 @@ public class TeamService {
     private final DeviceTokenService deviceTokenService;
     private final NotificationSettingRepository notificationSettingRepository;
     private final NoticeRepository noticeRepository;
+    private final AlertService alertService;
     
     /**
      * 팀 생성
@@ -340,6 +341,22 @@ public class TeamService {
         
         // 팀 참여 FCM 알림 전송 (참여한 사용자 제외)
         sendTeamMemberNotification(team, user.getName(), userId, true);
+
+        // 알림함용 Alert 생성 (기존 팀원 전체, 새로 들어온 사람 제외)
+        try {
+            String teamName = team.getName();
+            String newMemberName = user.getName();
+            List<TeamMember> teamMembers = teamMemberRepository.findByTeamId(team.getId());
+            for (TeamMember tm : teamMembers) {
+                Long targetUserId = tm.getUser().getId();
+                if (targetUserId.equals(userId)) {
+                    continue; // 새로 들어온 사람 제외
+                }
+                alertService.createTeamMemberJoinedAlert(targetUserId, team.getId(), teamName, newMemberName);
+            }
+        } catch (Exception e) {
+            log.warn("팀원 참여 Alert 생성 실패: teamId={}, userId={}, error={}", team.getId(), userId, e.getMessage());
+        }
         
         return memberResponse;
     }

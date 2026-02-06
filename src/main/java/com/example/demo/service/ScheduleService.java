@@ -34,6 +34,7 @@ public class ScheduleService {
     private final ExpoNotificationService expoNotificationService;
     private final DeviceTokenService deviceTokenService;
     private final NotificationSettingRepository notificationSettingRepository;
+    private final AlertService alertService;
 
     public enum RepeatScope {
         THIS_ONLY, FOLLOWING, ALL
@@ -193,6 +194,13 @@ public class ScheduleService {
         // 스케줄 생성 알림 전송 (생성자 제외)
         sendScheduleChangeNotification(schedule, userId);
 
+        // 알림함용 Alert 생성
+        try {
+            createScheduleAlertsForAttendeesAndPositions(schedule, members, schedulePositions);
+        } catch (Exception e) {
+            // 알림 생성 실패해도 스케줄 생성은 성공 처리
+        }
+
         return toResponse(schedule);
     }
 
@@ -230,6 +238,8 @@ public class ScheduleService {
         // 스케줄 수정 알림 전송 (수정자 제외)
         sendScheduleChangeNotification(schedule, userId);
 
+        // TODO: 스케줄 수정 시 참석자/포지션 변경에 따른 Alert 추가는 추후 확장 가능
+
         return toResponse(schedule);
     }
 
@@ -244,6 +254,46 @@ public class ScheduleService {
 
         // 단순 구현: scope에 상관없이 해당 스케줄만 삭제
         scheduleRepository.delete(schedule);
+    }
+
+    /**
+     * 스케줄 생성 시 참석자/포지션 기준 Alert 생성
+     */
+    private void createScheduleAlertsForAttendeesAndPositions(Schedule schedule,
+                                                              List<TeamMember> attendees,
+                                                              List<SchedulePosition> schedulePositions) {
+        Long teamId = schedule.getTeam().getId();
+
+        // 1) 참석자용 개인 알림
+        if (attendees != null) {
+            for (TeamMember member : attendees) {
+                Long userId = member.getUser().getId();
+                String userName = member.getUser().getName();
+                alertService.createScheduleAssigneeAlert(userId, teamId, userName);
+            }
+        }
+
+        // 2) 포지션 기반 그룹 알림
+        if (schedulePositions != null && !schedulePositions.isEmpty()) {
+            List<Long> positionIds = schedulePositions.stream()
+                    .map(sp -> sp.getPosition().getId())
+                    .distinct()
+                    .toList();
+
+            if (!positionIds.isEmpty()) {
+                List<TeamMember> positionMembers =
+                        teamMemberRepository.findByTeamIdAndPositionIdIn(teamId, positionIds);
+
+                for (TeamMember member : positionMembers) {
+                    if (member.getPosition() == null) {
+                        continue;
+                    }
+                    Long userId = member.getUser().getId();
+                    String positionName = member.getPosition().getName();
+                    alertService.createSchedulePositionAlert(userId, teamId, positionName);
+                }
+            }
+        }
     }
 
     @Transactional(readOnly = true)
