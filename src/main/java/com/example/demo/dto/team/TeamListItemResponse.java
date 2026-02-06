@@ -12,5 +12,8 @@ public interface TeamListItemResponse {
 
     @Schema(description = "사용자의 포지션 이름 (추후 positionName으로 변경 예정)", example = "Design")
     String getDescription(); // 추후 positionName으로 변경 예정
+
+    @Schema(description = "팀 이미지 URL", example = "https://firebasestorage.googleapis.com/v0/b/your-project.appspot.com/o/teams%2F...")
+    String getTeamImageUrl();
 }
 

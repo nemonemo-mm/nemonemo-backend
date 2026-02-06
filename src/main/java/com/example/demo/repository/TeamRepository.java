@@ -48,7 +48,8 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
             select distinct
                 t.id as teamId,
                 t.name as teamName,
-                p.name as description
+                p.name as description,
+                t.imageUrl as teamImageUrl
             from Team t
             left join TeamMember tm
                 on tm.team.id = t.id
