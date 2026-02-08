@@ -45,7 +45,7 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
             select 
                 tm.id as memberId,
                 tm.user.id as userId,
-                tm.user.name as displayName,
+                tm.user.name as userName,
                 coalesce(p.id, -1) as positionId,
                 coalesce(p.name, 'MEMBER') as positionName,
                 coalesce(p.colorHex, '#9BBF9B') as positionColor,

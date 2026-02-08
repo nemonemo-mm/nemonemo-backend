@@ -63,7 +63,7 @@ public class ScheduleCreateRequest {
     @Schema(description = "연결할 포지션 ID 목록 (첫 번째가 대표 포지션, 비어있으면 작성자의 포지션 사용)", example = "[1,2]")
     private List<Long> positionIds;
 
-    @Schema(description = "참석자 팀멤버 ID 목록 (필수)", example = "[10,11]", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "참석자 팀멤버 ID 목록 (선택)", example = "[10,11]")
     private List<Long> attendeeMemberIds;
 
     @Schema(description = "스케줄 사전 알림 시간 (분 단위 배열, null이면 사용자 개인 설정 사용)", example = "[10, 30, 60]")

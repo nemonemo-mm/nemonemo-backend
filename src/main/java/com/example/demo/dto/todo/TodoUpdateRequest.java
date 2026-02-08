@@ -6,7 +6,6 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -36,22 +35,6 @@ public class TodoUpdateRequest {
     private List<Long> assigneeMemberIds;
 
     private List<Long> positionIds;
-
-    // 반복 관련 필드 (스케줄과 동일한 구조)
-    @Schema(description = "반복 유형 (NONE, DAILY, WEEKLY, MONTHLY, YEARLY)", example = "NONE")
-    private String repeatType;
-
-    @Schema(description = "반복 간격 (예: 2일 간격, 2주 간격)", example = "1")
-    private Integer repeatInterval;
-
-    @Schema(description = "반복 종료일 (미설정 시 무기한)", example = "2026-01-17")
-    private LocalDate repeatEndDate;
-
-    @Schema(description = "월간/연간 반복 시 날짜 사용 여부", example = "true")
-    private Boolean repeatUseDate;
-
-    @Schema(description = "반복 요일 배열 (주간 반복 시, \"월\", \"화\", \"수\", \"목\", \"금\", \"토\", \"일\")", example = "[\"월\", \"수\", \"금\"]")
-    private List<String> repeatWeekDays;
 }
 
 

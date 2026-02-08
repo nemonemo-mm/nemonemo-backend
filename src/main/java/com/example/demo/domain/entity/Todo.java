@@ -64,23 +64,6 @@ public class Todo {
     @OneToMany(mappedBy = "todo", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TodoPosition> positions;
 
-    // 반복 일정 관련 필드 (스케줄과 동일한 구조)
-    @Column(name = "repeat_type", length = 20)
-    private String repeatType;  // NONE, DAILY, WEEKLY, MONTHLY, YEARLY
-
-    @Column(name = "repeat_interval")
-    @Builder.Default
-    private Integer repeatInterval = 1;  // 반복 간격
-
-    @Column(name = "repeat_days", columnDefinition = "INTEGER[]")
-    private Integer[] repeatDays;  // 주간 반복 시 요일 배열 (0=일요일, 1=월요일, ...)
-
-    @Column(name = "repeat_month_day")
-    private Integer repeatMonthDay;  // 월간/연간 반복 시 날짜 (1-31)
-
-    @Column(name = "repeat_end_date")
-    private LocalDateTime repeatEndDate;  // 반복 종료일
-
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();

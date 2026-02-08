@@ -98,41 +98,38 @@ public class ScheduleService {
 
         schedule = scheduleRepository.save(schedule);
 
-        // 참석자 설정 (필수)
+        // 참석자 설정 (선택)
+        List<TeamMember> members = new ArrayList<>();
         List<Long> attendeeMemberIds = request.getAttendeeMemberIds();
-        if (attendeeMemberIds == null || attendeeMemberIds.isEmpty()) {
-            throw new IllegalArgumentException("INVALID_MEMBER_IDS: 참석자 팀원 ID는 필수입니다.");
-        }
-        
-        // 0이나 null 값 필터링
-        List<Long> validMemberIds = attendeeMemberIds.stream()
-                .filter(id -> id != null && id > 0)
-                .distinct()
-                .toList();
-        
-        if (validMemberIds.isEmpty()) {
-            throw new IllegalArgumentException("INVALID_MEMBER_IDS: 유효한 참석자 팀원 ID가 없습니다.");
-        }
-        
-        List<TeamMember> members = teamMemberRepository.findAllById(validMemberIds);
-        
-        // 요청한 ID와 조회된 멤버 수가 다르면 일부 ID가 유효하지 않음
-        if (members.size() != validMemberIds.size()) {
-            throw new IllegalArgumentException("INVALID_MEMBER_IDS: 일부 팀원 ID가 유효하지 않습니다.");
-        }
-        
-        // 모든 멤버가 해당 팀에 속하는지 확인
-        for (TeamMember member : members) {
-            if (!member.getTeam().getId().equals(team.getId())) {
-                throw new IllegalArgumentException("INVALID_MEMBER_IDS: 팀원이 해당 팀에 속하지 않습니다.");
+        if (attendeeMemberIds != null && !attendeeMemberIds.isEmpty()) {
+            // 0이나 null 값 필터링
+            List<Long> validMemberIds = attendeeMemberIds.stream()
+                    .filter(id -> id != null && id > 0)
+                    .distinct()
+                    .toList();
+            
+            if (!validMemberIds.isEmpty()) {
+                members = teamMemberRepository.findAllById(validMemberIds);
+                
+                // 요청한 ID와 조회된 멤버 수가 다르면 일부 ID가 유효하지 않음
+                if (members.size() != validMemberIds.size()) {
+                    throw new IllegalArgumentException("INVALID_MEMBER_IDS: 일부 팀원 ID가 유효하지 않습니다.");
+                }
+                
+                // 모든 멤버가 해당 팀에 속하는지 확인
+                for (TeamMember member : members) {
+                    if (!member.getTeam().getId().equals(team.getId())) {
+                        throw new IllegalArgumentException("INVALID_MEMBER_IDS: 팀원이 해당 팀에 속하지 않습니다.");
+                    }
+                }
+                
+                List<ScheduleAttendee> attendees = new ArrayList<>();
+                for (TeamMember member : members) {
+                    attendees.add(buildScheduleAttendee(schedule, member));
+                }
+                scheduleAttendeeRepository.saveAll(attendees);
             }
         }
-        
-        List<ScheduleAttendee> attendees = new ArrayList<>();
-        for (TeamMember member : members) {
-            attendees.add(buildScheduleAttendee(schedule, member));
-        }
-        scheduleAttendeeRepository.saveAll(attendees);
 
         // 포지션 설정
         List<Long> positionIds = request.getPositionIds();
@@ -735,25 +732,6 @@ public class ScheduleService {
         String representativeColorHex = sortedPositions.isEmpty()
                 ? null
                 : sortedPositions.get(0).getPosition().getColorHex();
-
-        // 포지션이 없어서 대표 색상이 null인 경우:
-        // 1) 참석자 리스트가 있고
-        // 2) 첫 번째 참석자에게 포지션이 있으면 그 포지션 색을 사용
-        // 3) 그마저도 없으면 기본 색상 "#9BBF9B" 사용
-        if (representativeColorHex == null) {
-            if (schedule.getAttendees() != null && !schedule.getAttendees().isEmpty()) {
-                ScheduleAttendee firstAttendee = schedule.getAttendees().get(0);
-                if (firstAttendee != null &&
-                        firstAttendee.getMember() != null &&
-                        firstAttendee.getMember().getPosition() != null &&
-                        firstAttendee.getMember().getPosition().getColorHex() != null) {
-                    representativeColorHex = firstAttendee.getMember().getPosition().getColorHex();
-                } else {
-                    // 참석자의 포지션도 없으면 기본 색상 사용
-                    representativeColorHex = "#9BBF9B";
-                }
-            }
-        }
 
         LocalDate repeatEndDate = schedule.getRepeatEndDate() == null
                 ? null

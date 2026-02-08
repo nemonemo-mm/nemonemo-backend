@@ -10,8 +10,8 @@ public interface TeamMemberListItemResponse {
     @Schema(description = "사용자 ID", example = "1")
     Long getUserId();
 
-    @Schema(description = "표시 이름 (사용자 이름)", example = "홍길동")
-    String getDisplayName(); // 사용자 이름
+    @Schema(description = "사용자 이름", example = "홍길동")
+    String getUserName();
 
     @Schema(description = "포지션 ID", example = "1")
     Long getPositionId();
