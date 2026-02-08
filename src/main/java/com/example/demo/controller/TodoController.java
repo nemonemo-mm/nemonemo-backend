@@ -41,10 +41,18 @@ public class TodoController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "생성 성공",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TodoResponseDto.class))),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패 등)",
+            @ApiResponse(responseCode = "400", description = "잘못된 요청",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"제목은 필수입니다.\"}"))),
+                            examples = {
+                                    @ExampleObject(name = "제목 필수", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"제목은 필수입니다.\"}"),
+                                    @ExampleObject(name = "제목 길이", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"제목은 최대 20자까지 입력 가능합니다.\"}"),
+                                    @ExampleObject(name = "날짜 필수", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"종료일시는 필수입니다.\"}"),
+                                    @ExampleObject(name = "참석자 없음", value = "{\"code\":\"INVALID_MEMBER_IDS\",\"message\":\"일부 담당자 멤버 ID가 유효하지 않습니다.\"}"),
+                                    @ExampleObject(name = "참석자 팀 불일치", value = "{\"code\":\"INVALID_MEMBER_IDS\",\"message\":\"담당자 멤버가 해당 팀에 속하지 않습니다.\"}"),
+                                    @ExampleObject(name = "포지션 없음", value = "{\"code\":\"INVALID_POSITION_IDS\",\"message\":\"일부 포지션 ID가 유효하지 않습니다.\"}"),
+                                    @ExampleObject(name = "포지션 팀 불일치", value = "{\"code\":\"INVALID_POSITION_IDS\",\"message\":\"포지션이 해당 팀에 속하지 않습니다.\"}")
+                            })),
             @ApiResponse(responseCode = "401", description = "인증 실패",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
@@ -86,10 +94,17 @@ public class TodoController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "수정 성공",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TodoResponseDto.class))),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패 등)",
+            @ApiResponse(responseCode = "400", description = "잘못된 요청",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"유효하지 않은 요청입니다.\"}"))),
+                            examples = {
+                                    @ExampleObject(name = "제목 길이", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"제목은 최대 200자까지 입력 가능합니다.\"}"),
+                                    @ExampleObject(name = "날짜 형식", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"잘못된 날짜 형식입니다. ISO 8601 형식(예: 2025-01-01T00:00:00Z)을 사용해주세요.\"}"),
+                                    @ExampleObject(name = "참석자 없음", value = "{\"code\":\"INVALID_MEMBER_IDS\",\"message\":\"일부 담당자 멤버 ID가 유효하지 않습니다.\"}"),
+                                    @ExampleObject(name = "참석자 팀 불일치", value = "{\"code\":\"INVALID_MEMBER_IDS\",\"message\":\"담당자 멤버가 해당 팀에 속하지 않습니다.\"}"),
+                                    @ExampleObject(name = "포지션 없음", value = "{\"code\":\"INVALID_POSITION_IDS\",\"message\":\"일부 포지션 ID가 유효하지 않습니다.\"}"),
+                                    @ExampleObject(name = "포지션 팀 불일치", value = "{\"code\":\"INVALID_POSITION_IDS\",\"message\":\"포지션이 해당 팀에 속하지 않습니다.\"}")
+                            })),
             @ApiResponse(responseCode = "401", description = "인증 실패",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
@@ -133,10 +148,13 @@ public class TodoController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "수정 성공",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TodoResponseDto.class))),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패 등)",
+            @ApiResponse(responseCode = "400", description = "잘못된 요청",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"상태는 필수입니다.\"}"))),
+                            examples = {
+                                    @ExampleObject(name = "상태 필수", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"상태는 필수입니다.\"}"),
+                                    @ExampleObject(name = "상태 값", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"상태는 TODO 또는 DONE만 가능합니다.\"}")
+                            })),
             @ApiResponse(responseCode = "401", description = "인증 실패",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
@@ -218,6 +236,13 @@ public class TodoController {
             @ApiResponse(responseCode = "200", description = "조회 성공",
                     content = @Content(mediaType = "application/json",
                             array = @ArraySchema(schema = @Schema(implementation = TodoResponseDto.class)))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 (날짜 형식 오류 등)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = {
+                                    @ExampleObject(name = "날짜 형식", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"잘못된 날짜 형식입니다. ISO 8601 형식(예: 2025-01-01T00:00:00Z)을 사용해주세요.\"}"),
+                                    @ExampleObject(name = "날짜 필수", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"시작일시와 종료일시는 필수입니다.\"}")
+                            })),
             @ApiResponse(responseCode = "401", description = "인증 실패",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
@@ -261,6 +286,13 @@ public class TodoController {
             @ApiResponse(responseCode = "200", description = "조회 성공",
                     content = @Content(mediaType = "application/json",
                             array = @ArraySchema(schema = @Schema(implementation = TodoResponseDto.class)))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 (날짜 형식 오류 등)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = {
+                                    @ExampleObject(name = "날짜 형식", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"잘못된 날짜 형식입니다. ISO 8601 형식(예: 2025-01-01T00:00:00Z)을 사용해주세요.\"}"),
+                                    @ExampleObject(name = "날짜 필수", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"시작일시와 종료일시는 필수입니다.\"}")
+                            })),
             @ApiResponse(responseCode = "401", description = "인증 실패",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
