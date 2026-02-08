@@ -60,7 +60,7 @@ public class ScheduleCreateRequest {
     private List<String> repeatWeekDays;
 
     // 포지션 및 참석자
-    @Schema(description = "연결할 포지션 ID 목록 (첫 번째가 대표 포지션, 비어있으면 작성자의 포지션 사용)", example = "[1,2]")
+    @Schema(description = "연결할 포지션 ID 목록 (첫 번째가 대표 포지션, 선택)", example = "[1,2]")
     private List<Long> positionIds;
 
     @Schema(description = "참석자 팀멤버 ID 목록 (선택)", example = "[10,11]")

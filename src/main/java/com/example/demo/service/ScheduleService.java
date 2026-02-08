@@ -131,24 +131,9 @@ public class ScheduleService {
             }
         }
 
-        // 포지션 설정
+        // 포지션 설정 (선택)
         List<Long> positionIds = request.getPositionIds();
-        List<SchedulePosition> schedulePositions = new ArrayList<>();
-        
-        if (positionIds == null || positionIds.isEmpty()) {
-            // 포지션 ID가 없으면 작성자의 포지션 사용
-            Position creatorPosition = creatorMember.getPosition();
-            if (creatorPosition != null) {
-                SchedulePosition sp = SchedulePosition.builder()
-                        .id(new SchedulePositionId(schedule.getId(), creatorPosition.getId()))
-                        .schedule(schedule)
-                        .position(creatorPosition)
-                        .orderIndex(0)
-                        .build();
-                schedulePositions.add(sp);
-            }
-            // 작성자의 포지션도 없으면 포지션을 비워둠 (전체로 처리)
-        } else {
+        if (positionIds != null && !positionIds.isEmpty()) {
             // 0이나 null 값 필터링
             List<Long> validPositionIds = positionIds.stream()
                     .filter(id -> id != null && id > 0)
@@ -170,6 +155,7 @@ public class ScheduleService {
                     }
                 }
                 
+                List<SchedulePosition> schedulePositions = new ArrayList<>();
                 for (int i = 0; i < positions.size(); i++) {
                     Position position = positions.get(i);
                     SchedulePosition sp = SchedulePosition.builder()
@@ -180,24 +166,8 @@ public class ScheduleService {
                             .build();
                     schedulePositions.add(sp);
                 }
-            } else {
-                // 유효한 포지션 ID가 없으면 작성자의 포지션 사용
-                Position creatorPosition = creatorMember.getPosition();
-                if (creatorPosition != null) {
-                    SchedulePosition sp = SchedulePosition.builder()
-                            .id(new SchedulePositionId(schedule.getId(), creatorPosition.getId()))
-                            .schedule(schedule)
-                            .position(creatorPosition)
-                            .orderIndex(0)
-                            .build();
-                    schedulePositions.add(sp);
-                }
-                // 작성자의 포지션도 없으면 포지션을 비워둠 (전체로 처리)
+                schedulePositionRepository.saveAll(schedulePositions);
             }
-        }
-        
-        if (!schedulePositions.isEmpty()) {
-            schedulePositionRepository.saveAll(schedulePositions);
         }
 
         // 스케줄 생성 알림 전송 (생성자 제외)
