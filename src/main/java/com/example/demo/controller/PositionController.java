@@ -68,13 +68,21 @@ public class PositionController {
                     "  }\n" +
                     "]"))),
         @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
         @ApiResponse(responseCode = "403", description = "권한 없음 (팀원만 조회 가능) - 에러 코드: FORBIDDEN",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"FORBIDDEN\",\"message\":\"팀원만 조회할 수 있습니다.\"}"))),
         @ApiResponse(responseCode = "404", description = "팀을 찾을 수 없음 - 에러 코드: TEAM_NOT_FOUND",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"TEAM_NOT_FOUND\",\"message\":\"팀을 찾을 수 없습니다.\"}"))),
         @ApiResponse(responseCode = "500", description = "서버 오류 - 에러 코드: INTERNAL_SERVER_ERROR",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"포지션 목록 조회 중 오류가 발생했습니다.\"}")))
     })
     @GetMapping
     public ResponseEntity<?> getPositionList(
@@ -107,13 +115,21 @@ public class PositionController {
                     @ExampleObject(name = "최대 개수 초과", value = "{\"code\":\"INVALID_REQUEST\",\"message\":\"포지션은 최대 6개까지 추가할 수 있습니다. (기본값 MEMBER 포함 시 7개)\"}")
                 })),
         @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
         @ApiResponse(responseCode = "403", description = "권한 없음 (팀장만 생성 가능) - 에러 코드: FORBIDDEN",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"FORBIDDEN\",\"message\":\"팀장만 포지션을 생성할 수 있습니다.\"}"))),
         @ApiResponse(responseCode = "404", description = "팀을 찾을 수 없음 - 에러 코드: TEAM_NOT_FOUND",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"TEAM_NOT_FOUND\",\"message\":\"팀을 찾을 수 없습니다.\"}"))),
         @ApiResponse(responseCode = "500", description = "서버 오류 - 에러 코드: INTERNAL_SERVER_ERROR",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"포지션 생성 중 오류가 발생했습니다.\"}")))
     })
     @PostMapping
     public ResponseEntity<?> createPosition(
@@ -146,13 +162,24 @@ public class PositionController {
                     @ExampleObject(name = "중복 이름", value = "{\"code\":\"INVALID_REQUEST\",\"message\":\"이미 존재하는 포지션 이름입니다.\"}")
                 })),
         @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
         @ApiResponse(responseCode = "403", description = "권한 없음 (팀장만 수정 가능) - 에러 코드: FORBIDDEN",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"FORBIDDEN\",\"message\":\"팀장만 포지션을 수정할 수 있습니다.\"}"))),
         @ApiResponse(responseCode = "404", description = "팀 또는 포지션을 찾을 수 없음 - 에러 코드: TEAM_NOT_FOUND, POSITION_NOT_FOUND",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = {
+                    @ExampleObject(name = "팀 없음", value = "{\"code\":\"TEAM_NOT_FOUND\",\"message\":\"팀을 찾을 수 없습니다.\"}"),
+                    @ExampleObject(name = "포지션 없음", value = "{\"code\":\"POSITION_NOT_FOUND\",\"message\":\"포지션을 찾을 수 없습니다.\"}")
+                })),
         @ApiResponse(responseCode = "500", description = "서버 오류 - 에러 코드: INTERNAL_SERVER_ERROR",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"포지션 수정 중 오류가 발생했습니다.\"}")))
     })
     @PatchMapping("/{positionId}")
     public ResponseEntity<?> updatePosition(
@@ -177,15 +204,28 @@ public class PositionController {
         @ApiResponse(responseCode = "200", description = "포지션 삭제 성공",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = PositionDeleteResponse.class))),
         @ApiResponse(responseCode = "400", description = "잘못된 요청 (기본 포지션 삭제 시도) - 에러 코드: INVALID_REQUEST",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INVALID_REQUEST\",\"message\":\"기본 포지션은 삭제할 수 없습니다.\"}"))),
         @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
         @ApiResponse(responseCode = "403", description = "권한 없음 (팀장만 삭제 가능) - 에러 코드: FORBIDDEN",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"FORBIDDEN\",\"message\":\"팀장만 포지션을 삭제할 수 있습니다.\"}"))),
         @ApiResponse(responseCode = "404", description = "팀 또는 포지션을 찾을 수 없음 - 에러 코드: TEAM_NOT_FOUND, POSITION_NOT_FOUND",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = {
+                    @ExampleObject(name = "팀 없음", value = "{\"code\":\"TEAM_NOT_FOUND\",\"message\":\"팀을 찾을 수 없습니다.\"}"),
+                    @ExampleObject(name = "포지션 없음", value = "{\"code\":\"POSITION_NOT_FOUND\",\"message\":\"포지션을 찾을 수 없습니다.\"}")
+                })),
         @ApiResponse(responseCode = "500", description = "서버 오류 - 에러 코드: INTERNAL_SERVER_ERROR",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"포지션 삭제 중 오류가 발생했습니다.\"}")))
     })
     @DeleteMapping("/{positionId}")
     public ResponseEntity<?> deletePosition(

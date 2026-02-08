@@ -132,6 +132,7 @@ public class ScheduleService {
         }
 
         // 포지션 설정 (선택)
+        List<SchedulePosition> schedulePositions = new ArrayList<>();
         List<Long> positionIds = request.getPositionIds();
         if (positionIds != null && !positionIds.isEmpty()) {
             // 0이나 null 값 필터링
@@ -155,7 +156,6 @@ public class ScheduleService {
                     }
                 }
                 
-                List<SchedulePosition> schedulePositions = new ArrayList<>();
                 for (int i = 0; i < positions.size(); i++) {
                     Position position = positions.get(i);
                     SchedulePosition sp = SchedulePosition.builder()

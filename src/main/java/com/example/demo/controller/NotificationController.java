@@ -12,6 +12,7 @@ import com.example.demo.service.PersonalNotificationSettingService;
 import com.example.demo.service.TeamNotificationSettingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -40,7 +41,13 @@ public class NotificationController {
         @ApiResponse(responseCode = "200", description = "조회 성공",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = PersonalNotificationSettingResponse.class))),
         @ApiResponse(responseCode = "401", description = "인증 실패",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
+        @ApiResponse(responseCode = "500", description = "서버 오류",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"개인 알림 설정 조회 중 오류가 발생했습니다.\"}")))
     })
     @GetMapping("/personal")
     public ResponseEntity<?> getPersonalNotificationSetting(
@@ -63,7 +70,13 @@ public class NotificationController {
         @ApiResponse(responseCode = "200", description = "수정 성공",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = PersonalNotificationSettingResponse.class))),
         @ApiResponse(responseCode = "401", description = "인증 실패",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
+        @ApiResponse(responseCode = "500", description = "서버 오류",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"개인 알림 설정 수정 중 오류가 발생했습니다.\"}")))
     })
     @PutMapping("/personal")
     public ResponseEntity<?> updatePersonalNotificationSetting(
@@ -88,9 +101,21 @@ public class NotificationController {
         @ApiResponse(responseCode = "200", description = "조회 성공",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamNotificationSettingResponse.class))),
         @ApiResponse(responseCode = "401", description = "인증 실패",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
+        @ApiResponse(responseCode = "403", description = "권한 없음 (팀원이 아님)",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"FORBIDDEN\",\"message\":\"팀원이 아닌 사용자는 팀 알림 설정을 조회할 수 없습니다.\"}"))),
         @ApiResponse(responseCode = "404", description = "팀을 찾을 수 없음",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"TEAM_NOT_FOUND\",\"message\":\"팀을 찾을 수 없습니다.\"}"))),
+        @ApiResponse(responseCode = "500", description = "서버 오류",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"팀 알림 설정 조회 중 오류가 발생했습니다.\"}")))
     })
     @GetMapping("/teams/{teamId}")
     public ResponseEntity<?> getTeamNotificationSetting(
@@ -113,9 +138,21 @@ public class NotificationController {
         @ApiResponse(responseCode = "200", description = "수정 성공",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamNotificationSettingResponse.class))),
         @ApiResponse(responseCode = "401", description = "인증 실패",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
+        @ApiResponse(responseCode = "403", description = "권한 없음 (팀장만 수정 가능)",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"FORBIDDEN\",\"message\":\"팀장만 팀 알림 설정을 수정할 수 있습니다.\"}"))),
         @ApiResponse(responseCode = "404", description = "팀을 찾을 수 없음",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"TEAM_NOT_FOUND\",\"message\":\"팀을 찾을 수 없습니다.\"}"))),
+        @ApiResponse(responseCode = "500", description = "서버 오류",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"팀 알림 설정 수정 중 오류가 발생했습니다.\"}")))
     })
     @PutMapping("/teams/{teamId}")
     public ResponseEntity<?> updateTeamNotificationSetting(
@@ -139,10 +176,18 @@ public class NotificationController {
     @Operation(summary = "디바이스 토큰 등록", description = "Expo Push Token을 등록합니다.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "등록 성공"),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패 등)",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"디바이스 토큰은 필수입니다.\"}"))),
         @ApiResponse(responseCode = "401", description = "인증 실패",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
+        @ApiResponse(responseCode = "500", description = "서버 오류",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"디바이스 토큰 등록 중 오류가 발생했습니다.\"}")))
     })
     @PostMapping("/device-token")
     public ResponseEntity<?> registerDeviceToken(

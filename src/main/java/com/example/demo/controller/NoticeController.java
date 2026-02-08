@@ -45,14 +45,26 @@ public class NoticeController {
                                     "  \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n" +
                                     "  \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n" +
                                     "}"))),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패 등)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"내용은 필수입니다.\"}"))),
             @ApiResponse(responseCode = "401", description = "인증 실패",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "403", description = "권한 없음",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
+            @ApiResponse(responseCode = "403", description = "권한 없음 (팀원이 아님)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"FORBIDDEN\",\"message\":\"팀원이 아닌 사용자는 공지를 생성할 수 없습니다.\"}"))),
             @ApiResponse(responseCode = "404", description = "팀을 찾을 수 없음",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"TEAM_NOT_FOUND\",\"message\":\"팀을 찾을 수 없습니다.\"}"))),
+            @ApiResponse(responseCode = "500", description = "서버 오류",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"공지 생성 중 오류가 발생했습니다.\"}")))
     })
     @PostMapping("/teams/{teamId}/notices")
     public ResponseEntity<?> createNotice(
@@ -91,11 +103,21 @@ public class NoticeController {
                                     @ExampleObject(name = "공지 없음", value = "null")
                             })),
             @ApiResponse(responseCode = "401", description = "인증 실패",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "403", description = "권한 없음",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
+            @ApiResponse(responseCode = "403", description = "권한 없음 (팀원이 아님)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"FORBIDDEN\",\"message\":\"팀원이 아닌 사용자는 공지를 조회할 수 없습니다.\"}"))),
             @ApiResponse(responseCode = "404", description = "팀을 찾을 수 없음",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"TEAM_NOT_FOUND\",\"message\":\"팀을 찾을 수 없습니다.\"}"))),
+            @ApiResponse(responseCode = "500", description = "서버 오류",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"최신 공지 조회 중 오류가 발생했습니다.\"}")))
     })
     @GetMapping("/teams/{teamId}/notices/latest")
     public ResponseEntity<?> getLatestNotice(@PathVariable Long teamId) {
@@ -129,14 +151,26 @@ public class NoticeController {
                                     "  \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n" +
                                     "  \"updatedAt\": \"2024-01-15T11:00:00.000Z\"\n" +
                                     "}"))),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패 등)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"내용은 필수입니다.\"}"))),
             @ApiResponse(responseCode = "401", description = "인증 실패",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
             @ApiResponse(responseCode = "403", description = "권한 없음 (팀원만 수정 가능)",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"FORBIDDEN\",\"message\":\"팀원이 아닌 사용자는 공지를 수정할 수 없습니다.\"}"))),
             @ApiResponse(responseCode = "404", description = "공지를 찾을 수 없음",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"NOTICE_NOT_FOUND\",\"message\":\"공지를 찾을 수 없습니다.\"}"))),
+            @ApiResponse(responseCode = "500", description = "서버 오류",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"공지 수정 중 오류가 발생했습니다.\"}")))
     })
     @PatchMapping("/teams/{teamId}/notices/{noticeId}")
     public ResponseEntity<?> updateNotice(
@@ -165,11 +199,21 @@ public class NoticeController {
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = ""))),
             @ApiResponse(responseCode = "401", description = "인증 실패",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
             @ApiResponse(responseCode = "403", description = "권한 없음 (팀원만 삭제 가능)",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"FORBIDDEN\",\"message\":\"팀원이 아닌 사용자는 공지를 삭제할 수 없습니다.\"}"))),
             @ApiResponse(responseCode = "404", description = "공지를 찾을 수 없음",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"NOTICE_NOT_FOUND\",\"message\":\"공지를 찾을 수 없습니다.\"}"))),
+            @ApiResponse(responseCode = "500", description = "서버 오류",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"공지 삭제 중 오류가 발생했습니다.\"}")))
     })
     @DeleteMapping("/teams/{teamId}/notices/{noticeId}")
     public ResponseEntity<?> deleteNotice(
