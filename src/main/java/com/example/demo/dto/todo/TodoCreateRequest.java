@@ -36,7 +36,7 @@ public class TodoCreateRequest {
     @Schema(description = "URL (선택, 최대 1000자)", example = "https://example.com")
     private String url;
 
-    // 담당자 목록 (비어있으면 생성자가 기본 담당자)
+    // 담당자 목록 (선택)
     private List<Long> assigneeMemberIds;
 
     // 포지션 목록

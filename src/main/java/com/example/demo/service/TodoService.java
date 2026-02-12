@@ -43,7 +43,7 @@ public class TodoService {
         Team team = teamRepository.findById(request.getTeamId())
                 .orElseThrow(() -> new IllegalArgumentException("TEAM_NOT_FOUND: 팀을 찾을 수 없습니다."));
 
-        TeamMember creatorMember = teamMemberRepository.findByTeamIdAndUserId(team.getId(), userId)
+        teamMemberRepository.findByTeamIdAndUserId(team.getId(), userId)
                 .orElseThrow(() -> new IllegalArgumentException("FORBIDDEN: 팀원이 아닌 사용자는 투두를 생성할 수 없습니다."));
 
         User creator = userRepository.findById(userId)
@@ -62,22 +62,16 @@ public class TodoService {
 
         todo = todoRepository.save(todo);
 
-        // 담당자 설정 (없으면 생성자 기본 담당자)
+        // 담당자 설정 (선택)
         List<Long> assigneeMemberIds = request.getAssigneeMemberIds();
-        List<TodoAttendee> assignees = new ArrayList<>();
-        if (assigneeMemberIds == null || assigneeMemberIds.isEmpty()) {
-            assignees.add(buildTodoAttendee(todo, creatorMember));
-        } else {
+        if (assigneeMemberIds != null && !assigneeMemberIds.isEmpty()) {
             // 0이나 null 값 필터링
             List<Long> validMemberIds = assigneeMemberIds.stream()
                     .filter(id -> id != null && id > 0)
                     .distinct()
                     .toList();
             
-            if (validMemberIds.isEmpty()) {
-                // 유효한 ID가 없으면 생성자를 기본 담당자로 설정
-                assignees.add(buildTodoAttendee(todo, creatorMember));
-            } else {
+            if (!validMemberIds.isEmpty()) {
                 List<TeamMember> members = teamMemberRepository.findAllById(validMemberIds);
                 
                 // 요청한 ID와 조회된 멤버 수가 다르면 일부 ID가 유효하지 않음
@@ -86,15 +80,16 @@ public class TodoService {
                 }
                 
                 // 모든 멤버가 해당 팀에 속하는지 확인
+                List<TodoAttendee> assignees = new ArrayList<>();
                 for (TeamMember member : members) {
                     if (!member.getTeam().getId().equals(team.getId())) {
                         throw new IllegalArgumentException("INVALID_MEMBER_IDS: 담당자 멤버가 해당 팀에 속하지 않습니다.");
                     }
                     assignees.add(buildTodoAttendee(todo, member));
                 }
+                todoAttendeeRepository.saveAll(assignees);
             }
         }
-        todoAttendeeRepository.saveAll(assignees);
 
         // 포지션 설정
         if (request.getPositionIds() != null && !request.getPositionIds().isEmpty()) {
