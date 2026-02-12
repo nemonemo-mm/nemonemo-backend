@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.domain.entity.DeviceToken;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.notification.DeviceTokenRequest;
+import com.example.demo.dto.notification.DeviceTokenResponse;
 import com.example.demo.repository.DeviceTokenRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +56,21 @@ public class DeviceTokenService {
     public Optional<String> getDeviceTokenByUserId(Long userId) {
         return deviceTokenRepository.findByUserId(userId)
                 .map(DeviceToken::getDeviceToken);
+    }
+
+    /**
+     * 사용자의 디바이스 토큰 상세 조회 (API용)
+     */
+    @Transactional(readOnly = true)
+    public Optional<DeviceTokenResponse> getDeviceTokenResponseByUserId(Long userId) {
+        return deviceTokenRepository.findByUserId(userId)
+                .map(dt -> DeviceTokenResponse.builder()
+                        .deviceToken(dt.getDeviceToken())
+                        .deviceType(dt.getDeviceType())
+                        .deviceInfo(dt.getDeviceInfo())
+                        .registeredAt(dt.getCreatedAt())
+                        .updatedAt(dt.getUpdatedAt())
+                        .build());
     }
 
     /**

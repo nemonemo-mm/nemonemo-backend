@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.common.ErrorResponse;
 import com.example.demo.dto.notification.DeviceTokenRequest;
+import com.example.demo.dto.notification.DeviceTokenResponse;
 import com.example.demo.dto.notification.PersonalNotificationSettingRequest;
 import com.example.demo.dto.notification.PersonalNotificationSettingResponse;
 import com.example.demo.dto.notification.TeamNotificationSettingRequest;
@@ -172,6 +173,41 @@ public class NotificationController {
     }
 
     // ========== 디바이스 토큰 관리 ==========
+
+    @Operation(summary = "디바이스 토큰 조회", description = "현재 사용자의 등록된 디바이스 토큰을 조회합니다. 등록된 토큰이 없으면 deviceToken이 null입니다.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "조회 성공",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = DeviceTokenResponse.class))),
+        @ApiResponse(responseCode = "401", description = "인증 실패",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"UNAUTHORIZED\",\"message\":\"인증이 필요합니다.\"}"))),
+        @ApiResponse(responseCode = "500", description = "서버 오류",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"디바이스 토큰 조회 중 오류가 발생했습니다.\"}")))
+    })
+    @GetMapping("/device-token")
+    public ResponseEntity<?> getDeviceToken() {
+        try {
+            Long userId = jwtHelper.getCurrentUserId();
+            if (userId == null) {
+                return createUnauthorizedResponse("인증이 필요합니다.");
+            }
+
+            DeviceTokenResponse response = deviceTokenService.getDeviceTokenResponseByUserId(userId)
+                    .orElse(DeviceTokenResponse.builder()
+                            .deviceToken(null)
+                            .deviceType(null)
+                            .deviceInfo(null)
+                            .registeredAt(null)
+                            .updatedAt(null)
+                            .build());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return createErrorResponse("디바이스 토큰 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
     @Operation(summary = "디바이스 토큰 등록", description = "Expo Push Token을 등록합니다.")
     @ApiResponses({
