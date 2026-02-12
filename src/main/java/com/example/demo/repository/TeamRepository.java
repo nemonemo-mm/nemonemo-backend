@@ -12,6 +12,10 @@ import java.util.Optional;
 
 public interface TeamRepository extends JpaRepository<Team, Long> {
     Optional<Team> findByInviteCode(String inviteCode);
+
+    @Query("SELECT COUNT(t) FROM Team t WHERE t.owner.id = :userId " +
+           "OR EXISTS (SELECT 1 FROM TeamMember tm WHERE tm.team = t AND tm.user.id = :userId)")
+    long countTeamsByUserId(@Param("userId") Long userId);
     
     @Query("""
             select 

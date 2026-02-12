@@ -45,12 +45,13 @@ public class TeamController {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "팀 생성 성공",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamDetailResponseDto.class))),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패, 팀 이름 필수 또는 최대 길이 초과) - 에러 코드: VALIDATION_ERROR",
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (validation 실패, 팀 이름 필수/길이 초과, 팀 개수 초과) - 에러 코드: VALIDATION_ERROR, TEAM_LIMIT_EXCEEDED",
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = {
                     @ExampleObject(name = "팀 이름 필수", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"팀 이름은 필수입니다.\"}"),
-                    @ExampleObject(name = "팀 이름 길이 초과", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"팀 이름은 최대 10자까지 입력 가능합니다.\"}")
+                    @ExampleObject(name = "팀 이름 길이 초과", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"팀 이름은 최대 10자까지 입력 가능합니다.\"}"),
+                    @ExampleObject(name = "팀 개수 초과", value = "{\"code\":\"TEAM_LIMIT_EXCEEDED\",\"message\":\"팀은 최대 5개까지 참여할 수 있습니다.\"}")
                 })),
         @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",
             content = @Content(mediaType = "application/json", 
@@ -282,10 +283,13 @@ public class TeamController {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "팀 참여 성공",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = TeamMemberResponse.class))),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청 (이미 멤버, 유효하지 않은 초대 코드) - 에러 코드: ALREADY_MEMBER, INVALID_INVITE_CODE",
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (이미 멤버, 유효하지 않은 초대 코드, 팀 개수 초과) - 에러 코드: ALREADY_MEMBER, INVALID_INVITE_CODE, TEAM_LIMIT_EXCEEDED",
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(value = "{\"code\":\"ALREADY_MEMBER\",\"message\":\"이미 팀 멤버입니다.\"}"))),
+                examples = {
+                    @ExampleObject(name = "이미 멤버", value = "{\"code\":\"ALREADY_MEMBER\",\"message\":\"이미 해당 팀의 멤버입니다.\"}"),
+                    @ExampleObject(name = "팀 개수 초과", value = "{\"code\":\"TEAM_LIMIT_EXCEEDED\",\"message\":\"팀은 최대 5개까지 참여할 수 있습니다.\"}")
+                })),
         @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",
             content = @Content(mediaType = "application/json", 
                 schema = @Schema(implementation = ErrorResponse.class),

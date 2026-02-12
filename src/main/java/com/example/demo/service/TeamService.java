@@ -39,7 +39,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class TeamService {
-    
+
+    private static final int MAX_TEAMS_PER_USER = 5;
+
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
     private final PositionRepository positionRepository;
@@ -62,6 +64,12 @@ public class TeamService {
         User owner = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         
+        // 팀 개수 제한 (최대 5개)
+        long teamCount = teamRepository.countTeamsByUserId(userId);
+        if (teamCount >= MAX_TEAMS_PER_USER) {
+            throw new IllegalArgumentException("TEAM_LIMIT_EXCEEDED: 팀은 최대 5개까지 참여할 수 있습니다.");
+        }
+
         // 팀 이름 검증
         if (request.getTeamName() == null || request.getTeamName().trim().isEmpty()) {
             throw new IllegalArgumentException("팀 이름은 필수입니다.");
@@ -302,6 +310,12 @@ public class TeamService {
         // 이미 멤버인지 확인
         if (teamMemberRepository.existsByTeamIdAndUserId(team.getId(), userId)) {
             throw new IllegalArgumentException("ALREADY_MEMBER: 이미 해당 팀의 멤버입니다.");
+        }
+
+        // 팀 개수 제한 (최대 5개)
+        long teamCount = teamRepository.countTeamsByUserId(userId);
+        if (teamCount >= MAX_TEAMS_PER_USER) {
+            throw new IllegalArgumentException("TEAM_LIMIT_EXCEEDED: 팀은 최대 5개까지 참여할 수 있습니다.");
         }
         
         // 포지션 설정 (포지션이 없으면 null로 설정 - 전체로 처리)
