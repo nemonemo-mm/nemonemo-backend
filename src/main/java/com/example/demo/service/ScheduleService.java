@@ -485,8 +485,8 @@ public class ScheduleService {
             throw new IllegalArgumentException("VALIDATION_ERROR: 시작 일시와 종료 일시는 필수입니다.");
         }
 
-        if (!request.getEndAt().isAfter(request.getStartAt())) {
-            throw new IllegalArgumentException("VALIDATION_ERROR: 종료 일시는 시작 일시보다 이후여야 합니다.");
+        if (request.getEndAt().isBefore(request.getStartAt())) {
+            throw new IllegalArgumentException("VALIDATION_ERROR: 종료 일시는 시작 일시보다 이전일 수 없습니다.");
         }
     }
 

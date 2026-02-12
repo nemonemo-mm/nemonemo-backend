@@ -31,7 +31,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             from Schedule s
             where s.team.id = :teamId
               and (
-                    (s.repeatType = 'NONE' and s.startAt < :end and s.endAt > :start)
+                    (s.repeatType = 'NONE' and s.startAt <= :end and s.endAt >= :start)
                  or (s.repeatType <> 'NONE' and (s.repeatEndDate is null or s.repeatEndDate >= :start))
               )
             """)
@@ -62,7 +62,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             join s.attendees a
             where a.member.id in :memberIds
               and (
-                    (s.repeatType = 'NONE' and s.startAt < :end and s.endAt > :start)
+                    (s.repeatType = 'NONE' and s.startAt <= :end and s.endAt >= :start)
                  or (s.repeatType <> 'NONE' and (s.repeatEndDate is null or s.repeatEndDate >= :start))
               )
             """)
@@ -94,7 +94,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             where s.team.id = :teamId
               and p.position.id in :positionIds
               and (
-                    (s.repeatType = 'NONE' and s.startAt < :end and s.endAt > :start)
+                    (s.repeatType = 'NONE' and s.startAt <= :end and s.endAt >= :start)
                  or (s.repeatType <> 'NONE' and (s.repeatEndDate is null or s.repeatEndDate >= :start))
               )
             """)
@@ -128,7 +128,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             where a.member.id in :memberIds
               and p.position.id in :positionIds
               and (
-                    (s.repeatType = 'NONE' and s.startAt < :end and s.endAt > :start)
+                    (s.repeatType = 'NONE' and s.startAt <= :end and s.endAt >= :start)
                  or (s.repeatType <> 'NONE' and (s.repeatEndDate is null or s.repeatEndDate >= :start))
               )
             """)
@@ -161,7 +161,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             where a.member.id in :memberIds
               and s.team.id = :teamId
               and (
-                    (s.repeatType = 'NONE' and s.startAt < :end and s.endAt > :start)
+                    (s.repeatType = 'NONE' and s.startAt <= :end and s.endAt >= :start)
                  or (s.repeatType <> 'NONE' and (s.repeatEndDate is null or s.repeatEndDate >= :start))
               )
             """)
@@ -196,7 +196,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
               and s.team.id = :teamId
               and p.position.id in :positionIds
               and (
-                    (s.repeatType = 'NONE' and s.startAt < :end and s.endAt > :start)
+                    (s.repeatType = 'NONE' and s.startAt <= :end and s.endAt >= :start)
                  or (s.repeatType <> 'NONE' and (s.repeatEndDate is null or s.repeatEndDate >= :start))
               )
             """)
