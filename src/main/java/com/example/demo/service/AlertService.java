@@ -110,7 +110,7 @@ public class AlertService {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new IllegalArgumentException("TEAM_NOT_FOUND: 팀을 찾을 수 없습니다."));
 
-        String body = String.format("%s님에게 새로운 스케줄이 등록되었습니다.", userName);
+        String body = String.format("%s에게 새로운 스케줄이 등록되었습니다", userName);
 
         Alert alert = Alert.builder()
                 .user(user)
@@ -129,7 +129,7 @@ public class AlertService {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new IllegalArgumentException("TEAM_NOT_FOUND: 팀을 찾을 수 없습니다."));
 
-        String body = String.format("%s 그룹의 새로운 스케줄이 등록되었습니다.", positionName);
+        String body = String.format("%s 그룹의 새로운 스케줄이 등록되었습니다", positionName);
 
         Alert alert = Alert.builder()
                 .user(user)
@@ -148,7 +148,7 @@ public class AlertService {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new IllegalArgumentException("TEAM_NOT_FOUND: 팀을 찾을 수 없습니다."));
 
-        String body = String.format("%s 팀의 새로운 공지사항을 확인해주세요.", teamName);
+        String body = String.format("%s 팀의 새로운 공지사항을 확인해주세요", teamName);
 
         Alert alert = Alert.builder()
                 .user(user)
@@ -186,13 +186,35 @@ public class AlertService {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new IllegalArgumentException("TEAM_NOT_FOUND: 팀을 찾을 수 없습니다."));
 
-        String body = String.format("%s 팀에 새로운 팀원 %s 님이 참여했어요.", teamName, newMemberName);
+        String body = String.format("%s 팀에 새로운 팀원 %s 님이 참여했어요", teamName, newMemberName);
 
         Alert alert = Alert.builder()
                 .user(user)
                 .team(team)
                 .type(AlertType.TEAM_MEMBER_JOINED)
                 .title("새로운 팀원 참여")
+                .body(body)
+                .build();
+        alertRepository.save(alert);
+    }
+
+    /**
+     * 팀 해체 알림 (보류 - 팀 해체 기능 구현 시 호출 예정)
+     */
+    @Transactional
+    public void createTeamDissolvedAlert(Long userId, Long teamId, String teamName) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new IllegalArgumentException("TEAM_NOT_FOUND: 팀을 찾을 수 없습니다."));
+
+        String body = String.format("%s 팀이 해체되었습니다", teamName);
+
+        Alert alert = Alert.builder()
+                .user(user)
+                .team(team)
+                .type(AlertType.TEAM_DISSOLVED)
+                .title("팀 해체")
                 .body(body)
                 .build();
         alertRepository.save(alert);
