@@ -100,7 +100,7 @@ public class PositionController {
         }
     }
     
-    @Operation(summary = "포지션 생성", description = "새로운 포지션을 생성합니다. 팀장만 생성 가능하며, 최대 6개까지 생성 가능합니다.")
+    @Operation(summary = "포지션 생성", description = "새로운 포지션을 생성합니다. 팀장만 생성 가능하며, 최대 8개까지 생성 가능합니다.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "포지션 생성 성공",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = PositionResponse.class))),
@@ -112,7 +112,7 @@ public class PositionController {
                     @ExampleObject(name = "포지션 이름 길이 초과", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"포지션 이름은 최대 10자까지 입력 가능합니다.\"}"),
                     @ExampleObject(name = "색상 코드 길이 초과", value = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"색상 코드는 최대 9자까지 입력 가능합니다.\"}"),
                     @ExampleObject(name = "중복 이름", value = "{\"code\":\"INVALID_REQUEST\",\"message\":\"이미 존재하는 포지션 이름입니다.\"}"),
-                    @ExampleObject(name = "최대 개수 초과", value = "{\"code\":\"INVALID_REQUEST\",\"message\":\"포지션은 최대 6개까지 추가할 수 있습니다. (기본값 MEMBER 포함 시 7개)\"}")
+                    @ExampleObject(name = "최대 개수 초과", value = "{\"code\":\"INVALID_REQUEST\",\"message\":\"포지션은 최대 8개까지 추가할 수 있습니다.\"}")
                 })),
         @ApiResponse(responseCode = "401", description = "인증 실패 - 에러 코드: UNAUTHORIZED",
             content = @Content(mediaType = "application/json",

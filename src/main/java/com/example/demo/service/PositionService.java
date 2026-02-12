@@ -56,10 +56,10 @@ public class PositionService {
             throw new IllegalArgumentException("DUPLICATE_POSITION_NAME: 이미 존재하는 포지션 이름입니다.");
         }
         
-        // 포지션 개수 체크 (최대 6개까지 추가 가능)
+        // 포지션 개수 체크 (최대 8개까지 추가 가능)
         long positionCount = positionRepository.countByTeamId(teamId);
-        if (positionCount >= 6) {
-            throw new IllegalArgumentException("포지션은 최대 6개까지 추가할 수 있습니다.");
+        if (positionCount >= 8) {
+            throw new IllegalArgumentException("포지션은 최대 8개까지 추가할 수 있습니다.");
         }
         
         // 포지션 생성

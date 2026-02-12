@@ -94,9 +94,9 @@ public class TeamService {
         
         // 요청에 포함된 포지션들 생성
         if (request.getPositions() != null && !request.getPositions().isEmpty()) {
-            // 포지션 개수 체크 (최대 6개)
-            if (request.getPositions().size() > 6) {
-                throw new IllegalArgumentException("포지션은 최대 6개까지 추가할 수 있습니다.");
+            // 포지션 개수 체크 (최대 8개)
+            if (request.getPositions().size() > 8) {
+                throw new IllegalArgumentException("포지션은 최대 8개까지 추가할 수 있습니다.");
             }
             
             // 포지션 이름 중복 체크

@@ -24,7 +24,7 @@ public class TeamCreateRequest {
     @Schema(description = "팀 이미지 URL (선택)", example = "https://image.com/team-image.jpg")
     private String imageUrl;
 
-    @Schema(description = "팀 생성 시 함께 생성할 포지션 목록 (선택, 최대 6개, 기본 포지션 MEMBER는 자동 생성됨)", 
+    @Schema(description = "팀 생성 시 함께 생성할 포지션 목록 (선택, 최대 8개)", 
             example = "[{\"positionName\": \"Design\", \"colorHex\": \"#FFAA00\"}, {\"positionName\": \"Developer\", \"colorHex\": \"#00AAFF\"}]")
     @Valid
     private List<PositionCreateRequest> positions;
