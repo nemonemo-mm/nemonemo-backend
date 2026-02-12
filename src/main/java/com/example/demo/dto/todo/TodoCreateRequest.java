@@ -17,8 +17,8 @@ public class TodoCreateRequest {
     private Long teamId;
 
     @NotBlank(message = "제목은 필수입니다.")
-    @Size(max = 20, message = "제목은 최대 20자까지 입력 가능합니다.")
-    @Schema(description = "투두 제목 (필수, 최대 20자)", requiredMode = Schema.RequiredMode.REQUIRED, example = "프로젝트 계획 수립")
+    @Size(max = 30, message = "제목은 최대 30자까지 입력 가능합니다.")
+    @Schema(description = "투두 제목 (필수, 최대 30자)", requiredMode = Schema.RequiredMode.REQUIRED, example = "프로젝트 계획 수립")
     private String title;
 
     @Schema(description = "투두 설명 (선택, TEXT 타입, 길이 제한 없음)", example = "프로젝트 초기 계획을 수립합니다")

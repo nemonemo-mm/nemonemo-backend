@@ -13,8 +13,8 @@ import java.util.List;
 @Setter
 public class TodoUpdateRequest {
 
-    @Schema(description = "투두 제목", example = "프로젝트 계획 수립(수정)")
-    @Size(max = 200, message = "제목은 최대 200자까지 입력 가능합니다.")
+    @Schema(description = "투두 제목 (최대 30자)", example = "프로젝트 계획 수립(수정)")
+    @Size(max = 30, message = "제목은 최대 30자까지 입력 가능합니다.")
     private String title;
 
     @Schema(description = "투두 설명", example = "프로젝트 초기 계획 수정")
