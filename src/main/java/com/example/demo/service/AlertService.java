@@ -40,6 +40,7 @@ public class AlertService {
         } else { // PERSONAL
             List<AlertType> types = List.of(
                     AlertType.SCHEDULE_ASSIGNEE_ADDED,
+                    AlertType.TODO_ASSIGNEE_ADDED,
                     AlertType.TODO_DUE_TODAY
             );
             alerts = alertRepository.findTop50ByUserIdAndTypeInOrderByCreatedAtDesc(userId, types);
@@ -155,6 +156,25 @@ public class AlertService {
                 .team(team)
                 .type(AlertType.NOTICE_UPDATED)
                 .title("새로운 공지사항")
+                .body(body)
+                .build();
+        alertRepository.save(alert);
+    }
+
+    @Transactional
+    public void createTodoAssigneeAlert(Long userId, Long teamId, String userName) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new IllegalArgumentException("TEAM_NOT_FOUND: 팀을 찾을 수 없습니다."));
+
+        String body = String.format("%s에게 새로운 투두가 등록되었습니다", userName);
+
+        Alert alert = Alert.builder()
+                .user(user)
+                .team(team)
+                .type(AlertType.TODO_ASSIGNEE_ADDED)
+                .title("새로운 투두")
                 .body(body)
                 .build();
         alertRepository.save(alert);

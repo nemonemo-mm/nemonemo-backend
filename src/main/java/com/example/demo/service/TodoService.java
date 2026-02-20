@@ -10,6 +10,7 @@ import com.example.demo.dto.todo.TodoStatusUpdateRequest;
 import com.example.demo.dto.todo.TodoUpdateRequest;
 import com.example.demo.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TodoService {
@@ -33,6 +35,7 @@ public class TodoService {
     private final ExpoNotificationService expoNotificationService;
     private final DeviceTokenService deviceTokenService;
     private final NotificationSettingRepository notificationSettingRepository;
+    private final AlertService alertService;
 
     @Transactional
     public TodoResponseDto createTodo(Long userId, TodoCreateRequest request) {
@@ -141,8 +144,24 @@ public class TodoService {
             });
         }
 
-        // 투두 생성 알림 전송 (생성자 제외)
+        // 투두 생성 푸시 알림 전송 (생성자 제외)
         sendTodoChangeNotification(todo, userId);
+
+        // 알림함용 Alert 생성 (담당자별, 생성자 제외)
+        try {
+            if (todo.getAssignees() != null && !todo.getAssignees().isEmpty()) {
+                Long teamId = todo.getTeam().getId();
+                for (TodoAttendee attendee : todo.getAssignees()) {
+                    Long assigneeUserId = attendee.getMember().getUser().getId();
+                    if (!assigneeUserId.equals(userId)) {
+                        String assigneeName = attendee.getMember().getUser().getName();
+                        alertService.createTodoAssigneeAlert(assigneeUserId, teamId, assigneeName);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("투두 담당자 Alert 생성 실패: todoId={}, error={}", todo.getId(), e.getMessage());
+        }
 
         return toResponse(todo);
     }

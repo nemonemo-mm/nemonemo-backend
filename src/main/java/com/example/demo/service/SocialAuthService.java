@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.dto.auth.AuthTokensResponse;
 import com.example.demo.dto.auth.SocialLoginRequest;
 import com.example.demo.domain.entity.RefreshToken;
+import com.example.demo.domain.entity.Team;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.AuthProvider;
 import com.example.demo.repository.RefreshTokenRepository;
@@ -479,25 +480,26 @@ public class SocialAuthService {
 
     /**
      * 회원탈퇴: 사용자 삭제
-     * 팀장인 경우 회원탈퇴 불가 (먼저 팀을 삭제해야 함)
+     * 팀장인 경우 소유한 팀을 자동 삭제한 후 회원탈퇴 처리
      */
     @Transactional
     public void deleteUser(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-        
-        // 팀장인지 확인 (팀장은 회원탈퇴 불가)
-        List<TeamDetailResponse> ownedTeams = teamRepository.findByOwnerId(userId);
-        if (!ownedTeams.isEmpty()) {
-            throw new IllegalArgumentException("FORBIDDEN: 팀장은 회원탈퇴할 수 없습니다. 먼저 소유한 팀을 삭제해주세요.");
+                .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND: 사용자를 찾을 수 없습니다."));
+
+        // 팀장인 경우 소유한 팀 자동 삭제 (CASCADE로 팀 관련 데이터 함께 삭제)
+        List<Team> ownedTeams = teamRepository.findAllByOwnerId(userId);
+        for (Team team : ownedTeams) {
+            teamRepository.delete(team);
+            log.info("회원탈퇴: 팀장 소유 팀 자동 삭제 완료 teamId={}", team.getId());
         }
-        
+
         // Refresh Token 삭제
         refreshTokenRepository.deleteByUser(user);
-        
+
         // Device Token 삭제
         deviceTokenService.deleteDeviceTokenByUserId(userId);
-        
+
         // 사용자 삭제 (CASCADE로 관련 데이터 자동 삭제)
         userRepository.delete(user);
         log.info("회원탈퇴 완료: userId={}", userId);

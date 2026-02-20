@@ -6,7 +6,8 @@ public enum AlertType {
     SCHEDULE_POSITION_ADDED,      // {positionName} 그룹의 새로운 스케줄이 등록되었습니다
 
     // 투두 관련
-    TODO_DUE_TODAY,               // {teamName} 팀에서 {userName} 님의 오늘 할 일이 남아있어요!
+    TODO_ASSIGNEE_ADDED,         // {userName}에게 새로운 투두가 등록되었습니다
+    TODO_DUE_TODAY,              // {teamName} 팀에서 {userName} 님의 오늘 할 일이 남아있어요!
 
     // 팀/공지 관련
     NOTICE_UPDATED,               // {teamName} 팀의 새로운 공지사항을 확인해주세요

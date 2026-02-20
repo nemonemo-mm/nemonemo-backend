@@ -6,8 +6,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
@@ -16,11 +18,25 @@ import java.util.*;
 @Service
 public class ExpoNotificationService {
 
-    private static final String EXPO_PUSH_API_URL = "https://exp.host/--/api/v2/push/send";
+    private static final String DEFAULT_EXPO_PUSH_API_URL = "https://exp.host/--/api/v2/push/send";
     private final RestTemplate restTemplate;
+    private final String expoPushApiUrl;
 
-    public ExpoNotificationService() {
-        this.restTemplate = new RestTemplate();
+    public ExpoNotificationService(
+            @Value("${expo.push.api-url:https://exp.host/--/api/v2/push/send}") String expoPushApiUrl) {
+        this.expoPushApiUrl = (expoPushApiUrl != null && !expoPushApiUrl.isBlank()) ? expoPushApiUrl : DEFAULT_EXPO_PUSH_API_URL;
+        this.restTemplate = createRestTemplate();
+        log.info("Expo Push API URL: {}", this.expoPushApiUrl);
+    }
+
+    private RestTemplate createRestTemplate() {
+        RestTemplate rt = new RestTemplate();
+        org.springframework.http.client.SimpleClientHttpRequestFactory factory =
+                new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(10000);
+        factory.setReadTimeout(15000);
+        rt.setRequestFactory(factory);
+        return rt;
     }
 
     /**
@@ -147,7 +163,7 @@ public class ExpoNotificationService {
 
         try {
             ResponseEntity<ExpoPushResponse> response = restTemplate.exchange(
-                    EXPO_PUSH_API_URL,
+                    expoPushApiUrl,
                     HttpMethod.POST,
                     request,
                     ExpoPushResponse.class
@@ -164,8 +180,11 @@ public class ExpoNotificationService {
                 return expoResponse;
             }
             return null;
+        } catch (ResourceAccessException e) {
+            log.error("Expo Push API 연결 실패 (네트워크/타임아웃). 로컬 환경에서는 방화벽/프록시 확인: {}", e.getMessage());
+            return null;
         } catch (Exception e) {
-            log.error("Expo Push API 호출 실패", e);
+            log.error("Expo Push API 호출 실패: {}", e.getMessage(), e);
             return null;
         }
     }

@@ -9,6 +9,7 @@ import com.example.demo.dto.notification.TeamNotificationSettingRequest;
 import com.example.demo.dto.notification.TeamNotificationSettingResponse;
 import com.example.demo.security.jwt.JwtAuthenticationHelper;
 import com.example.demo.service.DeviceTokenService;
+import com.example.demo.service.ExpoNotificationService;
 import com.example.demo.service.PersonalNotificationSettingService;
 import com.example.demo.service.TeamNotificationSettingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,6 +34,7 @@ public class NotificationController {
     private final PersonalNotificationSettingService personalNotificationSettingService;
     private final TeamNotificationSettingService teamNotificationSettingService;
     private final DeviceTokenService deviceTokenService;
+    private final ExpoNotificationService expoNotificationService;
     private final JwtAuthenticationHelper jwtHelper;
 
     // ========== 개인 알림 설정 ==========
@@ -241,6 +243,41 @@ public class NotificationController {
         }
     }
 
+    @Operation(summary = "푸시 알림 테스트", description = "디바이스 토큰으로 테스트 푸시를 전송합니다. 로컬에서 푸시가 안 들어올 때 디버깅용.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "전송 성공"),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (토큰 필수)"),
+        @ApiResponse(responseCode = "401", description = "인증 실패")
+    })
+    @PostMapping("/device-token/test-push")
+    public ResponseEntity<?> testPush(@RequestBody DeviceTokenRequest request) {
+        try {
+            Long userId = jwtHelper.getCurrentUserId();
+            if (userId == null) {
+                return createUnauthorizedResponse("인증이 필요합니다.");
+            }
+            String token = request.getDeviceToken();
+            if (token == null || token.isBlank()) {
+                return ResponseEntity.badRequest()
+                        .body(ErrorResponse.builder()
+                                .code("VALIDATION_ERROR")
+                                .message("deviceToken은 필수입니다.")
+                                .build());
+            }
+            boolean success = expoNotificationService.sendNotification(
+                    token,
+                    "테스트 알림",
+                    "로컬 백엔드에서 전송한 테스트 푸시입니다.",
+                    java.util.Map.of("type", "test")
+            );
+            return ResponseEntity.ok(java.util.Map.of(
+                    "success", success,
+                    "message", success ? "푸시 전송 성공" : "푸시 전송 실패 (Expo API 응답 확인)"
+            ));
+        } catch (Exception e) {
+            return createErrorResponse("푸시 테스트 중 오류: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
     // ========== 헬퍼 메서드 ==========
 

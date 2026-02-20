@@ -31,6 +31,9 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
             where t.owner.id = :ownerId
             """)
     List<TeamDetailResponse> findByOwnerId(@Param("ownerId") Long ownerId);
+
+    @Query("SELECT t FROM Team t WHERE t.owner.id = :ownerId")
+    List<Team> findAllByOwnerId(@Param("ownerId") Long ownerId);
     
     @Query("""
             select distinct

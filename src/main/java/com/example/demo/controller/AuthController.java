@@ -36,7 +36,7 @@ public class AuthController {
 
     @Operation(summary = "소셜 로그인", description = "Firebase Authentication SDK에서 발급받은 ID Token을 사용하여 소셜 로그인을 수행합니다.\n\n" +
             "userName 필드 없이 호출: 신규/기존 사용자 여부만 확인 (newUser 필드로 판단, user는 null)\n" +
-            "userName 필드 포함하여 호출: 회원가입 또는 로그인 완료")
+            "userName 필드 포함하여 호출: 회원가입 (또는 로그인 완료)")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "로그인 성공", 
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthTokensResponse.class))),
@@ -225,6 +225,27 @@ public class AuthController {
 
             socialAuthService.deleteUser(userId);
             return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            String message = e.getMessage();
+            if (message != null && message.startsWith("FORBIDDEN:")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ErrorResponse.builder()
+                                .code("FORBIDDEN")
+                                .message(message.replace("FORBIDDEN:", "").trim())
+                                .build());
+            }
+            if (message != null && message.startsWith("USER_NOT_FOUND:")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ErrorResponse.builder()
+                                .code("USER_NOT_FOUND")
+                                .message(message.replace("USER_NOT_FOUND:", "").trim())
+                                .build());
+            }
+            return ResponseEntity.badRequest()
+                    .body(ErrorResponse.builder()
+                            .code("BAD_REQUEST")
+                            .message(message != null ? message : "잘못된 요청입니다.")
+                            .build());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ErrorResponse.builder()
